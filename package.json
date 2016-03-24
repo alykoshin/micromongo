@@ -32,7 +32,7 @@
     "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "keywords": [
-      "mongo,mongodb,query,find,findone,array,arrays,objects,collection,collections,find,findOne"
+    "mongo,mongodb,query,find,findone,array,arrays,objects,collection,collections,find,findOne"
   ],
   "author": "Alexander <alykoshin@gmail.com>",
   "license": "MIT",
@@ -45,7 +45,8 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "minimist": "^1.2.0"
+    "lodash": "^4.6.1",
+    "mini-deep-assign": "^0.0.3"
   },
   "devDependencies": {
     "chai": "^3.4.1",
