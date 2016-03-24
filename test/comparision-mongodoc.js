@@ -20,18 +20,18 @@ describe('#comparision operators - mongo docs', function() {
 	describe('#$eq', function () {
 
 		var array = [
-			{ _id: 1, item: { name: "ab", code: "123" }, qty: 15, tags: [ "A", "B", "C" ] },
-			{ _id: 2, item: { name: "cd", code: "123" }, qty: 20, tags: [ "B" ] },
-			{ _id: 3, item: { name: "ij", code: "456" }, qty: 25, tags: [ "A", "B" ] },
-			{ _id: 4, item: { name: "xy", code: "456" }, qty: 30, tags: [ "B", "A" ] },
-			{ _id: 5, item: { name: "mn", code: "000" }, qty: 20, tags: [ [ "A", "B" ], "C" ] }
+			{ _id: 1, item: { name: 'ab', code: '123' }, qty: 15, tags: [ 'A', 'B', 'C' ] },
+			{ _id: 2, item: { name: 'cd', code: '123' }, qty: 20, tags: [ 'B' ] },
+			{ _id: 3, item: { name: 'ij', code: '456' }, qty: 25, tags: [ 'A', 'B' ] },
+			{ _id: 4, item: { name: 'xy', code: '456' }, qty: 30, tags: [ 'B', 'A' ] },
+			{ _id: 5, item: { name: 'mn', code: '000' }, qty: 20, tags: [ [ 'A', 'B' ], 'C' ] }
 		];
 
 		it('#Equals a Specified Value', function () {
 			var query = { qty: { $eq: 20 } };
 			var res   = [
-				{ _id: 2, item: { name: "cd", code: "123" }, qty: 20, tags: [ "B" ] },
-				{ _id: 5, item: { name: "mn", code: "000" }, qty:  20, tags: [ [ "A", "B" ], "C" ] }
+				{ _id: 2, item: { name: 'cd', code: '123' }, qty: 20, tags: [ 'B' ] },
+				{ _id: 5, item: { name: 'mn', code: '000' }, qty:  20, tags: [ [ 'A', 'B' ], 'C' ] }
 			];
 			expect(mm.find(array, query)).eql(res);
 		});
@@ -43,17 +43,17 @@ describe('#comparision operators - mongo docs', function() {
 		describe('#Equals an Array Value', function () {
 
 			var res = [
-				{ _id: 3, item: { name: "ij", code: "456" }, qty: 25, tags: [ "A", "B" ] },
-				{ _id: 5, item: { name: "mn", code: "000" }, qty: 20, tags: [ [ "A", "B" ], "C" ] }
+				{ _id: 3, item: { name: 'ij', code: '456' }, qty: 25, tags: [ 'A', 'B' ] },
+				{ _id: 5, item: { name: 'mn', code: '000' }, qty: 20, tags: [ [ 'A', 'B' ], 'C' ] }
 			];
 
 			it.skip('#with $eq', function () {
-				var query1 = { tags: { $eq: [ "A", "B" ] } };
+				var query1 = { tags: { $eq: [ 'A', 'B' ] } };
 				expect(mm.find(array, query1)).eql(res);
 			});
 
 			it.skip('#without $eq (implicit $eq)', function () {
-				var query2 = { tags: [ "A", "B" ] };
+				var query2 = { tags: [ 'A', 'B' ] };
 				expect(mm.find(array, query2)).eql(res);
 			});
 

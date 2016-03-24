@@ -10,7 +10,7 @@
 
 # micromongo
 
-Mongodb-like operations over arrays of objects.
+Mongodb-like queries over arrays of objects.
 
 Array of objects is a very common data structure in programming. 
 If your application widely using this type of data, and you are familiar with Mongodb approach, you may consider this package to handle the arrays of objects.  
@@ -21,6 +21,11 @@ If you have big sets of data, I'd recommend to consider `minimongo`'s `Collectio
 
 Currently only `find()` and `findOne()` are supported.
 Not supported array elements, geolocation queries etc; for more info see compatibility matrix below.
+
+Tests contains more then 80 test cases based on module's logic and examples from mongodb docs.
+
+
+# Example
 
 ```
 var mm = require('../');

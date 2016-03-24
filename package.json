@@ -1,7 +1,7 @@
 {
   "name": "micromongo",
   "version": "0.0.2",
-  "description": "Mongodb-like operations over arrays of objects",
+  "description": "Mongodb-like queries over arrays of objects",
   "main": "./index.js",
   "engines": {
     "node": ">=0.10"
@@ -46,7 +46,7 @@
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
     "lodash": "^4.6.1",
-    "mini-deep-assign": "^0.0.4"
+    "mini-deep-assign": "^0.0.5"
   },
   "devDependencies": {
     "chai": "^3.5.0",
