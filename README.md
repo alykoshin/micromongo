@@ -12,7 +12,12 @@
 
 Mongodb-like operations over arrays of objects.
 
-If you need to 
+Array of objects is a very common data structure in programming. 
+If your application widely using this type of data, and you are familiar with Mongodb approach, you may consider this package to handle the arrays of objects.  
+
+Please, be aware that this module is not intended to be used with relatively big arrays and not optimized for that tasks.
+If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself
+
 
 Currently only `find()` and `findOne()` are supported.
 Not supported array elements, geolocation queries etc; for more info see compatibility matrix below.
