@@ -10,17 +10,21 @@
 
 # micromongo
 
-Mongodb-like queries over arrays of objects.
+Mongodb-like queries over standard arrays of objects.
 
-Array of objects is a very common data structure in programming. 
-If your application widely using this type of data, and you are familiar with Mongodb approach, you may consider this package to handle the arrays of objects.  
+Array of objects (documents in Mongodb's terminology) is a very common data structure in programming. 
+If your application widely using this type of data, if you are looking for something relatively lightweight 
+and you are familiar with Mongodb syntax, you may consider this package to handle the arrays of objects.  
 
 Please, be aware that this module is not intended to be used with relatively big arrays and not optimized for that tasks.
-If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself
+If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
 
 
 Currently only `find()` and `findOne()` are supported.
-Not supported array elements, geolocation queries etc; for more info see compatibility matrix below.
+Both returns deep copy (with some type limitations) of array's documents.
+
+Not supported querying array elements, geolocation, bitwise operators etc; 
+for more info see compatibility matrix below.
 
 Tests contains more then 80 test cases based on module's logic and examples from mongodb docs.
 
@@ -72,13 +76,13 @@ npm install --save micromongo
 
 ## Compatibility matrix
 
-At the moment supports `find()` and `findOne()` methods.
+At the moment supports only `find()` and `findOne()` operations.
 
 `_id` in projection are ignored
  ! need to decide which behavior is better
 
 
-Matrix below is based on Mongo doc 3.2
+Matrix below is based on Mongodb 3.2 documentation.
 
 ## Collection Methods
 
@@ -128,7 +132,9 @@ updateMany()            | .
 validate()              | NA
 
 NA - Not Applicable
+
 ?  - Not planned
+
 .  - Not implemented
 
 
@@ -228,37 +234,34 @@ $size          | .
 $inc 
 $mul 
 $rename 
-$setOnInsert  
-$set   
+$setOnInsert
+$set
 $unset 
 $min 
 $max 
 $currentDate
 
 ## Update Operators
-$ 	Acts as a placeholder to update the first element that matches the query condition in an update.
-$addToSet 	Adds elements to an array only if they do not already exist in the set.
-$pop 	Removes the first or last item of an array.
-$pullAll 	Removes all matching values from an array.
-$pull 	Removes all array elements that match a specified query.
-$pushAll 	Deprecated. Adds several items to an array.
-$push 	Adds an item to an array.
+$ 
+$addToSet 
+$pop
+$pullAll 
+$pull
+$pushAll 
+$push 
 
 ## Update Operator Modifiers
-Name 	Description
-$each 	Modifies the $push and $addToSet operators to append multiple items for array updates.
-$slice 	Modifies the $push operator to limit the size of updated arrays.
-$sort 	Modifies the $push operator to reorder documents stored in an array.
-$position 	Modifies the $push operator to specify the position in the array to add elements.
+$each 
+$slice
+$sort 
+$position 
 
 
 ## Bitwise Update Operator¶
-Name 	Description
-$bit 	Performs bitwise AND, OR, and XOR updates of integer values.
+$bit 
 
 ## Isolation Update Operator¶
-Name 	Description
-$isolated 	Modifies the behavior of a write operation to increase the isolation of the operation.
+$isolated 
 
 ## Aggregation Pipeline Operators
 ### Pipeline Aggregation Stages
