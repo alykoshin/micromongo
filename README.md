@@ -16,26 +16,103 @@ Array of objects (documents in Mongodb's terminology) is a very common data stru
 If your application widely using this type of data, if you are looking for something relatively lightweight 
 and you are familiar with Mongodb syntax, you may consider this package to handle the arrays of objects.  
 
-Please, be aware that this module is not intended to be used with relatively big arrays and not optimized for that tasks.
+Please, be aware that this module is working on unsorted arrays and does not uses indexes, so it is not intended to be used with relatively big arrays and not purposed for that tasks.
 If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
 
 
-Currently only `find()` and `findOne()` are supported.
-Both returns deep copy (with some type limitations) of array's documents.
+Currently only `count()`, `find()` and `findOne()` methods are supported.
 
-Not supported querying array elements, geolocation, bitwise operators etc; 
-for more info see compatibility matrix below.
+Not supported querying array elements, geolocation, bitwise operators etc; also not supported query options like  
+For more info see compatibility matrix below.
 
-Tests contains more then 80 test cases based on module's logic and examples from mongodb docs.
+Tests contains more then 90 test cases based on module's logic and examples from mongodb docs.
 
 
-# Example
+## `count()`
+
+Method `count()` return number of documents matching query.
+
+Syntax:
+```
+res = mm.count(collection, query);
+```
+
+`collection` - array of objects
+
+`query` - query object
+
+Following example returns number of elements with a>=2 (i.e. 2):
+
+```
+res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
+```
+
+If `query` is `undefined` or empty object (`{}`), method returns total count of elements in array:
+
+```
+res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
+```
+
+
+## `find()`
+
+Methods `find()` returns deep copy (with some type limitations) of array's documents matching query.
+
+```
+res = mm.find(collection, query, projection);
+```
+
+
+## `findOne()`
+
+Methods `findOne()` returns deep copy (with some type limitations) of first array's documents matching query.
+
+```
+doc = mm.findOne(collection, query, projection);
+```
+
+
+# Examples 
+
+## count()
 
 ```
 var mm = require('../');
 //var mm = require('micromongo');
 
-var data = [
+var collection, query, res;
+
+collection = [
+  { a: 1 },
+  { a: 2 },
+  { a: 3 },
+];
+
+query = { a: { $gte: 2 } };
+
+res = mm.count(collection, query);
+console.log(res);
+
+// 2
+
+query = {};
+
+res = mm.count(collection, query);
+console.log(res);
+
+// 3
+```
+
+
+# Example find()
+
+```
+var mm = require('../');
+//var mm = require('micromongo');
+
+var collection, query, projection, res;
+
+collection = [
   { qty: 10, price: 10 },
   { qty: 10, price:  0 },
   { qty: 20, price: 10 },
@@ -43,23 +120,21 @@ var data = [
   { qty: 30, price: 10 },
   { qty: 30, price:  0 },
 ];
-var query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
-var projection = { qty: 1 };
 
-var res = mm.find(data, query, projection);
+query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
 
+projection = { qty: 1 };
+
+res = mm.find(collection, query, projection);
 console.log(res);
-```
 
-Result:
-
-```
 // [ { qty: 10 }, { qty: 20 }, { qty: 30 } ]
 ```
 
 You can find examples in `examples/` subdirectory.
+To run all the examples at once you may start `node examples\index.js`.
 
-For more examples please refer to tests in `tests/` subdirectory. 
+For more examples please also have a look on tests in `tests/` subdirectory. 
 
 
 If you have different needs regarding the functionality, please add a [feature request](https://github.com/alykoshin/micromongo/issues).
@@ -90,7 +165,7 @@ Method                  | Status
 ------------------------|--------
 aggregate()             | ?
 bulkWrite()             | ?
-count()                 | .
+**count()**             | +
 copyTo()                | ?
 createIndex()           | NA
 dataSize()              | NA
