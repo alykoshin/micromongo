@@ -16,17 +16,26 @@ Array of objects (documents in Mongodb's terminology) is a very common data stru
 If your application widely using this type of data, if you are looking for something relatively lightweight 
 and you are familiar with Mongodb syntax, you may consider this package to handle the arrays of objects.  
 
-Please, be aware that this module is working on unsorted arrays and does not uses indexes, so it is not intended to be used with relatively big arrays and not purposed for that tasks.
+Please, be aware that this module is working on unsorted arrays and does not uses indexes, so it is not intended to be used with relatively big arrays (thousands of elements) and not purposed for that tasks (see [performance](#performance) section).
 If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
 
 
 Currently only `count()`, `find()` and `findOne()` methods are supported.
 
 Not supported querying array elements, geolocation, bitwise operators etc; also not supported query options like  
-For more info see compatibility matrix below.
+For more info see [compatibility matrix](#compatibility-matrix) below.
 
-Tests contains more then 90 test cases based on module's logic and examples from mongodb docs.
+Tests contains over 90 different test cases based on module's logic and examples from Mongodb docs.
 
+
+## Installation
+
+```sh
+npm install --save micromongo
+```
+
+
+# Usage
 
 ## `count()`
 
@@ -44,12 +53,14 @@ res = mm.count(collection, query);
 Following example returns number of elements with a>=2 (i.e. 2):
 
 ```
+var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
 ```
 
 If `query` is `undefined` or empty object (`{}`), method returns total count of elements in array:
 
 ```
+var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
 ```
 
@@ -59,6 +70,7 @@ res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
 Methods `find()` returns deep copy (with some type limitations) of array's documents matching query.
 
 ```
+var mm = require('micromongo');
 res = mm.find(collection, query, projection);
 ```
 
@@ -140,13 +152,40 @@ For more examples please also have a look on tests in `tests/` subdirectory.
 If you have different needs regarding the functionality, please add a [feature request](https://github.com/alykoshin/micromongo/issues).
 
 
-## Installation
 
-```sh
-npm install --save micromongo
+## Testing
+
+For unit tests run:
+
+```
+npm run _test
 ```
 
-## Usage
+
+## Performance
+
+As it was mentioned, `micromongo` runs on unsorted unindexed data, so it can't show good performance on big arrays.
+
+Test system: 
+- Intel® Core™ i7-3520M (2.90 GHz, 4MB L3, 1600MHz FSB)
+- 16GB 1600 MHz DDR3
+
+Tests showed following results for `1000` and `10000` elements:
+
+```
+  #performance
+count 1000 elements - Elapsed: 19 ms
+    ✓ #count 1000 elements
+count 10000 elements - Elapsed: 191 ms
+    ✓ #count 10000 elements (192ms)
+find 1000 elements - Elapsed: 35 ms
+    ✓ #find 1000 elements
+find 10000 elements - Elapsed: 296 ms
+    ✓ #find 10000 elements (297ms)
+```
+
+You may have a look on the data used for the tests in `tests/performance.js`, and running tests by yourself by `npm run _test` and checking the console log for `performance` output.
+
 
 
 ## Compatibility matrix
