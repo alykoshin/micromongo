@@ -204,7 +204,7 @@ Method                  | Status
 ------------------------|--------
 aggregate()             | ?
 bulkWrite()             | ?
-**count()**             | +
+**count()**             | **+**
 copyTo()                | ?
 createIndex()           | NA
 dataSize()              | NA
