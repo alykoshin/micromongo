@@ -19,7 +19,7 @@ node_js:
   - "5.8"
   - "5.9"
   - "stable"
-  - "latest"
+  - "node"
   - "iojs"
 before_install:
 script: "npm run-script test-travis"

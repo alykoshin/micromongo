@@ -14,7 +14,7 @@ var data = [
   { qty: 30, price:  0 },
 ];
 var query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
-var projection = { qty :1 };
+var projection = { qty: 1 };
 
 var res = mm.find(data, query, projection);
 
