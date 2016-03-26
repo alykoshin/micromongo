@@ -14,38 +14,38 @@ var sinon = require('sinon');
 var mm = require('../lib/');
 
 
-describe('#projection - development', function() {
+describe('# projection - development', function() {
 
-  describe('#primitive projection', function() {
+  describe('# primitive projection', function() {
 
-    describe('#doc with 1 field', function() {
+    describe('# doc with 1 field', function() {
       var doc = { value: 'ab' };
 
-      it('#empty projection', function() {
+      it('# empty projection', function() {
         var projection = {};
         var res = { value: 'ab' };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#inclusive all (1)', function() {
+      it('# inclusive all (1)', function() {
         var projection = { value: 1 };
         var res = { value: 'ab' };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#inclusive all (true)', function() {
+      it('# inclusive all (true)', function() {
         var projection = { value: true };
         var res = { value: 'ab' };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#exclusive all (0)', function() {
+      it('# exclusive all (0)', function() {
         var projection = { value: 0 };
         var res = {};
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#exclusive all (false)', function() {
+      it('# exclusive all (false)', function() {
         var projection = { value: false };
         var res = {};
         expect(mm._project( doc, projection )).eql( res );
@@ -53,41 +53,41 @@ describe('#projection - development', function() {
 
     });
 
-    describe('#doc with 2 fields', function() {
+    describe('# doc with 2 fields', function() {
       var doc = { value1: 1, value2: 2 };
 
-      it('#inclusive all', function() {
+      it('# inclusive all', function() {
         var projection = { value1: 1, value2: 1 };
         var res = { value1: 1, value2: 2 };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#inclusive 1st', function() {
+      it('# inclusive 1st', function() {
         var projection = { value1: 1 };
         var res = { value1: 1 };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#inclusive 2nd', function() {
+      it('# inclusive 2nd', function() {
         var projection = { value2: 1 };
         var res = { value2: 2 };
         expect(mm._project( doc, projection )).eql( res );
       });
 
 
-      it('#exclusive all', function() {
+      it('# exclusive all', function() {
         var projection = { value1: 0, value2: 0 };
         var res = { };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#exclusive 1st', function() {
+      it('# exclusive 1st', function() {
         var projection = { value1: 0 };
         var res = { value2: 2 };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#exclusive 2nd', function() {
+      it('# exclusive 2nd', function() {
         var projection = { value2: 0 };
         var res = { value1: 1 };
         expect(mm._project( doc, projection )).eql( res );
@@ -95,24 +95,24 @@ describe('#projection - development', function() {
 
     });
 
-    describe('#invalid projections', function() {
+    describe('# invalid projections', function() {
       var doc = {};
 
-      it('#attempt inclusive/exclusive', function() {
+      it('# attempt inclusive/exclusive', function() {
         var projection = { value1: 0, value2: 1 };
         expect(function() {
           mm._project( doc, projection );
         }).throw(Error);
       });
 
-      it('#attempt exclusive/inclusive', function() {
+      it('# attempt exclusive/inclusive', function() {
         var projection = { value1: 1, value2: 0 };
         expect(function() {
           mm._project( doc, projection );
         }).throw(Error);
       });
 
-      it('#attempt invalid value', function() {
+      it('# attempt invalid value', function() {
         var projection = { value: -1, value2: 0 };
         expect(function() {
           mm._project( doc, projection );
@@ -124,29 +124,29 @@ describe('#projection - development', function() {
   });
 
 
-  describe('#projection for embedded documents', function() {
+  describe('# projection for embedded documents', function() {
 
     var doc = { value1: { value2: 'ab' } };
 
-    it('#inclusive', function() {
+    it('# inclusive', function() {
       var projection = { 'value1.value2': 1 };
       var res = { value1: { value2: 'ab' } };
       expect(mm._project( doc, projection )).eql( res );
     });
 
-    it('#exclusive', function() {
+    it('# exclusive', function() {
       var projection = { 'value1.value2': 0 };
       var res = { value1 : {} };
       expect(mm._project( doc, projection )).eql( res );
     });
 
-    it('#exclude parent', function() {
+    it('# exclude parent', function() {
       var projection = { value1: 0 };
       var res = {};
       expect(mm._project( doc, projection )).eql( res );
     });
 
-    it('#exclude child', function() {
+    it('# exclude child', function() {
       var projection = { value2: 0 };
       var res = doc;
       expect(mm._project( doc, projection )).eql( res );
@@ -154,41 +154,45 @@ describe('#projection - development', function() {
 
   });
 
-  describe('#projection for _id', function() {
+  describe('# projection for _id', function() {
     var doc = { _id: 0, value1: 1, value2: 2 };
 
-    it('#empty projection', function() {
+    it('# empty projection', function() {
       var projection = {};
       var res = { _id: 0, value1: 1, value2: 2 };
       expect(mm._project( doc, projection )).eql( res );
     });
 
-    describe('#', function() {
+    describe('# scalar _id', function() {
 
-      it('#exclude scalar _id', function() {
-        var projection = { _id: 0, value1: 0 };
-        var res = { value2: 2 };
-        expect(mm._project( doc, projection )).eql( res );
-      });
+      describe('# exclusion', function() {
 
-      it('#include _id', function() {
-        var projection = { _id: 1, value1: 0 };
-        var res = { _id: 0, value2: 2 };
-        expect(mm._project( doc, projection )).eql( res );
+        it('# exclude _id', function() {
+          var projection = { _id: 0, value1: 0 };
+          var res = { value2: 2 };
+          expect(mm._project( doc, projection )).eql( res );
+        });
+
+        it('# include _id', function() {
+          var projection = { _id: 1, value1: 0 };
+          var res = { _id: 0, value2: 2 };
+          expect(mm._project( doc, projection )).eql( res );
+        });
+
       });
 
     });
 
 
-    describe('#inclusion', function() {
+    describe('# inclusion', function() {
 
-      it('#exclude _id', function() {
+      it('# exclude _id', function() {
         var projection = { _id: 0, value1: 1 };
         var res = { value1: 1 };
         expect(mm._project( doc, projection )).eql( res );
       });
 
-      it('#include _id', function() {
+      it('# include _id', function() {
         var projection = { _id: 1, value1: 1 };
         var res = { _id: 0, value1: 1 };
         expect(mm._project( doc, projection )).eql( res );
@@ -196,18 +200,18 @@ describe('#projection - development', function() {
 
     });
 
-    describe('#object _id', function() {
+    describe('# object _id', function() {
       var doc = { _id: { value: 'value' }, value1: 1, value2: 2 };
 
-      describe('#exclusion', function() {
+      describe('# exclusion', function() {
 
-        it('#exclude _id', function() {
+        it('# exclude _id', function() {
           var projection = { _id: 0, value1: 0 };
           var res = { value2: 2 };
           expect(mm._project( doc, projection )).eql( res );
         });
 
-        it('#include _id', function() {
+        it('# include _id', function() {
           var projection = { _id: 1, value1: 0 };
           var res = { _id: { value: 'value' }, value2: 2 };
           expect(mm._project( doc, projection )).eql( res );
@@ -215,15 +219,15 @@ describe('#projection - development', function() {
 
       });
 
-      describe('#inclusion', function() {
+      describe('# inclusion', function() {
 
-        it('#exclude _id', function() {
+        it('# exclude _id', function() {
           var projection = { _id: 0, value1: 0 };
           var res = { value2: 2 };
           expect(mm._project( doc, projection )).eql( res );
         });
 
-        it('#include _id', function() {
+        it('# include _id', function() {
           var projection = { _id: 1, value1: 0 };
           var res = { _id: { value: 'value' }, value2: 2 };
           expect(mm._project( doc, projection )).eql( res );

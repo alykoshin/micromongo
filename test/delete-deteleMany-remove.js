@@ -33,7 +33,7 @@ describe('#delete - development', function() {
       { a:  2, b: 4 },
       { a:  3, b: 5 },
     ];
-    console.log('a='+JSON.stringify(a));
+    //console.log('a='+JSON.stringify(a));
   });
 
   describe('#deleteOne', function() {
@@ -108,7 +108,7 @@ describe('#delete - development', function() {
     it('# several', function() {
       var q = { a: 2 };
       var r = a.filter(function(item) { return item.a !== 2; });
-      console.log('r:'+JSON.stringify(r));
+      //console.log('r:'+JSON.stringify(r));
 
       var result = mm.deleteMany( a, q );
 

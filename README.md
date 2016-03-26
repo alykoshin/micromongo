@@ -27,9 +27,12 @@ Currently following methods are supported:
 - [`deleteOne()`](#deleteone)
 - [`deleteMany()`](#deletemany)
 - [`remove()`](#remove)
+- [`insert()`](#insert)
+- [`insertOne()`](#insertOne)
+- [`insertMany()`](#insertMany)
 
 
-Not supported: querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
+Not supported: indexes, querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
 
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
@@ -130,9 +133,9 @@ Returns document containing
 - `deletedCount` containing the number of deleted documents
 
 
-## `nRemoved()`
+## `remove()`
 
-Method `nRemoved()` removes from array its first document matching query or all documents matching query.
+Method `remove()` removes from array its first document matching query or all documents matching query.
 
 ```
 var res = mm.remove(array, query);
@@ -150,6 +153,49 @@ Parameters:
 Returns document containing
 - `nRemoved` containing the number of deleted documents
 
+
+Parameters:
+- [`options`] - may be boolean or document containing boolean property `justOne`. Optional, default: `false`. Determines, all matched documents to be removed or only first of them.
+
+Returns document containing
+- `nRemoved` containing the number of deleted documents
+
+
+## `insert()`
+
+While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
+
+```
+var res = mm.insert(array, sourceDocOrArray, options);
+
+// { nInserted: 1 }  
+```
+
+- `options.ordered` - `boolean` - not supported
+
+
+## `insertOne()`
+
+While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
+
+```
+var res = mm.insertOne(array, sourceDoc, options);
+
+// { nInserted: 1 }  
+```
+
+
+## `insertMany()`
+
+While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
+
+```
+var res = mm.insert(array, sourceArray, options);
+
+// { nInserted: 1 }  
+```
+
+- `options.ordered` - `boolean` - not supported
 
 
 # Examples 
@@ -272,11 +318,11 @@ Method                  | Status
 aggregate()             | ?
 bulkWrite()             | ?
 **count()**             | **+**
-copyTo()                | ?
+**copyTo()**            | **+**
 createIndex()           | NA
 dataSize()              | NA
-deleteOne()             | .
-deleteMany()            | .
+**deleteOne()**         | **+**
+**deleteMany()**        | **+**
 distinct()              | ?
 drop()                  | NA
 dropIndex()             | NA
@@ -293,14 +339,14 @@ getIndexes()            | NA
 getShardDistribution()  | NA
 getShardVersion()       | NA
 group()                 | ?
-insert()                | .
-insertOne()             | .
-insertMany()            | .
+**insert()**            | **+**
+**insertOne()**         | **+**
+**insertMany()**        | **+**
 isCapped()              | NA
 mapReduce()             | ?
 reIndex()               | NA
 replaceOne()            | ?
-remove()                | ?
+**remove()**            | **+**
 renameCollection()      | NA
 save()                  | NA
 stats()                 | NA
@@ -311,6 +357,8 @@ update()                | .
 updateOne()             | .
 updateMany()            | .
 validate()              | NA
+
++  - Supported
 
 NA - Not Applicable
 
