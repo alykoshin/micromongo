@@ -48,7 +48,7 @@ describe('#delete - development', function() {
       expect(result).eql({ deletedCount: 0 });
     });
 
-   it('# first', function() {
+    it('# first', function() {
       var q = { a: 1 };
       var r = a.filter(function(item) { return item.a !== 1; });
 
@@ -127,6 +127,76 @@ describe('#delete - development', function() {
     });
 
   });
+
+
+  describe('# remove', function() {
+
+    it('# none', function() {
+      var q = { a: 10 };
+      var r = a.filter(function(item) { return item.a !== 10; });
+
+      var result = mm.remove( a, q );
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 0 });
+    });
+
+    it('# all matched (no justOne)', function() {
+      var q = { a: 2 };
+      var r = a.filter(function(item) { return item.a !== 2; });
+
+      var result = mm.remove( a, q );
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 3 });
+    });
+
+    it('# all matched (false)', function() {
+      var q = { a: 2 };
+      var r = a.filter(function(item) { return item.a !== 2; });
+
+      var result = mm.remove( a, q, false );
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 3 });
+    });
+
+    it('# all matched (justOne: false)', function() {
+      var q = { a: 2 };
+      var r = a.filter(function(item) { return item.a !== 2; });
+
+      var result = mm.remove( a, q, { justOne: false } );
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 3 });
+    });
+
+    it('# first matched (true)', function() {
+      var q = { a: 2 };
+      var idx = _.findIndex(a, function(item) { return item.a === 2; });
+      var r = a.slice();
+      r.splice(idx,1);
+
+      var result = mm.remove( a, q, true );
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 1 });
+    });
+
+    it('# first matched (true)', function() {
+      var q = { a: 2 };
+      var idx = _.findIndex(a, function(item) { return item.a === 2; });
+      var r = a.slice();
+      r.splice(idx,1);
+
+      var result = mm.remove( a, q, { justOne: true });
+
+      expect(a).eql(r);
+      expect(result).eql({ nRemoved: 1 });
+    });
+
+  });
+
 
 
 });

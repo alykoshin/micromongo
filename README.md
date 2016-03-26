@@ -26,6 +26,7 @@ Currently following methods are supported:
 - [`findOne()`](#findone)
 - [`deleteOne()`](#deleteone)
 - [`deleteMany()`](#deletemany)
+- [`remove()`](#remove)
 
 
 Not supported: querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
@@ -103,7 +104,7 @@ doc = mm.findOne(array, query, projection);
 
 ## `deleteOne()`
 
-Method `deleteOne()` removes from array its first document matching query with fields matching projection.
+Method `deleteOne()` removes from array its first document matching query.
 
 Returns document containing
 - `deletedCount` containing the number of deleted documents
@@ -117,7 +118,7 @@ var res = mm.deleteOne(array, query);
 
 ## `deleteMany()`
 
-Method `deleteMany()` removes from array its first document matching query with fields matching projection.
+Method `deleteMany()` removes from array all its documents matching query.
 
 ```
 var res = mm.deleteMany(array, query);
@@ -127,6 +128,27 @@ var res = mm.deleteMany(array, query);
 
 Returns document containing
 - `deletedCount` containing the number of deleted documents
+
+
+## `nRemoved()`
+
+Method `nRemoved()` removes from array its first document matching query or all documents matching query.
+
+```
+var res = mm.remove(array, query);
+
+// { nRemoved: 1 }  
+
+var res = mm.remove(array, query, {});
+
+// { nRemoved: 1 }  
+```
+
+Parameters:
+- [`options`] - may be boolean or document containing boolean property `justOne`. Optional, default: `false`. Determines, all matched documents to be removed or only first of them.
+
+Returns document containing
+- `nRemoved` containing the number of deleted documents
 
 
 
