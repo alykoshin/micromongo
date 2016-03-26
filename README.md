@@ -42,19 +42,22 @@ npm install --save micromongo
 Method `count()` return number of documents matching query.
 
 Syntax:
+
 ```
-res = mm.count(collection, query);
+res = mm.count(array, query);
 ```
 
-`collection` - array of objects
+`array` - array of objects
 
 `query` - query object
 
-Following example returns number of elements with a>=2 (i.e. 2):
+Following example returns number of elements with `a >= 2` (i.e. `2`):
 
 ```
 var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
+
+// res = 2
 ```
 
 If `query` is `undefined` or empty object (`{}`), method returns total count of elements in array:
@@ -62,6 +65,8 @@ If `query` is `undefined` or empty object (`{}`), method returns total count of 
 ```
 var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
+
+// res = 3
 ```
 
 
@@ -71,7 +76,7 @@ Methods `find()` returns deep copy (with some type limitations) of array's docum
 
 ```
 var mm = require('micromongo');
-res = mm.find(collection, query, projection);
+res = mm.find(array, query, projection);
 ```
 
 
@@ -80,7 +85,7 @@ res = mm.find(collection, query, projection);
 Methods `findOne()` returns deep copy (with some type limitations) of first array's documents matching query.
 
 ```
-doc = mm.findOne(collection, query, projection);
+doc = mm.findOne(array, query, projection);
 ```
 
 
@@ -89,12 +94,12 @@ doc = mm.findOne(collection, query, projection);
 ## count()
 
 ```
-var mm = require('../');
-//var mm = require('micromongo');
+//var mm = require('../');
+var mm = require('micromongo');
 
-var collection, query, res;
+var array, query, res;
 
-collection = [
+array = [
   { a: 1 },
   { a: 2 },
   { a: 3 },
@@ -102,14 +107,14 @@ collection = [
 
 query = { a: { $gte: 2 } };
 
-res = mm.count(collection, query);
+res = mm.count(array, query);
 console.log(res);
 
 // 2
 
 query = {};
 
-res = mm.count(collection, query);
+res = mm.count(array, query);
 console.log(res);
 
 // 3
@@ -119,12 +124,12 @@ console.log(res);
 # Example find()
 
 ```
-var mm = require('../');
-//var mm = require('micromongo');
+//var mm = require('../');
+var mm = require('micromongo');
 
-var collection, query, projection, res;
+var array, query, projection, res;
 
-collection = [
+array = [
   { qty: 10, price: 10 },
   { qty: 10, price:  0 },
   { qty: 20, price: 10 },
@@ -137,13 +142,13 @@ query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
 
 projection = { qty: 1 };
 
-res = mm.find(collection, query, projection);
+res = mm.find(array, query, projection);
 console.log(res);
 
 // [ { qty: 10 }, { qty: 20 }, { qty: 30 } ]
 ```
 
-You can find examples in `examples/` subdirectory.
+You can find these examples in `examples/` subdirectory.
 To run all the examples at once you may start `node examples\index.js`.
 
 For more examples please also have a look on tests in `tests/` subdirectory. 

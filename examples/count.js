@@ -5,9 +5,9 @@
 var mm = require('../');
 //var mm = require('micromongo');
 
-var collection, query, res;
+var array, query, res;
 
-collection = [
+array = [
   { a: 1 },
   { a: 2 },
   { a: 3 },
@@ -15,14 +15,14 @@ collection = [
 
 query = { a: { $gte: 2 } };
 
-res = mm.count(collection, query);
+res = mm.count(array, query);
 console.log(res);
 
 // 2
 
 query = {};
 
-res = mm.count(collection, query);
+res = mm.count(array, query);
 console.log(res);
 
 // 3
