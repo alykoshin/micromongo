@@ -38,7 +38,17 @@ describe('#delete - development', function() {
 
   describe('#deleteOne', function() {
 
-    it('# first', function() {
+    it('# none', function() {
+      var q = { a: 10 };
+      var r = a.filter(function(item) { return item.a !== 10; });
+
+      var result = mm.deleteOne( a, q );
+
+      expect(a).eql(r);
+      expect(result).eql({ deletedCount: 0 });
+    });
+
+   it('# first', function() {
       var q = { a: 1 };
       var r = a.filter(function(item) { return item.a !== 1; });
 
@@ -74,6 +84,16 @@ describe('#delete - development', function() {
   });
 
   describe('# deleteMany', function() {
+
+    it('# none', function() {
+      var q = { a: 10 };
+      var r = a.filter(function(item) { return item.a !== 10; });
+
+      var result = mm.deleteMany( a, q );
+
+      expect(a).eql(r);
+      expect(result).eql({ deletedCount: 0 });
+    });
 
     it('# first', function() {
       var q = { a: 1 };

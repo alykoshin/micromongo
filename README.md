@@ -21,14 +21,15 @@ If you have big sets of data, I'd recommend to consider `minimongo`'s `Collectio
 
 
 Currently following methods are supported:
-- `count()`, 
-- `find()`,
-- `findOne()`
-- `deleteOne()`
-- `deleteMany()`
+- [`count()`](#count), 
+- [`find()`](#find),
+- [`findOne()`](#findone)
+- [`deleteOne()`](#deleteone)
+- [`deleteMany()`](#deletemany)
 
 
-Not supported querying array elements, geolocation, bitwise operators etc; also not supported query options like  
+Not supported: querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
+
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
 Tests contains over 120 different test cases based on module's logic and examples from Mongodb docs.
