@@ -25,7 +25,7 @@ Currently only `count()`, `find()` and `findOne()` methods are supported.
 Not supported querying array elements, geolocation, bitwise operators etc; also not supported query options like  
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
-Tests contains over 90 different test cases based on module's logic and examples from Mongodb docs.
+Tests contains over 120 different test cases based on module's logic and examples from Mongodb docs.
 
 
 ## Installation
@@ -72,7 +72,10 @@ res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
 
 ## `find()`
 
-Methods `find()` returns deep copy (with some type limitations) of array's documents matching query.
+Methods `find()` returns deep copy (with some type limitations) of array's documents matching query with fields matching projection.
+
+If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
+
 
 ```
 var mm = require('micromongo');
@@ -82,7 +85,9 @@ res = mm.find(array, query, projection);
 
 ## `findOne()`
 
-Methods `findOne()` returns deep copy (with some type limitations) of first array's documents matching query.
+Methods `findOne()` returns deep copy (with some type limitations) of first array's documents matching query with fields matching projection.
+
+If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
 ```
 doc = mm.findOne(array, query, projection);
@@ -121,7 +126,7 @@ console.log(res);
 ```
 
 
-# Example find()
+## Example find()
 
 ```
 //var mm = require('../');
@@ -158,7 +163,7 @@ If you have different needs regarding the functionality, please add a [feature r
 
 
 
-## Testing
+# Testing
 
 For unit tests run:
 
@@ -167,7 +172,7 @@ npm run _test
 ```
 
 
-## Performance
+# Performance
 
 As it was mentioned, `micromongo` runs on unsorted unindexed data, so it can't show good performance on big arrays.
 
@@ -193,12 +198,11 @@ You may have a look on the data used for the tests in `tests/performance.js`, an
 
 
 
-## Compatibility matrix
+# Compatibility matrix
 
 At the moment supports only `find()` and `findOne()` operations.
 
-`_id` in projection are ignored
- ! need to decide which behavior is better
+If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
 
 Matrix below is based on Mongodb 3.2 documentation.
