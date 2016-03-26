@@ -20,7 +20,13 @@ Please, be aware that this module is working on unsorted arrays and does not use
 If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
 
 
-Currently only `count()`, `find()` and `findOne()` methods are supported.
+Currently following methods are supported:
+- `count()`, 
+- `find()`,
+- `findOne()`
+- `deleteOne()`
+- `deleteMany()`
+
 
 Not supported querying array elements, geolocation, bitwise operators etc; also not supported query options like  
 For more info see [compatibility matrix](#compatibility-matrix) below.
@@ -72,7 +78,7 @@ res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
 
 ## `find()`
 
-Methods `find()` returns deep copy (with some type limitations) of array's documents matching query with fields matching projection.
+Method `find()` returns deep copy (with some type limitations) of array's documents matching query with fields matching projection.
 
 If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
@@ -85,13 +91,42 @@ res = mm.find(array, query, projection);
 
 ## `findOne()`
 
-Methods `findOne()` returns deep copy (with some type limitations) of first array's documents matching query with fields matching projection.
+Method `findOne()` returns deep copy (with some type limitations) of first array's documents matching query with fields matching projection.
 
 If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
 ```
 doc = mm.findOne(array, query, projection);
 ```
+
+
+## `deleteOne()`
+
+Method `deleteOne()` removes from array its first document matching query with fields matching projection.
+
+Returns document containing
+- `deletedCount` containing the number of deleted documents
+
+```
+var res = mm.deleteOne(array, query);
+
+// { deletedCount: 1 }  
+```
+
+
+## `deleteMany()`
+
+Method `deleteMany()` removes from array its first document matching query with fields matching projection.
+
+```
+var res = mm.deleteMany(array, query);
+
+// { deletedCount: 1 }  
+```
+
+Returns document containing
+- `deletedCount` containing the number of deleted documents
+
 
 
 # Examples 
