@@ -20,11 +20,11 @@ describe('#comparision operators - development', function() {
 	describe('#primitive equal (implicit $eq)', function() {
 
 		it('#same values', function() {
-			expect(mm._match( { value: 'ab' }, { value: 'ab' } )).equals(true);
+			expect(mm._match( { value: 'ab' }, { value: 'ab' } )).eql(true);
 		});
 
 		it('#different values', function() {
-			expect(mm._match( { value: 'ab' }, { value: 'cd' } )).equals(false);
+			expect(mm._match( { value: 'ab' }, { value: 'cd' } )).eql(false);
 		});
 
 	});
@@ -33,11 +33,11 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $eq', function() {
 
 		it('#same values', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $eq: 'ab' } } )).equals(true);
+			expect(mm._match( { value: 'ab' }, { value: { $eq: 'ab' } } )).eql(true);
 		});
 
 		it('#different values', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $eq: 'cd' } } )).equals(false);
+			expect(mm._match( { value: 'ab' }, { value: { $eq: 'cd' } } )).eql(false);
 		});
 
 	});
@@ -46,11 +46,11 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $ne', function() {
 
 		it('#same values', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $ne: 'ab' } } )).equals(false);
+			expect(mm._match( { value: 'ab' }, { value: { $ne: 'ab' } } )).eql(false);
 		});
 
 		it('#different values', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $ne: 'cd' } } )).equals(true);
+			expect(mm._match( { value: 'ab' }, { value: { $ne: 'cd' } } )).eql(true);
 		});
 
 	});
@@ -59,15 +59,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $gt', function() {
 
 		it('#greater', function() {
-			expect(mm._match( { value: 1 }, { value: { $gt: 0 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $gt: 0 } } )).eql(true);
 		});
 
 		it('#equal', function() {
-			expect(mm._match( { value: 1 }, { value: { $gt: 1 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $gt: 1 } } )).eql(false);
 		});
 
 		it('#less', function() {
-			expect(mm._match( { value: 1 }, { value: { $gt: 2 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $gt: 2 } } )).eql(false);
 		});
 
 	});
@@ -76,15 +76,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $gte', function() {
 
 		it('#greater', function() {
-			expect(mm._match( { value: 1 }, { value: { $gte: 0 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $gte: 0 } } )).eql(true);
 		});
 
 		it('#equal', function() {
-			expect(mm._match( { value: 1 }, { value: { $gte: 1 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $gte: 1 } } )).eql(true);
 		});
 
 		it('#less', function() {
-			expect(mm._match( { value: 1 }, { value: { $gte: 2 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $gte: 2 } } )).eql(false);
 		});
 
 	});
@@ -93,15 +93,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $lt', function() {
 
 		it('#greater', function() {
-			expect(mm._match( { value: 1 }, { value: { $lt: 0 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $lt: 0 } } )).eql(false);
 		});
 
 		it('#equal', function() {
-			expect(mm._match( { value: 1 }, { value: { $lt: 1 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $lt: 1 } } )).eql(false);
 		});
 
 		it('#less', function() {
-			expect(mm._match( { value: 1 }, { value: { $lt: 2 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $lt: 2 } } )).eql(true);
 		});
 
 	});
@@ -110,15 +110,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $lte', function() {
 
 		it('#greater', function() {
-			expect(mm._match( { value: 1 }, { value: { $lte: 0 } } )).equals(false);
+			expect(mm._match( { value: 1 }, { value: { $lte: 0 } } )).eql(false);
 		});
 
 		it('#equal', function() {
-			expect(mm._match( { value: 1 }, { value: { $lte: 1 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $lte: 1 } } )).eql(true);
 		});
 
 		it('#less', function() {
-			expect(mm._match( { value: 1 }, { value: { $lte: 2 } } )).equals(true);
+			expect(mm._match( { value: 1 }, { value: { $lte: 2 } } )).eql(true);
 		});
 
 	});
@@ -127,15 +127,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $in', function() {
 
 		it('#first', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $in: [ 'ab', 'cd' ] } } )).equals(true);
+			expect(mm._match( { value: 'ab' }, { value: { $in: [ 'ab', 'cd' ] } } )).eql(true);
 		});
 
 		it('#second', function() {
-			expect(mm._match( { value: 'cd' }, { value: { $in: [ 'ab', 'cd' ] } } )).equals(true);
+			expect(mm._match( { value: 'cd' }, { value: { $in: [ 'ab', 'cd' ] } } )).eql(true);
 		});
 
 		it('#none', function() {
-			expect(mm._match( { value: 'de' }, { value: { $in: [ 'ab', 'cd' ] } } )).equals(false);
+			expect(mm._match( { value: 'de' }, { value: { $in: [ 'ab', 'cd' ] } } )).eql(false);
 		});
 
 	});
@@ -144,15 +144,15 @@ describe('#comparision operators - development', function() {
 	describe('#primitive $in', function() {
 
 		it('#first', function() {
-			expect(mm._match( { value: 'ab' }, { value: { $nin: [ 'ab', 'cd' ] } } )).equals(false);
+			expect(mm._match( { value: 'ab' }, { value: { $nin: [ 'ab', 'cd' ] } } )).eql(false);
 		});
 
 		it('#second', function() {
-			expect(mm._match( { value: 'cd' }, { value: { $nin: [ 'ab', 'cd' ] } } )).equals(false);
+			expect(mm._match( { value: 'cd' }, { value: { $nin: [ 'ab', 'cd' ] } } )).eql(false);
 		});
 
 		it('#none', function() {
-			expect(mm._match( { value: 'de' }, { value: { $nin: [ 'ab', 'cd' ] } } )).equals(true);
+			expect(mm._match( { value: 'de' }, { value: { $nin: [ 'ab', 'cd' ] } } )).eql(true);
 		});
 
 	});

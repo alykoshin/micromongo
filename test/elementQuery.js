@@ -22,11 +22,11 @@ describe('#element query operators - development', function() {
 		describe('#value exists', function() {
 
 			it('#$exists: true', function() {
-				expect(mm._match( { prop1: 1 }, { prop1: { $exists: true  } } )).equals(true);
+				expect(mm._match( { prop1: 1 }, { prop1: { $exists: true  } } )).eql(true);
 			});
 
 			it('#$exists: false', function() {
-				expect(mm._match( { prop1: 1 }, { prop1: { $exists: false } } )).equals(false);
+				expect(mm._match( { prop1: 1 }, { prop1: { $exists: false } } )).eql(false);
 			});
 
 		});
@@ -35,11 +35,11 @@ describe('#element query operators - development', function() {
 		describe('#value not exists ', function() {
 
 			it('#$exists: true', function() {
-				expect(mm._match( { prop1: 1 }, { prop2: { $exists: true  } } )).equals(false);
+				expect(mm._match( { prop1: 1 }, { prop2: { $exists: true  } } )).eql(false);
 			});
 
 			it('#$exists: false', function() {
-				expect(mm._match( { prop1: 1 }, { prop2: { $exists: false } } )).equals(true);
+				expect(mm._match( { prop1: 1 }, { prop2: { $exists: false } } )).eql(true);
 			});
 
 		});
@@ -48,11 +48,11 @@ describe('#element query operators - development', function() {
 		describe('#value undefined', function() {
 
 			it('#$exists: true', function() {
-				expect(mm._match( { prop1: undefined }, { prop1: { $exists: true  } } )).equals(false);
+				expect(mm._match( { prop1: undefined }, { prop1: { $exists: true  } } )).eql(false);
 			});
 
 			it('#$exists: false', function() {
-				expect(mm._match( { prop1: undefined }, { prop1: { $exists: false } } )).equals(true);
+				expect(mm._match( { prop1: undefined }, { prop1: { $exists: false } } )).eql(true);
 			});
 
 		});
@@ -60,11 +60,11 @@ describe('#element query operators - development', function() {
 		describe('#value null', function() {
 
 			it('#$exists: true', function() {
-				expect(mm._match( { prop1: null }, { prop1: { $exists: true  } } )).equals(true);
+				expect(mm._match( { prop1: null }, { prop1: { $exists: true  } } )).eql(true);
 			});
 
 			it('#$exists: false', function() {
-				expect(mm._match( { prop1: null }, { prop1: { $exists: false } } )).equals(false);
+				expect(mm._match( { prop1: null }, { prop1: { $exists: false } } )).eql(false);
 			});
 
 		});

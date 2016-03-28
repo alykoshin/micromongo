@@ -28,15 +28,16 @@ Currently following methods are supported:
 - [`deleteMany()`](#deletemany)
 - [`remove()`](#remove)
 - [`insert()`](#insert)
-- [`insertOne()`](#insertOne)
-- [`insertMany()`](#insertMany)
+- [`insertOne()`](#insertone)
+- [`insertMany()`](#insertmany)
+- [`aggregate()`](#aggregate)
 
 
 Not supported: indexes, querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
 
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
-Tests contains over 120 different test cases based on module's logic and examples from Mongodb docs.
+Tests contains over 150 different test cases based on module's logic and examples from Mongodb docs.
 
 
 ## Installation
@@ -198,6 +199,21 @@ var res = mm.insert(array, sourceArray, options);
 - `options.ordered` - `boolean` - not supported
 
 
+## `aggregate()`
+
+```
+var res = mm.aggregate(array, stages);
+```
+
+`stages` - array of aggregation pipeline stages.
+
+Currently supported aggregation pipeline stages:
+- `$limit`  - `mm.aggregate([ { $limit: 5 } ])`
+- `$skip`   - `mm.aggregate([ { $skip: 5 } ])`
+- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` 
+
+
+
 # Examples 
 
 ## count()
@@ -315,7 +331,7 @@ Matrix below is based on Mongodb 3.2 documentation.
 
 Method                  | Status 
 ------------------------|--------
-aggregate()             | ?
+aggregate()             | **+** (see [Aggregation Pipeline Operators](#aggregation-pipeline-operators)
 bulkWrite()             | ?
 **count()**             | **+**
 **copyTo()**            | **+**
@@ -493,7 +509,25 @@ $bit
 $isolated 
 
 ## Aggregation Pipeline Operators
+
 ### Pipeline Aggregation Stages
+
+Operator       | Status 
+---------------|--------
+$project       | .
+$match         | .
+$redact        | .
+$limit         | **+**
+$skip          | **+**
+$unwind        | **+**
+$group         | .
+$sample        | .
+$sort          | .
+$geoNear       | .
+$lookup        | .
+$out           | .
+$indexStats    | .
+
 ### Boolean Aggregation Operators
 ### Set Operators (Aggregation)
 ### Comparison Aggregation Operators

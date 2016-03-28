@@ -36,63 +36,63 @@ describe('#count - mongodb docs', function() {
     //db.collection.find( { a: 5, b: 5 } ).count()
     var q = { a: 5, b: 5 };
     var r = 2;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#{ a: { $gt: 5 } }', function() {
     //db.collection.find( { a: { $gt: 5 } } ).count()
     var q =  { a: { $gt: 5 } };
     var r = 1;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#{ a: 5, b: { $gt: 10 } }', function() {
     //db.collection.find( { a: 5, b: { $gt: 10 } } ).count()
     var q =  { a: 5, b: { $gt: 10 } };
     var r = 1;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#{ a: 5, b: { $in: [ 1, 2, 3 ] } }', function() {
     //db.collection.find( { a: 5, b: { $in: [ 1, 2, 3 ] } } ).count()
     var q = { a: 5, b: { $in: [ 1, 2, 3 ] } };
     var r = 1;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#{ a: { $gt: 5 }, b: 5 }', function() {
     //db.collection.find( { a: { $gt: 5 }, b: 5 } ).count()
     var q =  { a: { $gt: 5 }, b: 5 };
     var r = 0;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#{ a: 5, b: 5, c: 5 }', function() {
     //db.collection.find( { a: 5, b: 5, c: 5 } ).count()
     var q = { a: 5, b: 5, c: 5 };
     var r = 1;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#Count all Documents in a Collection *** empty object', function() {
     //db.orders.count()
     var q = {};
     var r = 6;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#Count all Documents in a Collection *** undefined query', function() {
     //db.orders.count()
     var q = undefined;
     var r = 6;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
   it('#Count all Documents that Match a Query', function() {
     //db.orders.count( { ord_dt: { $gt: new Date('01/01/2012') } } )
     var q = { ord_dt: { $gt: new Date('01/01/2012') } };
     var r = 1;
-    expect(mm.count( a, q )).equals(r);
+    expect(mm.count( a, q )).eql(r);
   });
 
 
