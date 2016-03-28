@@ -314,19 +314,28 @@ Test system:
 - Intel® Core™ i7-3520M (2.90 GHz, 4MB L3, 1600MHz FSB)
 - 16GB 1600 MHz DDR3
 
-Tests showed following results for `1000` and `10000` elements:
+Tests showed following results for operations `count`, `find`, `aggregate` `$sort` over arrays of `1000`, `10000`, `100000` elements:
 
 ```
   #performance
-count 1000 elements - Elapsed: 19 ms
+Processed 1000 elements - Elapsed: 17 ms
     ✓ #count 1000 elements
-count 10000 elements - Elapsed: 191 ms
-    ✓ #count 10000 elements (192ms)
-find 1000 elements - Elapsed: 35 ms
+Processed 10000 elements - Elapsed: 132 ms
+    ✓ #count 10000 elements (133ms)
+Processed 100000 elements - Elapsed: 1264 ms
+    ✓ #count 100000 elements (1266ms)
+Processed 1000 elements - Elapsed: 17 ms
     ✓ #find 1000 elements
-find 10000 elements - Elapsed: 296 ms
-    ✓ #find 10000 elements (297ms)
-```
+Processed 10000 elements - Elapsed: 130 ms
+    ✓ #find 10000 elements (130ms)
+Processed 100000 elements - Elapsed: 1316 ms
+    ✓ #find 100000 elements (1318ms)
+Processed 1000 elements - Elapsed: 13 ms
+    ✓ #sort 1000 elements
+Processed 10000 elements - Elapsed: 106 ms
+    ✓ #sort 10000 elements (106ms)
+Processed 100000 elements - Elapsed: 1189 ms
+ ```
 
 You may have a look on the data used for the tests in `tests/performance.js`, and running tests by yourself by `npm run _test` and checking the console log for `performance` output.
 
@@ -540,7 +549,7 @@ $sample        | .
 $geoNear       | .
 $lookup        | .
 $out           | .
-$indexStats    | .
+$indexStats    | NA
 
 ### Boolean Aggregation Operators
 ### Set Operators (Aggregation)

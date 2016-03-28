@@ -34,17 +34,21 @@ describe('#performance', function() {
   };
 
   var sampleArr = function(count) {
-    return _sampleArr(count, { a: 1, b: 1 })
+    return _sampleArr(count, {
+      a: Math.random*100,
+      b: Math.random*100,
+    });
   };
 
-  var testHuge = function(methodName, count) {
+  var testHuge = function(count, fn) {
     var a = sampleArr(count);
-    var q = { a: 1, b: 1 };
-    var e = methodName === 'find' ? a : count; // find() will return copy of array, count() - number of elements
+    //var q = { a: 1, b: 1 };
+    //var e = methodName === 'find' ? a : count; // find() will return copy of array, count() - number of elements
 
     msStart = Date.now();
-    var r = mm[methodName]( a, q );
-    console.log(methodName+' '+count+' elements - Elapsed: '+(Date.now()-msStart)+' ms');
+    //var r = mm[methodName]( a, q );
+    fn(a);
+    console.log('Processed '+count+' elements - Elapsed: '+(Date.now()-msStart)+' ms');
 
     // deep comparision takes a lot of time !!!
     //expect(r).eql(e);
@@ -52,21 +56,48 @@ describe('#performance', function() {
 
 
   it('#count 1000 elements', function() {
-    testHuge('count', 1000);
+    //testHuge(1000, function(a) { mm.count(a,{a:1,b:1}); });
+    testHuge(1000, function(a) { mm.count(a,{a:{$lt:50},b:{$gt:50}}); });
   });
 
   it('#count 10000 elements', function() {
-    testHuge('count', 10000);
+    //testHuge(10000, function(a) { mm.count(a,{a:1,b:1}); });
+    testHuge(10000, function(a) { mm.count(a,{a:{$lt:50},b:{$gt:50}}); });
+  });
+
+  it.skip('#count 100000 elements', function() {
+    //testHuge(10000, function(a) { mm.count(a,{a:1,b:1}); });
+    testHuge(100000, function(a) { mm.count(a,{a:{$lt:50},b:{$gt:50}}); });
   });
 
 
   it('#find 1000 elements', function() {
-    testHuge('find', 1000);
+    //testHuge(1000, function(a) { mm.find(a,{a:1,b:1}); });
+    testHuge(1000, function(a) { mm.find(a,{a:{$lt:50},b:{$gt:50}}); });
   });
 
   it('#find 10000 elements', function() {
+    //testHuge(10000, function(a) { mm.find(a,{a:1,b:1}); });
+    testHuge(10000, function(a) { mm.find(a,{a:{$lt:50},b:{$gt:50}}); });
+  });
+
+  it.skip('#find 100000 elements', function() {
     this.timeout(10000);
-    testHuge('find', 10000);
+    //testHuge(100000, function(a) { mm.find(a,{a:1,b:1}); });
+    testHuge(100000, function(a) { mm.find(a,{a:{$lt:50},b:{$gt:50}}); });
+  });
+
+  it('#sort 1000 elements', function() {
+    testHuge(1000, function(a) { mm.aggregate(a, [{$sort: {a:1,b:1}}]); });
+  });
+
+  it('#sort 10000 elements', function() {
+    testHuge(10000, function(a) { mm.aggregate(a, [{$sort: {a:1,b:1}}]); });
+  });
+
+  it.skip('#sort 100000 elements', function() {
+    this.timeout(10000);
+    testHuge(100000, function(a) { mm.aggregate(a, [{$sort: {a:1,b:1}}]); });
   });
 
 
