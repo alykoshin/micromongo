@@ -1,6 +1,6 @@
 {
   "name": "micromongo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Mongodb-like queries over standard arrays of objects",
   "main": "./index.js",
   "engines": {
