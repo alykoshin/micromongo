@@ -158,21 +158,41 @@ describe('# aggregate', function() {
       it('# undefined field', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
         ).eql(r);
       });
 
       it('# null field', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
         ).eql(r);
       });
 
       it('# empty array', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
+        ).eql(r);
+      });
+
+    });
+
+    describe('# includeArrayIndex', function() {
+      var a = [
+        {
+          a: [ 'a', 'b', 'c' ],
+        }
+      ];
+
+      it('# undefined field', function() {
+        var r = [
+          { a: 'a', i: 0 },
+          { a: 'b', i: 1 },
+          { a: 'c', i: 2 },
+        ];
+        expect(
+          mm._aggregateStageOps.$unwind(a, { path: '$a', includeArrayIndex: 'i' })
         ).eql(r);
       });
 
