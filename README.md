@@ -211,17 +211,13 @@ Currently supported aggregation pipeline stages:
 
 - `$limit`  - `mm.aggregate([ { $limit: 5 } ])`
 
-- `$skip`   - `mm.aggregate([ { $skip: 5 } ])`
+- `$skip`   - `mm.aggregate([ { $skip: 5 } ])`       
 
-- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` 
+- `$sort`   - `mm.aggregate([ { $sort: { a: 1 }, { 'a.b': -1 } } ])`
 
-Syntax:
+Array and objects in `$sort` not currently supported. 
 
-```
-mm.aggregate([ { $unwind: '$customer.items' } ])
-```
-
-
+- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` or 
 
 ```
 mm.aggregate([ { $unwind: { 
@@ -535,12 +531,12 @@ Operator       | Status
 $project       | .
 $match         | .
 $redact        | .
-$limit         | **+**
-$skip          | **+**
-$unwind        | **+**
+**$limit**     | **+**
+**$skip**      | **+**
+**$unwind**    | **+**
 $group         | .
 $sample        | .
-$sort          | .
+**$sort**      | **+**
 $geoNear       | .
 $lookup        | .
 $out           | .
