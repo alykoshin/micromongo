@@ -210,7 +210,7 @@ var res = mm.aggregate(array, stages);
 Currently supported aggregation pipeline stages:
 - `$limit`  - `mm.aggregate([ { $limit: 5 } ])`
 - `$skip`   - `mm.aggregate([ { $skip: 5 } ])`
-- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` 
+- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' }, { preserveNullAndEmptyArrays: true } ])` 
 
 
 

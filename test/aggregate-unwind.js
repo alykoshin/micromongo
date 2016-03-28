@@ -146,6 +146,39 @@ describe('# aggregate', function() {
       ).eql(r);
     });
 
+    describe('# preserveNullAndEmptyArrays', function() {
+      var a = [
+        {
+          a: undefined,
+          b: null,
+          c: [],
+        }
+      ];
+
+      it('# undefined field', function() {
+        var r = a;
+        expect(
+          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+        ).eql(r);
+      });
+
+      it('# null field', function() {
+        var r = a;
+        expect(
+          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+        ).eql(r);
+      });
+
+      it('# empty array', function() {
+        var r = a;
+        expect(
+          mm._aggregateStageOps.$unwind(a, '$a', { preserveNullAndEmptyArrays: true })
+        ).eql(r);
+      });
+
+    });
+
   });
+
 
 });
