@@ -11,6 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
+var crud = require('../../../lib/crud/');
 var match = require('../../../lib/crud/match');
 
 
@@ -92,7 +93,7 @@ describe('#element query operators - development', function() {
 			res = [
 				{ name: null }
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "undefined"', function() {
@@ -101,7 +102,7 @@ describe('#element query operators - development', function() {
 				// !!! at some function call 'name: undefined' is removed by node itself
 				{ name: undefined, value: 'the name is undefined' },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "boolean"', function() {
@@ -110,7 +111,7 @@ describe('#element query operators - development', function() {
 				{ name: false },
 				{ name: true },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "number"', function() {
@@ -118,7 +119,7 @@ describe('#element query operators - development', function() {
 			res = [
 				{ name: 1 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "string"', function() {
@@ -126,7 +127,7 @@ describe('#element query operators - development', function() {
 			res = [
 				{ name: 'text' },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "object" (null, empty object, normal object, empty array, normal array', function() {
@@ -138,7 +139,7 @@ describe('#element query operators - development', function() {
 				{ name: [] },
 				{ name: [ 1, 2, 3 ] }
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#$type: "object" ()', function() {
@@ -147,7 +148,7 @@ describe('#element query operators - development', function() {
 				{ name: [] },
 				{ name: [ 1, 2, 3 ] }
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 	});

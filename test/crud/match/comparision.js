@@ -11,7 +11,6 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../../lib/');
 var match = require('../../../lib/crud/match');
 
 

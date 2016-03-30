@@ -11,6 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
+var crud = require('../../../lib/crud/');
 var match = require('../../../lib/crud/match');
 
 
@@ -59,14 +60,40 @@ describe('#logical operators - development', function() {
 	});
 
 
-	describe('#primitive $not', function() {
+	//describe('#primitive $not', function() {
+  //
+	//	it('#true', function() {
+	//		expect(match( {}, { $not: true  } )).eql(false);
+	//	});
+  //
+	//	it('#false', function() {
+	//		expect(match( {}, { $not: false } )).eql(true);
+	//	});
+  //
+	//});
 
-		it('#true', function() {
-			expect(match( {}, { $not: true  } )).eql(false);
+
+	describe('# query $not $eq', function() {
+
+		it('# field $not $eq - match', function() {
+			expect(match( { a: 1 }, { a: { $not: { $eq: 1 } } } )).eql(false);
 		});
 
-		it('#false', function() {
-			expect(match( {}, { $not: false } )).eql(true);
+		it('# field $not $eq - not match', function() {
+			expect(match( { a: 1 }, { a: { $not: { $eq: 10 } } } )).eql(true);
+		});
+
+	});
+
+
+	describe('# query $not $size', function() {
+
+		it('# field $not $eq - match', function() {
+			expect(match( { a: [ 1, 2, 3 ] }, { a: { $not: { $size: 3 } } } )).eql(false);
+		});
+
+		it('# field $not $eq - not match', function() {
+			expect(match( { a: [ 1, 2, 3 ] }, { a: { $not: { $size: 0 } } } )).eql(true);
 		});
 
 	});
@@ -135,38 +162,71 @@ describe('#logical operators - development', function() {
 	});
 
 
-	it('#nested $and and $or', function() {
-		expect(mm._match( {}, { $and: [ { $or:  [ true,  true ] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $and: [ { $or:  [ true,  false] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $and: [ { $or:  [ false, true ] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $and: [ { $or:  [ false, false] }, true  ] } )).eql(false);
-		expect(mm._match( {}, { $and: [ { $or:  [ true,  true ] }, false ] } )).eql(false);
-		expect(mm._match( {}, { $and: [ { $or:  [ true,  false] }, false ] } )).eql(false);
-		expect(mm._match( {}, { $and: [ { $or:  [ false, true ] }, false ] } )).eql(false);
-		expect(mm._match( {}, { $and: [ { $or:  [ false, false] }, false ] } )).eql(false);
+	describe('# implicit $eq - composite (1)', function() {
 
-		expect(mm._match( {}, { $or:  [ { $and: [ true,  true ] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $or:  [ { $and: [ true,  false] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $or:  [ { $and: [ false, true ] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $or:  [ { $and: [ false, false] }, true  ] } )).eql(true);
-		expect(mm._match( {}, { $or:  [ { $and: [ true,  true ] }, false ] } )).eql(true);
-		expect(mm._match( {}, { $or:  [ { $and: [ true,  false] }, false ] } )).eql(false);
-		expect(mm._match( {}, { $or:  [ { $and: [ false, true ] }, false ] } )).eql(false);
-		expect(mm._match( {}, { $or:  [ { $and: [ false, false] }, false ] } )).eql(false);
+		it('#same', function() {
+			expect(match( { value1: { value2: 2 } }, { value1: { value2: 2 } } )).eql(true);
+		});
+
+		it('#different value', function() {
+			expect(match( { value1: { value2: 2 } }, { value1: { value2: 1 } } )).eql(false);
+		});
+
+		it('#different name', function() {
+			expect(match( { value1: { value2: 2 } }, { value1: { value3: 1 } } )).eql(false);
+		});
+
+		it('#different name', function() {
+			expect(match( { value1: { value2: 2 } }, { value2: { value2: 1 } } )).eql(false);
+		});
+
+});
+
+	describe('# implicit $eq - composite (2)', function() {
+
+		it('#same', function() {
+			expect(match( { value1: { value2: 2 } }, { 'value1.value2': 2 } )).eql(true);
+		});
+
+		it('#different', function() {
+			expect(match( { value1: { value2: 2 } }, { 'value1.value2': 1 } )).eql(false);
+		});
+
+});
+
+
+	it('#nested $and and $or', function() {
+		expect(match( {}, { $and: [ { $or:  [ true,  true ] }, true  ] } )).eql(true);
+		expect(match( {}, { $and: [ { $or:  [ true,  false] }, true  ] } )).eql(true);
+		expect(match( {}, { $and: [ { $or:  [ false, true ] }, true  ] } )).eql(true);
+		expect(match( {}, { $and: [ { $or:  [ false, false] }, true  ] } )).eql(false);
+		expect(match( {}, { $and: [ { $or:  [ true,  true ] }, false ] } )).eql(false);
+		expect(match( {}, { $and: [ { $or:  [ true,  false] }, false ] } )).eql(false);
+		expect(match( {}, { $and: [ { $or:  [ false, true ] }, false ] } )).eql(false);
+		expect(match( {}, { $and: [ { $or:  [ false, false] }, false ] } )).eql(false);
+
+		expect(match( {}, { $or:  [ { $and: [ true,  true ] }, true  ] } )).eql(true);
+		expect(match( {}, { $or:  [ { $and: [ true,  false] }, true  ] } )).eql(true);
+		expect(match( {}, { $or:  [ { $and: [ false, true ] }, true  ] } )).eql(true);
+		expect(match( {}, { $or:  [ { $and: [ false, false] }, true  ] } )).eql(true);
+		expect(match( {}, { $or:  [ { $and: [ true,  true ] }, false ] } )).eql(true);
+		expect(match( {}, { $or:  [ { $and: [ true,  false] }, false ] } )).eql(false);
+		expect(match( {}, { $or:  [ { $and: [ false, true ] }, false ] } )).eql(false);
+		expect(match( {}, { $or:  [ { $and: [ false, false] }, false ] } )).eql(false);
 	});
 
 	it('#$and for primitive implicit $eq', function() {
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: 1 }, { value2: 2 } ] } )).eql(true);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: 2 }, { value2: 2 } ] } )).eql(false);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: 1 }, { value2: 1 } ] } )).eql(false);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: 2 }, { value2: 1 } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: 1 }, { value2: 2 } ] } )).eql(true);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: 2 }, { value2: 2 } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: 1 }, { value2: 1 } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: 2 }, { value2: 1 } ] } )).eql(false);
 	});
 
 	it('#$and for primitive $eq', function() {
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 1 } }, { value2: { $eq: 2 } } ] } )).eql(true);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 2 } }, { value2: { $eq: 2 } } ] } )).eql(false);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 1 } }, { value2: { $eq: 1 } } ] } )).eql(false);
-		expect(mm._match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 2 } }, { value2: { $eq: 1 } } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 1 } }, { value2: { $eq: 2 } } ] } )).eql(true);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 2 } }, { value2: { $eq: 2 } } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 1 } }, { value2: { $eq: 1 } } ] } )).eql(false);
+		expect(match( { value1: 1, value2: 2 }, { $and: [ { value1: { $eq: 2 } }, { value2: { $eq: 1 } } ] } )).eql(false);
 	});
 
 });
