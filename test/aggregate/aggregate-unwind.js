@@ -18,7 +18,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+//var mm = require('../../lib/');
+var aggregate = require('../../lib/aggregate/');
 
 
 describe('# aggregate', function() {
@@ -27,19 +28,19 @@ describe('# aggregate', function() {
 
     it('# not a string', function() {
       expect(function() {
-        mm._parseFieldPath( 1 );
+        aggregate._parseFieldPath( 1 );
       }).throw(Error);
     });
 
     it('# not starts with $', function() {
       expect(function() {
-        mm._parseFieldPath( 'abc' );
+        aggregate._parseFieldPath( 'abc' );
       }).throw(Error);
     });
 
     it('# removes $', function() {
       expect(
-        mm._parseFieldPath( '$abc' )
+        aggregate._parseFieldPath( '$abc' )
       ).eql( 'abc');
     });
 
@@ -54,7 +55,7 @@ describe('# aggregate', function() {
       //var stage = { $unwind: '$a' };
 
       expect(function() {
-        mm._aggregateStageOps.$unwind(a, '$a');
+        aggregate._aggregateStageOps.$unwind(a, '$a');
       }).throw(Error);
     });
 
@@ -66,7 +67,7 @@ describe('# aggregate', function() {
       var r = [];
 
       expect(
-        mm._aggregateStageOps.$unwind(a, '$a')
+        aggregate._aggregateStageOps.$unwind(a, '$a')
       ).eql(r);
     });
 
@@ -80,7 +81,7 @@ describe('# aggregate', function() {
         { a: 3 },
       ];
       expect(
-        mm._aggregateStageOps.$unwind(a, '$a')
+        aggregate._aggregateStageOps.$unwind(a, '$a')
       ).eql(r);
     });
 
@@ -98,7 +99,7 @@ describe('# aggregate', function() {
       ];
 
       expect(
-        mm._aggregateStageOps.$unwind(a, '$a')
+        aggregate._aggregateStageOps.$unwind(a, '$a')
       ).eql(r);
     });
 
@@ -120,7 +121,7 @@ describe('# aggregate', function() {
       ];
 
       expect(
-        mm._aggregateStageOps.$unwind(a, '$a')
+        aggregate._aggregateStageOps.$unwind(a, '$a')
         //mm.aggregate(a, [
         //  stage
         //])
@@ -142,7 +143,7 @@ describe('# aggregate', function() {
         { a: { b: 1, c: 3 } },
       ];
       expect(
-        mm._aggregateStageOps.$unwind(a, '$a.c')
+        aggregate._aggregateStageOps.$unwind(a, '$a.c')
       ).eql(r);
     });
 
@@ -158,21 +159,21 @@ describe('# aggregate', function() {
       it('# undefined field', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
+          aggregate._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
         ).eql(r);
       });
 
       it('# null field', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
+          aggregate._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
         ).eql(r);
       });
 
       it('# empty array', function() {
         var r = a;
         expect(
-          mm._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
+          aggregate._aggregateStageOps.$unwind(a, { path: '$a', preserveNullAndEmptyArrays: true })
         ).eql(r);
       });
 
@@ -192,7 +193,7 @@ describe('# aggregate', function() {
           { a: 'c', i: 2 },
         ];
         expect(
-          mm._aggregateStageOps.$unwind(a, { path: '$a', includeArrayIndex: 'i' })
+          aggregate._aggregateStageOps.$unwind(a, { path: '$a', includeArrayIndex: 'i' })
         ).eql(r);
       });
 

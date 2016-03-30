@@ -19,7 +19,7 @@ var expect = chai.expect;
 var sinon = require('sinon');
 var _ = require('lodash');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#delete - development', function() {
@@ -36,13 +36,14 @@ describe('#delete - development', function() {
     //console.log('a='+JSON.stringify(a));
   });
 
+
   describe('#deleteOne', function() {
 
     it('# none', function() {
       var q = { a: 10 };
       var r = a.filter(function(item) { return item.a !== 10; });
 
-      var result = mm.deleteOne( a, q );
+      var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 0 });
@@ -52,7 +53,7 @@ describe('#delete - development', function() {
       var q = { a: 1 };
       var r = a.filter(function(item) { return item.a !== 1; });
 
-      var result = mm.deleteOne( a, q );
+      var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 1 });
@@ -65,7 +66,7 @@ describe('#delete - development', function() {
       var r = a.slice();
       r.splice(idx,1);
 
-      var result = mm.deleteOne( a, q );
+      var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 1 });
@@ -75,7 +76,7 @@ describe('#delete - development', function() {
       var q = { a: 3 };
       var r = a.filter(function(item) { return item.a !== 3; });
 
-      var result = mm.deleteOne( a, q );
+      var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 1 });
@@ -83,13 +84,14 @@ describe('#delete - development', function() {
 
   });
 
+
   describe('# deleteMany', function() {
 
     it('# none', function() {
       var q = { a: 10 };
       var r = a.filter(function(item) { return item.a !== 10; });
 
-      var result = mm.deleteMany( a, q );
+      var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 0 });
@@ -99,7 +101,7 @@ describe('#delete - development', function() {
       var q = { a: 1 };
       var r = a.filter(function(item) { return item.a !== 1; });
 
-      var result = mm.deleteMany( a, q );
+      var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 1 });
@@ -110,7 +112,7 @@ describe('#delete - development', function() {
       var r = a.filter(function(item) { return item.a !== 2; });
       //console.log('r:'+JSON.stringify(r));
 
-      var result = mm.deleteMany( a, q );
+      var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 3 });
@@ -120,7 +122,7 @@ describe('#delete - development', function() {
       var q = { a: 3 };
       var r = a.filter(function(item) { return item.a !== 3; });
 
-      var result = mm.deleteMany( a, q );
+      var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ deletedCount: 1 });
@@ -135,7 +137,7 @@ describe('#delete - development', function() {
       var q = { a: 10 };
       var r = a.filter(function(item) { return item.a !== 10; });
 
-      var result = mm.remove( a, q );
+      var result = crud.remove( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 0 });
@@ -145,7 +147,7 @@ describe('#delete - development', function() {
       var q = { a: 2 };
       var r = a.filter(function(item) { return item.a !== 2; });
 
-      var result = mm.remove( a, q );
+      var result = crud.remove( a, q );
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 3 });
@@ -155,7 +157,7 @@ describe('#delete - development', function() {
       var q = { a: 2 };
       var r = a.filter(function(item) { return item.a !== 2; });
 
-      var result = mm.remove( a, q, false );
+      var result = crud.remove( a, q, false );
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 3 });
@@ -165,7 +167,7 @@ describe('#delete - development', function() {
       var q = { a: 2 };
       var r = a.filter(function(item) { return item.a !== 2; });
 
-      var result = mm.remove( a, q, { justOne: false } );
+      var result = crud.remove( a, q, { justOne: false } );
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 3 });
@@ -177,7 +179,7 @@ describe('#delete - development', function() {
       var r = a.slice();
       r.splice(idx,1);
 
-      var result = mm.remove( a, q, true );
+      var result = crud.remove( a, q, true );
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 1 });
@@ -189,7 +191,7 @@ describe('#delete - development', function() {
       var r = a.slice();
       r.splice(idx,1);
 
-      var result = mm.remove( a, q, { justOne: true });
+      var result = crud.remove( a, q, { justOne: true });
 
       expect(a).eql(r);
       expect(result).eql({ nRemoved: 1 });

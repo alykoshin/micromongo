@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#comparision operators - mongo docs', function() {
@@ -33,7 +33,7 @@ describe('#comparision operators - mongo docs', function() {
 				{ _id: 2, item: { name: 'cd', code: '123' }, qty: 20, tags: [ 'B' ] },
 				{ _id: 5, item: { name: 'mn', code: '000' }, qty:  20, tags: [ [ 'A', 'B' ], 'C' ] }
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#Field in Embedded Document Equals a Value');
@@ -49,12 +49,12 @@ describe('#comparision operators - mongo docs', function() {
 
 			it.skip('#with $eq', function () {
 				var query1 = { tags: { $eq: [ 'A', 'B' ] } };
-				expect(mm.find(array, query1)).eql(res);
+				expect(crud.find(array, query1)).eql(res);
 			});
 
 			it.skip('#without $eq (implicit $eq)', function () {
 				var query2 = { tags: [ 'A', 'B' ] };
-				expect(mm.find(array, query2)).eql(res);
+				expect(crud.find(array, query2)).eql(res);
 			});
 
 		});
@@ -100,7 +100,7 @@ describe('#comparision operators - mongo docs', function() {
 				{ qty:  5 },
 				{ qty: 15 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#Use the $in Operator to Match Values in an Array');
@@ -125,7 +125,7 @@ describe('#comparision operators - mongo docs', function() {
 				{ qty: 10 },
 				{ qty: 20 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#{ tags: { $nin: [ "appliances", "school" ] } }');

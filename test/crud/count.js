@@ -18,7 +18,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var mm = require('../../lib/');
 
 
 describe('#count - mongodb docs', function() {
@@ -74,25 +74,27 @@ describe('#count - mongodb docs', function() {
     expect(mm.count( a, q )).eql(r);
   });
 
-  it('#Count all Documents in a Collection *** empty object', function() {
-    //db.orders.count()
-    var q = {};
-    var r = 6;
-    expect(mm.count( a, q )).eql(r);
-  });
+  describe('# Count all Documents in a Collection', function() {
+    it('# empty object', function() {
+      //db.orders.count()
+      var q = {};
+      var r = 6;
+      expect(mm.count( a, q )).eql(r);
+    });
 
-  it('#Count all Documents in a Collection *** undefined query', function() {
-    //db.orders.count()
-    var q = undefined;
-    var r = 6;
-    expect(mm.count( a, q )).eql(r);
-  });
+    it('# undefined query', function() {
+      //db.orders.count()
+      var q = undefined;
+      var r = 6;
+      expect(mm.count( a, q )).eql(r);
+    });
 
-  it('#Count all Documents that Match a Query', function() {
-    //db.orders.count( { ord_dt: { $gt: new Date('01/01/2012') } } )
-    var q = { ord_dt: { $gt: new Date('01/01/2012') } };
-    var r = 1;
-    expect(mm.count( a, q )).eql(r);
+    it('# that Match a Query', function() {
+      //db.orders.count( { ord_dt: { $gt: new Date('01/01/2012') } } )
+      var q = { ord_dt: { $gt: new Date('01/01/2012') } };
+      var r = 1;
+      expect(mm.count( a, q )).eql(r);
+    });
   });
 
 

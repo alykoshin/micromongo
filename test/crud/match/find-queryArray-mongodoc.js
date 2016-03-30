@@ -11,17 +11,19 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var match = require('../../../lib/crud/match');
 
 
-describe('#Bitwise Query Operators - mongo docs', function() {
+describe('#query operator array - mongo docs', function() {
 
-	it('#$bitsAllSet');
 
-	it('#$bitsAnySet');
+	it('#$all');
 
-	it('#$bitsAllClear');
 
-	it('#$bitsAnyClear');
+	it('#$elemMatch');
+
+
+	it('#$size');
+
 
 });

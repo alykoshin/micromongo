@@ -18,7 +18,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#insert-insertOne-insertMany', function() {
@@ -36,7 +36,7 @@ describe('#insert-insertOne-insertMany', function() {
       var i = { a: 2 };
       var r = a.slice(); r.push(i);
 
-      var res = mm.insert(a, i);
+      var res = crud.insert(a, i);
 
       expect(a).eql(r);
       expect(res).eql({ nInserted: 1 });
@@ -49,7 +49,7 @@ describe('#insert-insertOne-insertMany', function() {
       ];
       var r = a.concat(i);
 
-      var res = mm.insert(a, i);
+      var res = crud.insert(a, i);
 
       expect(a).eql(r);
       expect(res).eql({ nInserted: i.length });
@@ -58,11 +58,26 @@ describe('#insert-insertOne-insertMany', function() {
   });
 
   it('#insertOne', function() {
+    var i = { a: 2 };
+    var r = a.slice(); r.push(i);
 
+    var res = crud.insert(a, i);
+
+    expect(a).eql(r);
+    expect(res).eql({ nInserted: 1 });
   });
 
   it('#insertMany', function() {
+    var i = [
+      { a: 2 },
+      { a: 3 },
+    ];
+    var r = a.concat(i);
 
+    var res = crud.insert(a, i);
+
+    expect(a).eql(r);
+    expect(res).eql({ nInserted: i.length });
   });
 
 

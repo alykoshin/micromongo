@@ -18,7 +18,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#copyTo', function() {
@@ -31,11 +31,29 @@ describe('#copyTo', function() {
     { a:  5, b: { c: 1 } },
   ];
 
-  it('#copies', function() {
+  it('# copies all types', function() {
     var r = [];
-    var res = mm.copyTo( a, r );
+    var res = crud.copyTo( a, r );
     expect(r).eql(a);
     expect(res).eql(a.length);
+  });
+
+  it('# empty source, non-empty target', function() {
+    var s = [];
+    var t = [ { a: 1 } ];
+    var r = t.slice();
+    var res = crud.copyTo( s, t );
+    expect(r).eql(t);
+    expect(res).eql(s.length);
+  });
+
+  it('# non-empty source, empty target', function() {
+    var s = [ { a: 1 } ];
+    var t = [ ];
+    var r = s.slice();
+    var res = crud.copyTo( s, t );
+    expect(r).eql(s);
+    expect(res).eql(s.length);
   });
 
 

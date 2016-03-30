@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#logical operators - mongo docs', function() {
@@ -35,7 +35,7 @@ describe('#logical operators - mongo docs', function() {
 				{ quantity: 20, price: 10 },
 				{ quantity: 30, price: 10 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('Nested $or Clauses');
@@ -53,7 +53,7 @@ describe('#logical operators - mongo docs', function() {
 			var res   = [
 				{ price: 0.99 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#implicit $and', function() {
@@ -66,7 +66,7 @@ describe('#logical operators - mongo docs', function() {
 			var res   = [
 				{ price: 0.99 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 		it('#AND Queries With Multiple Expressions Specifying the Same Operator', function() {
@@ -96,7 +96,7 @@ describe('#logical operators - mongo docs', function() {
 				{ qty: 30, sale: true,  price: 1.99 },
 				{ qty: 10, sale: false, price: 1.99 },
 			];
-			expect(mm.find(array, query)).eql(res);
+			expect(crud.find(array, query)).eql(res);
 		});
 
 	});

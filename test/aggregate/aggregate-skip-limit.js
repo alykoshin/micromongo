@@ -18,7 +18,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var mm = require('../../lib/');
+var aggregate = require('../../lib/aggregate/');
 
 
 describe('# aggregate', function() {
@@ -36,13 +37,13 @@ describe('# aggregate', function() {
     it('# 0/5', function() {
       //var stage = { $skip: 0 };
       var r = a;
-      expect(mm._aggregateStageOps.$skip(a, 0)).eql(r);
+      expect(aggregate._aggregateStageOps.$skip(a, 0)).eql(r);
     });
 
     it('# 5/5', function() {
       //var stage = { $skip: 5 };
       var r = [];
-      expect(mm._aggregateStageOps.$skip(a, 5)).eql(r);
+      expect(aggregate._aggregateStageOps.$skip(a, 5)).eql(r);
     });
 
     it('# 3/5', function() {
@@ -51,7 +52,7 @@ describe('# aggregate', function() {
         a[ 3 ], // zero-based, points to { a: 4 }
         a[ 4 ], // zero-based, points to { a: 5 }
       ];
-      expect(mm._aggregateStageOps.$skip(a, 3)).eql(r);
+      expect(aggregate._aggregateStageOps.$skip(a, 3)).eql(r);
     });
 
     it('# aggregate $skip', function() {
@@ -66,6 +67,8 @@ describe('# aggregate', function() {
     });
 
   });
+
+
 
   describe('# $limit', function() {
 
@@ -98,5 +101,7 @@ describe('# aggregate', function() {
     });
 
   });
+
+
 
 });

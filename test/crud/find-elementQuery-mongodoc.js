@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#element query operators - mongo docs', function() {
@@ -43,7 +43,7 @@ describe('#element query operators - mongo docs', function() {
 			{ qty: null },
 			{ qty: 20 },
 		];
-		expect(mm.find(array, query)).eql(res);
+		expect(crud.find(array, query)).eql(res);
 	});
 
 	it('#Null Values: $exists: true', function() {
@@ -57,7 +57,7 @@ describe('#element query operators - mongo docs', function() {
 			{ a: 3, b: 2 },
 			{ a: 4 },
 		];
-		expect(mm.find(array, query)).eql(res);
+		expect(crud.find(array, query)).eql(res);
 	});
 
 	it('#Null Values: $exists: false', function() {
@@ -67,7 +67,7 @@ describe('#element query operators - mongo docs', function() {
 			{ a: 4 },
 			{ c: 6 },
 		];
-		expect(mm.find(array, query)).eql(res);
+		expect(crud.find(array, query)).eql(res);
 	});
 
 

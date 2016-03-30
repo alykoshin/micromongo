@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 // https://docs.mongodb.org/v3.2/tutorial/project-fields-from-query-results/
@@ -24,7 +24,7 @@ describe('#projection - mongo docs', function() {
 		var q = {};
 		var p = {};
 		var r = a;
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 
 	});
 
@@ -38,7 +38,7 @@ describe('#projection - mongo docs', function() {
 		var r = [
 			{ item: 'item', qty: 1}
 		];
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 	});
 
 	it('#Return Specified Fields Only *** Original Mongo handles _id differently ***', function() {
@@ -51,7 +51,7 @@ describe('#projection - mongo docs', function() {
 		var r = [
 			{ item: 'item', qty: 1}
 		];
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 	});
 
 	it('#Return All But the Excluded Field', function() {
@@ -64,7 +64,7 @@ describe('#projection - mongo docs', function() {
 		var r = [
 			{ item: 'item', qty: 1 },
 		];
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 	});
 
 	it('#Return Specific Fields in Embedded Documents', function() {
@@ -83,7 +83,7 @@ describe('#projection - mongo docs', function() {
 				'classification': { category: 'chocolate'  }
 			}
 		];
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 	});
 
 	it('#Suppress Specific Fields in Embedded Documents', function() {
@@ -129,7 +129,7 @@ describe('#projection - mongo docs', function() {
 				}
 			}
 		];
-		expect(mm.find( a, q, p )).eql( r );
+		expect(crud.find( a, q, p )).eql( r );
 	});
 
 	it('#Projection for Array Fields');

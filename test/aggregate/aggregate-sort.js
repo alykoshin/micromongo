@@ -18,7 +18,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+//var mm = require('../lib/');
+var aggregate = require('../../lib/aggregate/');
 
 
 describe('# aggregate', function() {
@@ -37,7 +38,7 @@ describe('# aggregate', function() {
         { a:  2 },
         { a:  3 },
       ];
-      expect(mm._aggregateStageOps.$sort(a, s)).eql(r);
+      expect(aggregate._aggregateStageOps.$sort(a, s)).eql(r);
     });
 
     it('# one field - compound', function() {
@@ -52,7 +53,7 @@ describe('# aggregate', function() {
         { a:  { b: 2 } },
         { a:  { b: 3 } },
       ];
-      expect(mm._aggregateStageOps.$sort(a, s)).eql(r);
+      expect(aggregate._aggregateStageOps.$sort(a, s)).eql(r);
     });
 
     it('# two fields - numerical and string', function() {
@@ -69,7 +70,7 @@ describe('# aggregate', function() {
         { a:  1, b: 'a' },
         { a:  1, b: 'b' },
       ];
-      expect(mm._aggregateStageOps.$sort(a, s)).eql(r);
+      expect(aggregate._aggregateStageOps.$sort(a, s)).eql(r);
     });
 
     it('# array comparison');

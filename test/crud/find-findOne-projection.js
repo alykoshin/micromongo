@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../lib/');
+var crud = require('../../lib/crud/');
 
 
 describe('#projection', function() {
@@ -55,11 +55,11 @@ describe('#projection', function() {
       var p1 = { a: 0, b: 0, c: 0};
 
       it('#find', function() {
-        expect( mm.find(a, q, p1)).eql(r0);
+        expect( crud.find(a, q, p1)).eql(r0);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p1)).eql( r0[0] );
+        expect( crud.findOne(a, q, p1)).eql( r0[0] );
       });
 
     });
@@ -68,11 +68,11 @@ describe('#projection', function() {
       var p1 = {};
 
       it('#find', function() {
-        expect( mm.find(a, q, p1)).eql(r3);
+        expect( crud.find(a, q, p1)).eql(r3);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p1)).eql( r3[0] );
+        expect( crud.findOne(a, q, p1)).eql( r3[0] );
       });
 
     });
@@ -82,11 +82,11 @@ describe('#projection', function() {
       var p1 = { a: 1 };
 
       it('#find', function() {
-        expect( mm.find(a, q, p1)).eql(r1);
+        expect( crud.find(a, q, p1)).eql(r1);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p1)).eql( r1[0] );
+        expect( crud.findOne(a, q, p1)).eql( r1[0] );
       });
 
     });
@@ -96,11 +96,11 @@ describe('#projection', function() {
       var p2 = { b: 1, c: 1 };
 
       it('#find', function() {
-        expect( mm.find(a, q, p2)).eql(r2);
+        expect( crud.find(a, q, p2)).eql(r2);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p2)).eql( r2[0] );
+        expect( crud.findOne(a, q, p2)).eql( r2[0] );
       });
 
     });
@@ -113,11 +113,11 @@ describe('#projection', function() {
     describe('#1 field', function() {
 
       it('#find', function() {
-        expect( mm.find(a, q, p1)).eql(r1);
+        expect( crud.find(a, q, p1)).eql(r1);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p1)).eql( r1[0] );
+        expect( crud.findOne(a, q, p1)).eql( r1[0] );
       });
 
     });
@@ -126,11 +126,11 @@ describe('#projection', function() {
       var p2 = { a: 0 };
 
       it('#find', function() {
-        expect( mm.find(a, q, p2)).eql(r2);
+        expect( crud.find(a, q, p2)).eql(r2);
       });
 
       it('#findOne', function() {
-        expect( mm.findOne(a, q, p2)).eql( r2[0] );
+        expect( crud.findOne(a, q, p2)).eql( r2[0] );
       });
 
     });
