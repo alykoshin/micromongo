@@ -30,7 +30,7 @@ Currently following methods are supported:
 - [`insert()`](#insert)
 - [`insertOne()`](#insertone)
 - [`insertMany()`](#insertmany)
-- [`aggregate()`](#aggregate)
+- [`aggregate()`](#aggregate) (stages `skip`, `limit`, `sort`, `unwind`, partially `project`)
 
 
 Not supported: indexes, querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
