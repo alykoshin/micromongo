@@ -469,7 +469,7 @@ Operator       | Status
 ---------------|--------    
 $all           | .
 $elemMatch     | .
-$size          | .
+**$size**      | **+**
  
 ### Bitwise Query Operators
 
