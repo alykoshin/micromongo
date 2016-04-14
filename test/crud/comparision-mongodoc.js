@@ -201,7 +201,17 @@ describe('# comparison operators - mongo docs', function() {
       expect(crud.find(inventory, query)).eql(res);
     });
 
-    it('# Use the $in Operator with a Regular Expression');
+    it('# Use the $in Operator with a Regular Expression', function () {
+      var inventory = [
+        {                               tags: [ "aaa", "aaa" ],             }, // 0
+        { _id: 1, item: "abc", qty: 10, tags: [ "bee", "stt" ], sale: false }, // 1
+        {                               tags: [ "bee", "aaa" ],             }, // 2
+        {                               tags: [ "aaa", "stt" ],             }, // 3
+      ];
+      var query = { tags: { $in: [ /^be/, /^st/ ] } };
+      var res = [ inventory[1], inventory[2], inventory[3] ]
+      expect(crud.find(inventory, query)).eql(res);
+    });
 
   });
 
