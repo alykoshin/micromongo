@@ -71,16 +71,16 @@ describe('#logical operators - mongo docs', function() {
 
 		it('#AND Queries With Multiple Expressions Specifying the Same Operator', function() {
 			var array = [
-				{ qty: 10, sale: true },
-				{ qty: 30, sale: true },
-				{ qty: 10, sale: true,  price: 0.99 },
-				{ qty: 30, sale: true,  price: 0.99 },
-				{ qty: 10, sale: false, price: 0.99 },
-				{ qty: 30, sale: false, price: 0.99 },
-				{ qty: 10, sale: true,  price: 1.99 },
-				{ qty: 30, sale: true,  price: 1.99 },
-				{ qty: 10, sale: false, price: 1.99 },
-				{ qty: 30, sale: false, price: 1.99 },
+				{ qty: 10, sale: true               }, // 0
+				{ qty: 30, sale: true               }, // 1
+				{ qty: 10, sale: true,  price: 0.99 }, // 2
+				{ qty: 30, sale: true,  price: 0.99 }, // 3
+				{ qty: 10, sale: false, price: 0.99 }, // 4
+				{ qty: 30, sale: false, price: 0.99 }, // 5
+				{ qty: 10, sale: true,  price: 1.99 }, // 6
+				{ qty: 30, sale: true,  price: 1.99 }, // 7
+				{ qty: 10, sale: false, price: 1.99 }, // 8
+				{ qty: 30, sale: false, price: 1.99 }, // 9
 			];
 			var query = {
 				$and : [
@@ -89,12 +89,12 @@ describe('#logical operators - mongo docs', function() {
 				]
 			};
 			var res   = [
-				{ qty: 10, sale: true,  price: 0.99 },
-				{ qty: 30, sale: true,  price: 0.99 },
-				{ qty: 10, sale: false, price: 0.99 },
-				{ qty: 10, sale: true,  price: 1.99 },
-				{ qty: 30, sale: true,  price: 1.99 },
-				{ qty: 10, sale: false, price: 1.99 },
+        array[2],
+        array[3],
+        array[4],
+        array[6],
+        array[7],
+        array[8],
 			];
 			expect(crud.find(array, query)).eql(res);
 		});

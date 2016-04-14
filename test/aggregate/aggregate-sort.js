@@ -22,9 +22,9 @@ var sinon = require('sinon');
 var aggregate = require('../../lib/aggregate/');
 
 
-describe('# aggregate', function() {
+//describe('# aggregate', function() {
 
-  describe('# $sort', function() {
+  describe('# aggregate $sort', function() {
 
     it('# one field - numerical', function() {
       var a = [
@@ -75,6 +75,6 @@ describe('# aggregate', function() {
 
     it('# array comparison');
 
-  });
+  //});
 
 });

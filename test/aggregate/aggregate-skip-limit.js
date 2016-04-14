@@ -22,7 +22,7 @@ var mm = require('../../lib/');
 var aggregate = require('../../lib/aggregate/');
 
 
-describe('# aggregate', function() {
+//describe('# aggregate', function() {
 
   var a = [
     { a:  1 },
@@ -32,7 +32,7 @@ describe('# aggregate', function() {
     { a:  5 },
   ];
 
-  describe('# $skip', function() {
+  describe('# aggregate $skip', function() {
 
     it('# 0/5', function() {
       //var stage = { $skip: 0 };
@@ -100,7 +100,7 @@ describe('# aggregate', function() {
       ])).eql(r);
     });
 
-  });
+  //});
 
 
 

@@ -22,9 +22,9 @@ var sinon = require('sinon');
 var aggregate = require('../../lib/aggregate/');
 
 
-describe('# aggregate', function() {
+//describe('# aggregate', function() {
 
-  describe('# _parseFieldPath()', function() {
+  describe('# aggregate _parseFieldPath()', function() {
 
     it('# not a string', function() {
       expect(function() {
@@ -46,7 +46,7 @@ describe('# aggregate', function() {
 
   });
 
-  describe('# $unwind', function() {
+  describe('# aggregate $unwind', function() {
 
     it('# not array', function() {
       var a = [
@@ -199,7 +199,7 @@ describe('# aggregate', function() {
 
     });
 
-  });
+  //});
 
 
 });

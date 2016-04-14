@@ -21,15 +21,15 @@ var sinon = require('sinon');
 var aggregate = require('../../lib/aggregate/');
 
 
-describe('# aggregate', function() {
+//describe('# aggregate', function() {
 
-  var a = [
-    { a:  1, b:  1 },
-    { a:  2, b:  2 },
-    { a:  3, b:  3 },
-  ];
+  describe('# aggregate $project', function() {
 
-  describe('# $project', function() {
+    var a = [
+      { a:  1, b:  1 },
+      { a:  2, b:  2 },
+      { a:  3, b:  3 },
+    ];
 
     it('# basic', function() {
       var p = { a: 1 };
@@ -67,7 +67,7 @@ describe('# aggregate', function() {
     //  ])).eql(r);
     //});
 
-  });
+  //});
 
 
 });

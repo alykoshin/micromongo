@@ -90,7 +90,8 @@ describe('#comparision operators - development', function() {
   });
 
 
-  describe('# primitive $lt', function() {
+  describe('# $lt', function() {
+  describe('# primitive', function() {
 
     describe('# greater', function() {
       it('# numbers', function() {
@@ -119,6 +120,7 @@ describe('#comparision operators - development', function() {
       });
     });
 
+  });
   });
 
 
