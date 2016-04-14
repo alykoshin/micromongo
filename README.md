@@ -33,7 +33,8 @@ Currently following methods are supported:
 - [`aggregate()`](#aggregate) (stages `skip`, `limit`, `sort`, `unwind`, partially `project`)
 
 
-Not supported: indexes, querying array elements, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
+Not supported: indexes, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
+Limited support for querying array elements; not supported /pattern/ syntax (without $regexp) 
 
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
@@ -92,6 +93,18 @@ If documents in array contains `_id` field, projection follows standard Mongo ag
 ```
 var mm = require('micromongo');
 res = mm.find(array, query, projection);
+
+inventory = [
+  { qty: 10, carrier: { fee: 3 }, price: 3 },
+  { qty: 20, carrier: { fee: 2 }, price: 2 },
+  { qty: 30, carrier: { fee: 1 }, price: 1 },
+];
+
+var query = { qty: { $gt: 20 } };
+
+var res = mm.find(inventory, query);
+
+// { qty: 30, carrier: { fee: 1 }, price: 1 },
 ```
 
 
@@ -411,7 +424,7 @@ NA - Not Applicable
 ### Comparison Operators
 
 Operator       | Status |
----------------|--------|
+---------------|--------|-----------------------
 **$eq**        | **+**  |
 **$ne**        | **+**  |
 **$gt**        | **+**  |
@@ -439,12 +452,12 @@ Operator       | Status
  
 ### Evaluation query operators
 
-Operator       | Status    
----------------|--------   
-$mod           | +
-$regex         | .
-$text          | ?
-$where         | .
+Operator       | Status |   
+---------------|--------|----------------------------------   
+**$mod**       | **+**  |
+**$regex**     | **+**  | (not supported `o`, `x` options)
+$text          | ?      |
+$where         | .      |
 
 ### Geospatial Query Operators
 

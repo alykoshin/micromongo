@@ -91,9 +91,9 @@ describe('# comparison operators - mongo docs', function() {
     beforeEach(function(){
 
       inventory = [
-        { qty: 10, carrier: { fee: 3 }, price: 3 },
-        { qty: 20, carrier: { fee: 2 }, price: 2 },
-        { qty: 30, carrier: { fee: 1 }, price: 1 },
+        { qty: 10, carrier: { fee: 3 }, price: 3 }, // 0
+        { qty: 20, carrier: { fee: 2 }, price: 2 }, // 1
+        { qty: 30, carrier: { fee: 1 }, price: 1 }, // 2
       ];
     });
 
