@@ -410,16 +410,16 @@ NA - Not Applicable
 
 ### Comparison Operators
 
-Operator       | Status 
----------------|--------
-**$eq**        | **+**
-**$ne**        | **+**
-**$gt**        | **+**
-**$gte**       | **+**
-**$lt**        | **+**
-**$lte**       | **+**
-**$in**        | **+**
-**$nin**       | **+**
+Operator       | Status |
+---------------|--------|
+**$eq**        | **+**  |
+**$ne**        | **+**  |
+**$gt**        | **+**  |
+**$gte**       | **+**  |
+**$lt**        | **+**  |
+**$lte**       | **+**  |
+**$in**        | **+**  |
+**$nin**       | **+**  | arrays not supported
   
 ### Logical Operators
                
