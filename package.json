@@ -45,19 +45,19 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.6.1",
+    "lodash": "^4.11.1",
     "mini-deep-assign": "^0.0.6"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-things": "^0.2.0",
     "coveralls": "^2.11.9",
-    "eslint": "^2.5.2",
-    "istanbul": "^0.4.2",
+    "eslint": "^2.7.0",
+    "istanbul": "^0.4.3",
     "jshint": "^2.9.1",
     "jsinspect": "^0.8.0",
     "mocha": "^2.4.5",
-    "mockery": "^1.4.1",
+    "mockery": "^1.6.2",
     "require-dir-all": "^0.4.9",
     "sinon": "^1.17.3"
   }
