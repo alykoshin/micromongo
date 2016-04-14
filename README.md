@@ -441,7 +441,7 @@ Operator       | Status
 
 Operator       | Status    
 ---------------|--------   
-$mod           | .
+$mod           | +
 $regex         | .
 $text          | ?
 $where         | .
