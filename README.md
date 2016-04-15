@@ -92,7 +92,6 @@ If documents in array contains `_id` field, projection follows standard Mongo ag
 
 ```
 var mm = require('micromongo');
-res = mm.find(array, query, projection);
 
 inventory = [
   { qty: 10, carrier: { fee: 3 }, price: 3 },
