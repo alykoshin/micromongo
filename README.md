@@ -456,7 +456,7 @@ Operator       | Status |
 **$mod**       | **+**  |
 **$regex**     | **+**  | (not supported `o`, `x` options)
 $text          | ?      |
-$where         | .      |
+**$where**     | **+**  |
 
 ### Geospatial Query Operators
 
