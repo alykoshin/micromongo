@@ -38,7 +38,7 @@ Limited support for querying array elements; not supported /pattern/ syntax (wit
 
 For more info see [compatibility matrix](#compatibility-matrix) below.
 
-Tests contains over 150 different test cases based on module's logic and examples from Mongodb docs.
+Tests contains over 200 different test cases based on module's logic and examples from Mongodb docs.
 
 
 ## Installation

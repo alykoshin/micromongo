@@ -137,4 +137,80 @@ describe('# evaluation query operators - mongo docs', function() {
 
   });
 
+
+
+  describe('# $where', function() {
+    var myCollection = [
+      { credits : 1, debits: 0 }, // 0
+      { credits : 1, debits: 1 }, // 1
+      { credits : 1, debits: 2, active: false }, // 2
+      { credits : 1, debits: 2, active: true }, // 3
+    ];
+    it('# { $where: "this.credits == this.debits" }', function() {
+      var query = { $where: "this.credits == this.debits" };
+      var res = [
+        myCollection[1],
+      ];
+      expect(crud.find(myCollection, query)).eql(res);
+    });
+    it('# { $where: "obj.credits == obj.debits" }', function() {
+      var query = { $where: "obj.credits == obj.debits" };
+      var res = [
+        myCollection[1],
+      ];
+      expect(crud.find(myCollection, query)).eql(res);
+    });
+    it('# { $where: function() { return (this.credits == this.debits) } }', function() {
+      var query = { $where: function() { return (this.credits == this.debits) } };
+      var res = [
+        myCollection[1],
+      ];
+      expect(crud.find(myCollection, query)).eql(res);
+    });
+    it('# { $where: function() { return obj.credits == obj.debits; } }', function() {
+      var query = { $where: function() { return obj.credits == obj.debits; } };
+      var res = [
+        myCollection[1],
+      ];
+      expect(crud.find(myCollection, query)).eql(res);
+    });
+
+    describe('# pass in just the JavaScript expression or JavaScript functions', function() {
+      it('# "this.credits == this.debits || this.credits > this.debits"', function() {
+        var query = "this.credits == this.debits || this.credits > this.debits";
+        var res = [
+          myCollection[0],
+          myCollection[1],
+        ];
+        expect(crud.find(myCollection, query)).eql(res);
+      });
+      it('# function() { return (this.credits == this.debits || this.credits > this.debits ) }', function() {
+        var query = function() { return (this.credits == this.debits || this.credits > this.debits ) };
+        var res = [
+          myCollection[0],
+          myCollection[1],
+        ];
+        expect(crud.find(myCollection, query)).eql(res);
+      });
+    });
+
+    describe('# include both the standard MongoDB operators and the $where operator', function() {
+      it('# { active: true, $where: "this.credits - this.debits < 0" }', function() {
+        var query = { active: true, $where: "this.credits - this.debits < 0" };
+        var res = [
+          myCollection[3],
+        ];
+        expect(crud.find(myCollection, query)).eql(res);
+      });
+      it('# { active: true, $where: function() { return obj.credits - obj.debits < 0; } }', function() {
+        var query = { active: true, $where: function() { return obj.credits - obj.debits < 0; } };
+        var res = [
+          myCollection[3],
+        ];
+        expect(crud.find(myCollection, query)).eql(res);
+      });
+    });
+
+  });
+
 });
