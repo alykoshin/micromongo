@@ -464,9 +464,9 @@ Operator       | Status
 Operator       | Status | Comment  
 ---------------|--------|----------------------------------   
 **$mod**       | **+**  |  
-**$regex**     | **+**  | (not supported `o`, `x` options)
+**$regex**     | **+**  | Not supported `o`, `x` options
 $text          | ?      |  
-**$where**     | **+**  |  
+**$where**     | **+**  | Timeout hardcoded to 1000 ms  
 
 
 ### Geospatial Query Operators
