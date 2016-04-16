@@ -479,11 +479,11 @@ $uniqueDocs    | ?
  
 ### Query Operator Array 
 
-Operator       | Status     
----------------|--------    
-$all           | .
-$elemMatch     | .
-**$size**      | **+**
+Operator       | Status | Comment   
+---------------|--------|----------------    
+**$all**       | **+**  | Not supported nested arrays, use with $elemMatch, 
+$elemMatch     | .      |
+**$size**      | **+**  |
  
 ### Bitwise Query Operators
 
