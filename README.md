@@ -422,6 +422,7 @@ NA - Not Applicable
 
 ## Query and Projection Operators
 
+
 ### Comparison Operators
 
 Operator       | Status | Comment
@@ -435,6 +436,7 @@ Operator       | Status | Comment
 **$in**        | **+**  |
 **$nin**       | **+**  | arrays not supported
   
+  
 ### Logical Operators
                
 Operator       | Status 
@@ -444,12 +446,14 @@ Operator       | Status
 **$not**       | **+**    
 **$nor**       | **+**    
 
+
 ### Element Query Operators
 
 Operator       | Status    
 ---------------|--------   
 **$exists**    | **+**
 **$type**      | **+**
+
  
 ### Evaluation query operators
 
@@ -459,6 +463,7 @@ Operator       | Status | Comment
 **$regex**     | **+**  | (not supported `o`, `x` options)
 $text          | ?      |  
 **$where**     | **+**  |  
+
 
 ### Geospatial Query Operators
 
@@ -477,6 +482,7 @@ $box           | ?
 $polygon       | ?
 $uniqueDocs    | ?
  
+ 
 ### Query Operator Array 
 
 Operator       | Status | Comment   
@@ -484,6 +490,7 @@ Operator       | Status | Comment
 **$all**       | **+**  | Not supported nested arrays, use with $elemMatch, 
 **$elemMatch** | **+**  | 
 **$size**      | **+**  |
+ 
  
 ### Bitwise Query Operators
 
@@ -494,11 +501,13 @@ $bitsAnySet    | ?
 $bitsAllClear  | ?
 $bitsAnyClear  | ?
  
+ 
 ### $comment
                          
-Operator       | Status  
----------------|-------- 
-$comment       | .
+Operator       | Status | Comment 
+---------------|--------|------------------- 
+**$comment**   | **+**  | Logs to console
+
 
 ### Projection operators
 
