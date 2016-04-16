@@ -11,28 +11,28 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var _acoe = require('../../../lib/crud/match')._arrayContainsOrEquals;
+var _ae = require('../../../lib/crud/match')._arrayEqlOrElementEql;
 
 
-describe('# _arrayContainsOrEquals', function() {
+describe('# _arrayEqlOrElementEql', function() {
 
   describe('# equals', function () {
 
     it('# empty', function () {
-      expect(_acoe([],[])).eql(true);
+      expect(_ae([],[])).eql(true);
     });
 
     it('# scalars', function () {
-      expect(_acoe([ 1,2 ], [ 1,2   ])).eql(true);
-      expect(_acoe([ 1,2 ], [ 1     ])).eql(false);
-      expect(_acoe([ 1,2 ], [ 1,  3 ])).eql(false);
-      expect(_acoe([ 1,2 ], [ 1,2,3 ])).eql(false);
+      expect(_ae([ 1, 2 ], [ 1, 2   ])).eql(true);
+      expect(_ae([ 1, 2 ], [ 1     ])).eql(false);
+      expect(_ae([ 1, 2 ], [ 1, 3 ])).eql(false);
+      expect(_ae([ 1, 2 ], [ 1, 2, 3 ])).eql(false);
     });
 
     it('# objects', function () {
-      expect(_acoe([ {a:1}, {b:2} ], [ {a:1}, {b:2} ])).eql(true);
-      expect(_acoe([ {a:1}, {b:3} ], [ {a:1}, {b:2} ])).eql(false);
-      expect(_acoe([ {a:1}, {c:2} ], [ {a:1}, {b:2} ])).eql(false);
+      expect(_ae([ {a: 1}, {b: 2} ], [ {a: 1}, {b: 2} ])).eql(true);
+      expect(_ae([ {a: 1}, {b: 3} ], [ {a: 1}, {b: 2} ])).eql(false);
+      expect(_ae([ {a: 1}, {c: 2} ], [ {a: 1}, {b: 2} ])).eql(false);
     });
 
   });
@@ -41,9 +41,9 @@ describe('# _arrayContainsOrEquals', function() {
   describe('# contains', function () {
 
     it('# scalars', function () {
-      expect(_acoe([ [1,2], 3 ], [1,2] )).eql(true);
-      expect(_acoe([ [1,2], 3 ], [1  ] )).eql(false);
-      expect(_acoe([ [1,2], 3 ], [1,3] )).eql(false);
+      expect(_ae([ [ 1, 2], 3 ], [ 1, 2] )).eql(true);
+      expect(_ae([ [ 1, 2], 3 ], [ 1  ] )).eql(false);
+      expect(_ae([ [ 1, 2], 3 ], [ 1, 3] )).eql(false);
     });
 
   });

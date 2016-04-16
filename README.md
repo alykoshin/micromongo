@@ -366,50 +366,50 @@ Matrix below is based on Mongodb 3.2 documentation.
 
 ## Collection Methods
 
-Method                  | Status 
-------------------------|--------
-aggregate()             | **+** (see [Aggregation Pipeline Operators](#aggregation-pipeline-operators)
-bulkWrite()             | ?
-**count()**             | **+**
-**copyTo()**            | **+**
-createIndex()           | NA
-dataSize()              | NA
-**deleteOne()**         | **+**
-**deleteMany()**        | **+**
-distinct()              | ?
-drop()                  | NA
-dropIndex()             | NA
-dropIndexes()           | NA
-ensureIndex()           | NA
-explain()               | NA
-**find()**              | **+**
-findAndModify()         | ?
-**findOne()**           | **+**
-findOneAndDelete()      | ?
-findOneAndReplace()     | ?
-findOneAndUpdate()      | ?
-getIndexes()            | NA
-getShardDistribution()  | NA
-getShardVersion()       | NA
-group()                 | ?
-**insert()**            | **+**
-**insertOne()**         | **+**
-**insertMany()**        | **+**
-isCapped()              | NA
-mapReduce()             | ?
-reIndex()               | NA
-replaceOne()            | ?
-**remove()**            | **+**
-renameCollection()      | NA
-save()                  | NA
-stats()                 | NA
-storageSize()           | NA
-totalSize()             | NA
-totalIndexSize()        | NA
-update()                | .
-updateOne()             | .
-updateMany()            | .
-validate()              | NA
+Method                  | Status |
+------------------------|--------|--------------------------
+aggregate()             | **+**  | see [Aggregation Pipeline Operators](#aggregation-pipeline-operators)
+bulkWrite()             | ?      |
+**count()**             | **+**  |
+**copyTo()**            | **+**  |
+createIndex()           | NA     |
+dataSize()              | NA     |
+**deleteOne()**         | **+**  |
+**deleteMany()**        | **+**  |
+distinct()              | ?      |
+drop()                  | NA     |
+dropIndex()             | NA     |
+dropIndexes()           | NA     |
+ensureIndex()           | NA     |
+explain()               | NA     |
+**find()**              | **+**  |
+findAndModify()         | ?      |
+**findOne()**           | **+**  |
+findOneAndDelete()      | ?      |
+findOneAndReplace()     | ?      |
+findOneAndUpdate()      | ?      |
+getIndexes()            | NA     |
+getShardDistribution()  | NA     |
+getShardVersion()       | NA     |
+group()                 | ?      |
+**insert()**            | **+**  |
+**insertOne()**         | **+**  |
+**insertMany()**        | **+**  |
+isCapped()              | NA     |
+mapReduce()             | ?      |
+reIndex()               | NA     |
+replaceOne()            | ?      |
+**remove()**            | **+**  |
+renameCollection()      | NA     |
+save()                  | NA     |
+stats()                 | NA     |
+storageSize()           | NA     |
+totalSize()             | NA     |
+totalIndexSize()        | NA     |
+update()                | .      |
+updateOne()             | .      |
+updateMany()            | .      |
+validate()              | NA     |
 
 +  - Supported
 
@@ -424,7 +424,7 @@ NA - Not Applicable
 
 ### Comparison Operators
 
-Operator       | Status |
+Operator       | Status | Comment
 ---------------|--------|-----------------------
 **$eq**        | **+**  |
 **$ne**        | **+**  |
@@ -453,12 +453,12 @@ Operator       | Status
  
 ### Evaluation query operators
 
-Operator       | Status |   
+Operator       | Status | Comment  
 ---------------|--------|----------------------------------   
-**$mod**       | **+**  |
+**$mod**       | **+**  |  
 **$regex**     | **+**  | (not supported `o`, `x` options)
-$text          | ?      |
-**$where**     | **+**  |
+$text          | ?      |  
+**$where**     | **+**  |  
 
 ### Geospatial Query Operators
 

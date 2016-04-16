@@ -12,6 +12,7 @@ var expect = chai.expect;
 var sinon = require('sinon');
 
 var match = require('../../../lib/crud/match');
+var prepareQuery = require('../../../lib/crud/match').prepareQuery;
 
 
 describe('# array query operators', function() {
@@ -31,10 +32,14 @@ describe('# array query operators', function() {
 
     describe('# empty array', function() {
       it('# match', function() {
-        expect(match( { a: [] }, { a: { $size: 0  } } )).eql(true);
+        var doc = { a: [] };
+        var query = { a: { $size: 0  } };
+        expect(match(doc, query)).eql(true);
       });
       it('# not match', function() {
-        expect(match( { a: [] }, { a: { $size: 1  } } )).eql(false);
+        var doc = { a: [] };
+        var query = { a: { $size: 1  } };
+        expect(match(doc, query)).eql(false);
       });
     });
 

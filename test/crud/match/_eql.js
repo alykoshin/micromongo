@@ -20,7 +20,7 @@ describe('# _eql', function() {
     expect(_eql({}, {})).eql(true);
   });
 
- it('# scalar', function () {
+  it('# scalar', function () {
     expect(_eql(null,      null     )).eql(true);
     expect(_eql(undefined, undefined)).eql(true);
     expect(_eql(1,         1        )).eql(true);
@@ -59,10 +59,19 @@ describe('# _eql', function() {
     expect(_eql([1      ], [2     ])).eql(false);
     expect(_eql([1,2    ], [1,2   ])).eql(true);
     expect(_eql([1,2    ], [1,3   ])).eql(false);
+  });
 
+  it('# two level arrays', function () {
     expect(_eql([1,[1  ]], [1,[1  ]])).eql(true);
     expect(_eql([1,[1,2]], [1,[1,2]])).eql(true);
     expect(_eql([1,[1,2]], [1,[1,3]])).eql(false);
+  });
+
+  it('# one level arrays, sameOrder', function () {
+    expect(_eql([1,2    ], [1,2   ], { sameOrder: false })).eql(true);
+    expect(_eql([1,2    ], [2,1   ], { sameOrder: false })).eql(true);
+    expect(_eql([1,2    ], [1,2   ], { sameOrder: true  })).eql(true);
+    expect(_eql([1,2    ], [2,1   ], { sameOrder: true  })).eql(false);
   });
 
 });
