@@ -40,6 +40,8 @@ For more info see [compatibility matrix](#compatibility-matrix) below.
 
 Tests contains over 200 different test cases based on module's logic and examples from Mongodb docs.
 
+Supported `node` version >= 0.11.
+
 
 ## Installation
 
