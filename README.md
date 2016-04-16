@@ -332,24 +332,28 @@ Tests showed following results for operations `count`, `find`, `aggregate` `$sor
 
 ```
   #performance
-Processed 1000 elements - Elapsed: 17 ms
-    ✓ #count 1000 elements
-Processed 10000 elements - Elapsed: 132 ms
-    ✓ #count 10000 elements (133ms)
-Processed 100000 elements - Elapsed: 1264 ms
-    ✓ #count 100000 elements (1266ms)
-Processed 1000 elements - Elapsed: 17 ms
-    ✓ #find 1000 elements
-Processed 10000 elements - Elapsed: 130 ms
-    ✓ #find 10000 elements (130ms)
-Processed 100000 elements - Elapsed: 1316 ms
-    ✓ #find 100000 elements (1318ms)
-Processed 1000 elements - Elapsed: 13 ms
-    ✓ #sort 1000 elements
-Processed 10000 elements - Elapsed: 106 ms
-    ✓ #sort 10000 elements (106ms)
-Processed 100000 elements - Elapsed: 1189 ms
+Processed 1000 elements - Elapsed: 26 ms
+    ✓ # count 1000 elements
+Processed 10000 elements - Elapsed: 261 ms
+    ✓ #count 10000 elements (262ms)
+    - # count 100000 elements
+Processed 1000 elements - Elapsed: 26 ms
+    ✓ # find 1000 elements
+Processed 10000 elements - Elapsed: 246 ms
+    ✓ # find 10000 elements (247ms)
+    - # find 100000 elements
+Processed 1000 elements - Elapsed: 15 ms
+    ✓ # sort 1000 elements
+Processed 10000 elements - Elapsed: 102 ms
+    ✓ # sort 10000 elements (102ms)
+    - # sort 100000 elements
+Processed 1000 elements - Elapsed: 481 ms
+    ✓ # node version >= v5.3.0 - find $where 1000 elements (481ms)
+Processed 5000 elements - Elapsed: 2997 ms
+    ✓ # node version >= v5.3.0 - find $where 5000 elements (2997ms)
  ```
+
+For `node` version < 5.3.0 `$where` is significantly slower due to imementation of `vm`.
 
 You may have a look on the data used for the tests in `tests/performance.js`, and running tests by yourself by `npm run _test` and checking the console log for `performance` output.
 
@@ -487,7 +491,7 @@ $uniqueDocs    | ?
 
 Operator       | Status | Comment   
 ---------------|--------|----------------    
-**$all**       | **+**  | Not supported nested arrays, use with $elemMatch, 
+**$all**       | **+**  | Not supported: (1) nested arrays, (2) use with `$elemMatch`, 
 **$elemMatch** | **+**  | 
 **$size**      | **+**  |
  
