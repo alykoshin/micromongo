@@ -482,7 +482,7 @@ $uniqueDocs    | ?
 Operator       | Status | Comment   
 ---------------|--------|----------------    
 **$all**       | **+**  | Not supported nested arrays, use with $elemMatch, 
-$elemMatch     | .      |
+**$elemMatch** | **+**  | 
 **$size**      | **+**  |
  
 ### Bitwise Query Operators

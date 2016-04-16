@@ -131,10 +131,69 @@ describe('# query operator array - mongo docs', function() {
 
   });
 
-  it('#$elemMatch');
+  describe('# $elemMatch', function() {
+
+    it('# Element Match', function() {
+      var scores = [
+        { _id: 1, results: [ 82, 85, 88 ] },
+        { _id: 2, results: [ 75, 88, 89 ] },
+      ];
+      var query = { results: { $elemMatch: { $gte: 80, $lt: 85 } } };
+      var r = [
+        scores[0]
+      ];
+      var res = crud.find(scores, query);
+      expect(r).eql(res);
+    });
+
+    it('# Array of Embedded Documents', function() {
+
+      var survey = [
+        { _id: 1, results: [ { product: "abc", score: 10 }, { product: "xyz", score: 5 } ] },
+        { _id: 2, results: [ { product: "abc", score:  8 }, { product: "xyz", score: 7 } ] },
+        { _id: 3, results: [ { product: "abc", score:  7 }, { product: "xyz", score: 8 } ] },
+      ];
+      var query = { results: { $elemMatch: { product: "xyz", score: { $gte: 8 } } } };
+      var r = [
+        survey[2]
+      ];
+      var res = crud.find(survey, query);
+      expect(r).eql(res);
+    });
+
+    it.skip('# Single Query Condition', function() {
+      var survey = [
+        { _id: 1, results: [ { product: "abc", score: 10 }, { product: "xyz", score: 5 } ] },
+        { _id: 2, results: [ { product: "abc", score:  8 }, { product: "xyz", score: 7 } ] },
+        { _id: 3, results: [ { product: "abc", score:  7 }, { product: "xyz", score: 8 } ] },
+      ];
+      var q1 = { results: { $elemMatch: { product: "xyz" } } };
+      var q2 = { "results.product": "xyz" };
+
+      var r1 = crud.find(survey, q1);
+      var r2 = crud.find(survey, q2);
+      expect(r1).eql(r2);
+    });
+
+  });
 
 
-  it('#$size');
+  describe('# $size', function() {
+    var collection = [
+      { field: [ 'red', 'green' ] },
+      { field: [ 'apple', 'lime' ] },
+      { field: 'fruit' },
+      { field: [ 'orange', 'lemon', 'grapefruit' ] }
+    ];
+    it('# $size:2', function() {
+      var query = { field: { $size: 2 } };
+      expect( crud.find(collection, query) ).eql([ collection[0], collection[1] ]);
+    });
+    it('# $size:1', function() {
+      var query = { field: { $size: 1 } };
+      expect( crud.find(collection, query) ).eql([]);
+    });
+  });
 
 
 });
