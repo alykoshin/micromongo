@@ -21,5 +21,5 @@ projection = {};
 res = mm.find(array, query, projection);
 console.log(res);
 
-// [ { qty: 10 }, { qty: 20 }, { qty: 30 } ]
+// [ { a: 'bcd' } ]
 
