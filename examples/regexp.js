@@ -22,4 +22,3 @@ res = mm.find(array, query, projection);
 console.log(res);
 
 // [ { a: 'bcd' } ]
-
