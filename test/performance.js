@@ -116,6 +116,7 @@ describe('#performance', function() {
   } else {
 
     it('# node version >= v5.3.0 - find $where 1000 elements', function() {
+      this.timeout(10000);
       testHuge(1000, function(a) { mm.find(a, { $where: "this.a>=50" } ); });
     });
 
