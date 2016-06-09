@@ -17,16 +17,66 @@ var match = require('../../../lib/crud/match');
 describe('#comparision operators - development', function() {
 
 
-  describe('#primitive equal (implicit $eq)', function() {
+  describe('#primitive implicit $eq', function() {
 
     it('#same values', function() {
-      expect(match( { value: 'ab' }, { value: 'ab' } )).eql('ab'==='ab');
+      it('# number with number', function() {
+        expect(match( { value: 1 }, { value: 1 } )).eql(1===1);
+      });
+      it('# string with string', function() {
+        expect(match( { value: 'ab' }, { value: 'ab' } )).eql('ab'==='ab');
+      });
+      it('# null with null', function() {
+        expect(match( { value: null }, { value: null } )).eql(null===null);
+      });
     });
 
     it('#different values', function() {
-      expect(match( { value: 'ab' }, { value: 'cd' } )).eql('ab'==='cd');
+      it('# number with number', function() {
+        expect(match( { value: 1 }, { value: 2 } )).eql(1===2);
+      });
+      it('# string with number', function() {
+        expect(match( { value: 'ab' }, { value: 1 } )).eql('ab'===1);
+      });
+      it('# number with string', function() {
+        expect(match( { value: 1 }, { value: 'ab' } )).eql(1==='ab');
+      });
+      it('# string with string', function() {
+        expect(match( { value: 'ab' }, { value: 'cd' } )).eql('ab'==='cd');
+      });
+      it('# string with null', function() {
+        expect(match( { value: 'ab' }, { value: null } )).eql('ab'===null);
+      });
+      it('# null with string', function() {
+        expect(match( { value: null }, { value: 'ab' } )).eql(null==='cd');
+      });
     });
 
+  });
+
+  describe('# several fields implicit $eq', function() {
+    describe('#same values', function() {
+      it('# number fields with number fields', function() {
+        expect(match( { value1: 1, value2: 2 }, { value1: 1, value2: 2 } )).eql(true);
+      });
+      it('# string fields with string fields', function() {
+        expect(match( { value1: 'ab', value2: 'cd' }, { value1: 'ab', value2: 'cd' } )).eql(true);
+      });
+      it('# number fields with null fields', function() {
+        expect(match( { value1: null, value2: 2 }, { value1: null, value2: 2 } )).eql(true);
+        expect(match( { value1: 1, value2: null }, { value1: 1, value2: null } )).eql(true);
+      });
+    });
+    describe('#different values', function() {
+      it('# number fields with null fields', function() {
+        expect(match( { value1: null, value2: 2    }, { value1: 1,    value2: 2    } )).eql(false);
+        expect(match( { value1: null, value2: 2    }, { value1: null, value2: 22   } )).eql(false);
+        expect(match( { value1: 1,    value2: 2    }, { value1: null, value2: 2    } )).eql(false);
+        expect(match( { value1: 1,    value2: null }, { value1: 1,    value2: 2    } )).eql(false);
+        expect(match( { value1: 1,    value2: null }, { value1: 11,   value2: null } )).eql(false);
+        expect(match( { value1: 1,    value2: 2    }, { value1: 1,    value2: null } )).eql(false);
+      });
+    });
   });
 
 
@@ -72,7 +122,7 @@ describe('#comparision operators - development', function() {
       it('# null with number', function() {
         expect(match( { value: null }, { value: { $ne: 1 } } )).eql(null!==1);
       });
-     it('# null with string', function() {
+      it('# null with string', function() {
         expect(match( { value: null }, { value: { $ne: 'ab' } } )).eql(null!=='ab');
       });
     });
