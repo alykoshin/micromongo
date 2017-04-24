@@ -58,7 +58,7 @@ Method `count()` return number of documents matching query.
 
 Syntax:
 
-```
+```js
 res = mm.count(array, query);
 ```
 
@@ -68,7 +68,7 @@ res = mm.count(array, query);
 
 Following example returns number of elements with `a >= 2` (i.e. `2`):
 
-```
+```js
 var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
 
@@ -77,7 +77,7 @@ res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
 
 If `query` is `undefined` or empty object (`{}`), method returns total count of elements in array:
 
-```
+```js
 var mm = require('micromongo');
 res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
 
@@ -92,7 +92,7 @@ Method `find()` returns deep copy (with some type limitations) of array's docume
 If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
 
-```
+```js
 var mm = require('micromongo');
 
 inventory = [
@@ -115,7 +115,7 @@ Method `findOne()` returns deep copy (with some type limitations) of first array
 
 If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
 
-```
+```js
 doc = mm.findOne(array, query, projection);
 ```
 
@@ -127,7 +127,7 @@ Method `deleteOne()` removes from array its first document matching query.
 Returns document containing
 - `deletedCount` containing the number of deleted documents
 
-```
+```js
 var res = mm.deleteOne(array, query);
 
 // { deletedCount: 1 }  
@@ -138,7 +138,7 @@ var res = mm.deleteOne(array, query);
 
 Method `deleteMany()` removes from array all its documents matching query.
 
-```
+```js
 var res = mm.deleteMany(array, query);
 
 // { deletedCount: 1 }  
@@ -152,7 +152,7 @@ Returns document containing
 
 Method `remove()` removes from array its first document matching query or all documents matching query.
 
-```
+```js
 var res = mm.remove(array, query);
 
 // { nRemoved: 1 }  
@@ -180,7 +180,7 @@ Returns document containing
 
 While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
 
-```
+```js
 var res = mm.insert(array, sourceDocOrArray, options);
 
 // { nInserted: 1 }  
@@ -193,7 +193,7 @@ var res = mm.insert(array, sourceDocOrArray, options);
 
 While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
 
-```
+```js
 var res = mm.insertOne(array, sourceDoc, options);
 
 // { nInserted: 1 }  
@@ -204,7 +204,7 @@ var res = mm.insertOne(array, sourceDoc, options);
 
 While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
 
-```
+```js
 var res = mm.insert(array, sourceArray, options);
 
 // { nInserted: 1 }  
@@ -215,7 +215,7 @@ var res = mm.insert(array, sourceArray, options);
 
 ## `aggregate()`
 
-```
+```js
 var res = mm.aggregate(array, stages);
 ```
 
@@ -233,7 +233,7 @@ Array and objects in `$sort` not currently supported.
 
 - `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` or 
 
-```
+```js
 mm.aggregate([ { $unwind: { 
     path: '$customer.items', 
     includeArrayIndex: 'idx',
@@ -246,7 +246,7 @@ mm.aggregate([ { $unwind: {
 
 ## count()
 
-```
+```js
 //var mm = require('../');
 var mm = require('micromongo');
 
@@ -276,7 +276,7 @@ console.log(res);
 
 ## Example find()
 
-```
+```js
 //var mm = require('../');
 var mm = require('micromongo');
 
@@ -315,7 +315,7 @@ If you have different needs regarding the functionality, please add a [feature r
 
 For unit tests run:
 
-```
+```sh
 npm run _test
 ```
 
