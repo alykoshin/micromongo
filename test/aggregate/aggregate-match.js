@@ -41,7 +41,7 @@ describe('# aggregate $match', function() {
   //  ];
   //  expect(aggregate._aggregateStageOps.$project(a, p)).eql(r);
   //});
-  describe.only('# examples from mongo docs (https://docs.mongodb.com/manual/reference/operator/aggregation/match/)', function() {
+  describe('# examples from mongo docs (https://docs.mongodb.com/manual/reference/operator/aggregation/match/)', function() {
 
     const articles = [
       { "_id" : ObjectId("512bc95fe835e68f199c8686"), "author" : "dave", "score" : 80, "views" : 100 },

@@ -569,7 +569,7 @@ $match         | **+**
 $redact        | .
 **$limit**     | **+**
 **$skip**      | **+**
-**$unwind**    | **+**
+**$unwind**    | **+**         s
 $group         | .
 $sample        | .
 **$sort**      | **+**
