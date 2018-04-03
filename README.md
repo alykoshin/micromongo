@@ -564,8 +564,8 @@ $isolated
 
 Operator       | Status 
 ---------------|--------
-$project       | .
-$match         | .
+$project       | **+**
+$match         | **+**
 $redact        | .
 **$limit**     | **+**
 **$skip**      | **+**
