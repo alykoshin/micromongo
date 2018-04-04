@@ -54,6 +54,9 @@ describe('#performance', function() {
     //expect(r).eql(e);
   };
 
+  const timeout = 20000;
+  this.timeout(timeout);
+
   //
 
   it('# count 1000 elements', function() {
@@ -74,6 +77,7 @@ describe('#performance', function() {
   //
 
   it('# find 1000 elements', function() {
+    this.timeout(timeout);
     //testHuge(1000, function(a) { mm.find(a,{a:1,b:1}); });
     testHuge(1000, function(a) { mm.find(a,{a:{$lt:50},b:{$gt:50}}); });
   });
@@ -84,7 +88,6 @@ describe('#performance', function() {
   });
 
   it.skip('# find 100000 elements', function() {
-    this.timeout(10000);
     //testHuge(100000, function(a) { mm.find(a,{a:1,b:1}); });
     testHuge(100000, function(a) { mm.find(a,{a:{$lt:50},b:{$gt:50}}); });
   });
@@ -100,28 +103,24 @@ describe('#performance', function() {
   });
 
   it.skip('# sort 100000 elements', function() {
-    this.timeout(10000);
     testHuge(100000, function(a) { mm.aggregate(a, [{$sort: {a:1,b:1}}]); });
   });
 
   //
 
-  if (process.version < 'v5.3.0') {
+  if (process.version < 'v5.3.0' /*|| (process.version > 'v7' && process.version < 'v8')*/ ) {
 
-    it('# node version < v5.3.0 (slow implementation) - find $where 50 elements', function () {
-      this.timeout(10000);
+    it('# node version < v5.3.0 or = v7.x.x (slow implementation) - find $where 50 elements', function () {
       testHuge(50, function (a) { mm.find(a, { $where: "this.a>=50" }); });
     });
 
   } else {
 
     it('# node version >= v5.3.0 - find $where 1000 elements', function() {
-      this.timeout(10000);
       testHuge(1000, function(a) { mm.find(a, { $where: "this.a>=50" } ); });
     });
 
     it.skip('# node version >= v5.3.0 - find $where 5000 elements', function() {
-      this.timeout(10000);
       testHuge(5000, function(a) { mm.find(a, { $where: "this.a>=50" } ); });
     });
 

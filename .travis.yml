@@ -4,8 +4,11 @@ node_js:
   - "5"
   - "6"
   - "7"
-  - "stable"
+  - "8"
+  - "9"
   - "node"
+  - "stable"
+  - "unstable"
 before_install:
 script: "npm run-script test-travis"
 # Send coverage data to Coveralls
