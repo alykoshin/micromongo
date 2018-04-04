@@ -78,7 +78,73 @@ describe('# aggregate $match', function() {
 
       expect(result.length).equal(expected);
     });
-  });
+
+  }); // # examples from mongo doc
+
+  describe('# Github issues', function() {
+
+    it.only('#1 (https://github.com/alykoshin/micromongo/issues/1', function() {
+
+      const treatment =  {
+        progressNotes: [
+          {
+            visit: "1",
+            status: "preposed",
+          },
+          {
+            visit: "1",
+            status: "preposed",
+          },
+          {
+            visit: "2",
+            status: "completed",
+          }
+        ]
+      };
+      const treatments = [
+        treatment,
+      ];
+
+      const pipeline = [
+        // Stage 1
+        {
+          $unwind: {
+            //path: "$treatment.progressNotes",
+            path: "$progressNotes",
+            includeArrayIndex: "arrayIndex", // optional
+            preserveNullAndEmptyArrays: false // optional
+          }
+        },
+
+        //Stage 2
+        {
+          $match: {
+            //"treatment.progressNotes.status": "completed"
+            "progressNotes.status": "completed"
+          }
+        },
+
+      ];
+
+      const expected = [
+        {
+          arrayIndex: 2,
+          progressNotes: {
+            visit:  "2",
+            status: "completed",
+          }
+        }
+      ];
+
+      const actual = /*mm.*/aggregate( treatments, pipeline );
+
+      console.log(actual);
+
+      expect(actual).eql(expected);
+
+    });
+
+  }); // # Github issues
 
   //it('# 5/5', function() {
   //  //var stage = { $skip: 5 };
