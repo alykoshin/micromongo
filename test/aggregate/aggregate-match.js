@@ -83,7 +83,7 @@ describe('# aggregate $match', function() {
 
   describe('# Github issues', function() {
 
-    it.only('#1 (https://github.com/alykoshin/micromongo/issues/1', function() {
+    it('#1 (https://github.com/alykoshin/micromongo/issues/1', function() {
 
       const treatment =  {
         progressNotes: [
@@ -137,8 +137,6 @@ describe('# aggregate $match', function() {
       ];
 
       const actual = /*mm.*/aggregate( treatments, pipeline );
-
-      console.log(actual);
 
       expect(actual).eql(expected);
 
