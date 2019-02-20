@@ -7,7 +7,7 @@
     "node": ">=4"
   },
   "scripts": {
-    "nsp": "nsp check",
+    "_npm-audit": "npm audit --audit-level high",
     "_deps-check": "npm-check-updates --error-level 2",
     "_deps-update": "echo '* Updating packages versions... '; npm-check-updates -u --upgradeAll --error-level 1 && npm install",
     "_check-changes": "echo '* Checking if git directory is clean... '; bash -c '[[ -z $(git status -uno --porcelain) ]]'",
@@ -15,7 +15,7 @@
     "lint": "eslint -f unix .",
     "_inspect": "jsinspect",
     "inspect": "echo \"skipping jsinspect\"",
-    "pretest": "npm run lint && npm run inspect && npm run nsp && npm run _deps-check",
+    "pretest": "npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
     "_test": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/",
     "test": "npm run _test",
     "__test": "echo \"Warning: no test specified\" && exit 0",
@@ -46,20 +46,20 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.11",
     "mini-deep-assign": "^0.0.8"
   },
   "devDependencies": {
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "chai-things": "^0.2.0",
-    "coveralls": "^3.0.0",
-    "eslint": "^4.19.1",
+    "coveralls": "^3.0.2",
+    "eslint": "^5.14.1",
     "istanbul": "^0.4.5",
-    "jshint": "^2.9.5",
+    "jshint": "^2.10.1",
     "jsinspect": "^0.12.7",
-    "mocha": "^5.0.5",
+    "mocha": "^6.0.0",
     "mockery": "^2.1.0",
     "require-dir-all": "^0.4.15",
-    "sinon": "^4.5.0"
+    "sinon": "^7.2.4"
   }
 }
