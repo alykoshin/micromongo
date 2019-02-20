@@ -8,7 +8,6 @@ node_js:
   - "9"
   - "node"
   - "stable"
-  - "unstable"
 before_install:
 script: "npm run-script test-travis"
 # Send coverage data to Coveralls
