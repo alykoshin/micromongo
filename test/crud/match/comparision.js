@@ -331,4 +331,27 @@ describe('#comparision operators - development', function() {
   });
 
 
+  describe('#Buffer type', function() {
+
+    it('#same 1', function() {
+      expect(match(
+        { value: Buffer.from([1]) },
+        { value: Buffer.from([1]) }
+      )).eql(true);
+    });
+    it('#same 2', function() {
+      expect(match(
+        { value: Buffer.from([1,2]) },
+        { value: Buffer.from([1,2]) }
+      )).eql(true);
+    });
+    it('#different', function() {
+      expect(match(
+        { value: Buffer.from([1,2]) },
+        { value: Buffer.from([1,3]) } )).eql(false);
+    });
+
+  });
+
+
 });

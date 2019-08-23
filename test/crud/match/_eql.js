@@ -74,4 +74,11 @@ describe('# _eql', function() {
     expect(_eql([1,2    ], [2,1   ], { sameOrder: true  })).eql(false);
   });
 
+  it('# Buffer class', function () {
+    expect(_eql(Buffer.from([1]), Buffer.from([1]))).eql(true);
+    expect(_eql(Buffer.from([1,2]), Buffer.from([1,2]))).eql(true);
+    expect(_eql(Buffer.from([1]), Buffer.from([2]))).eql(false);
+    expect(_eql(Buffer.from([1,2]), Buffer.from([1,3]))).eql(false);
+  });
+
 });
