@@ -7,30 +7,36 @@
     "node": ">=8"
   },
   "scripts": {
-    "_npm-audit": "npm audit --audit-level high",
+    "_npm-audit": "npm audit || echo '\n*** Please check warnings above ***\n' && npm audit --production --audit-level high && echo '\n*** npm audit reported no high-level vulnerabilities for production configuration ***\n' ",
     "_deps-check": "npm-check-updates --error-level 2",
     "_deps-update": "echo '* Updating packages versions... '; npm-check-updates -u --upgradeAll --error-level 1 && npm install",
     "_check-changes": "echo '* Checking if git directory is clean... '; bash -c '[[ -z $(git status -uno --porcelain) ]]'",
     "update-deps": "npm run _check-changes && npm run _deps-update && npm test && git commit -am 'updated deps'",
     "lint": "eslint -f unix .",
-    "_inspect": "jsinspect",
+    "_inspect": "jsinspect --ignore 'coverage|test'",
     "inspect": "echo \"skipping jsinspect\"",
     "pretest": "npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
-    "_test": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/",
-    "test": "npm run _test",
+    "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/",
+    "_test-report": "nyc report --reporter=html && nyc report --reporter=text-lcov > coverage/coverage.lcov",
+    "test": "npm run _test && npm run _test-report",
+    "test-travis": "npm run _test && npm run _test-report",
     "__test": "echo \"Warning: no test specified\" && exit 0",
     "___test": "echo \"Error: no test specified\" && exit 1",
-    "test-travis": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test",
     "_commit": "git commit -am \"commit by 'npm run commit'\"",
     "_push": "git push --follow-tags",
     "commit-and-push": "npm run _commit && npm test && npm run _push",
-    "_patch-release": "npm version patch && npm publish",
-    "_minor-release": "npm version minor && npm publish",
-    "_major-release": "npm version major && npm publish",
+    "_publish": "npm publish --access public",
+    "_patch-release": "npm version patch && npm run _publish",
+    "_minor-release": "npm version minor && npm run _publish",
+    "_major-release": "npm version major && npm run _publish",
     "patch-release": "npm test && npm run _patch-release && npm run _push",
     "minor-release": "npm test && npm run _minor-release && npm run _push",
     "__major-release": "npm test && npm run _major-release && npm run _push",
-    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "travis-before-install": "",
+    "travis-before-script": "",
+    "travis-script": "npm run test",
+    "travis-after-script": "npm run _coveralls"
   },
   "keywords": [
     "mongo,mongodb,query,find,findone,array,arrays,objects,collection,collections,find,findOne"
@@ -47,14 +53,14 @@
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
     "lodash": "^4.17.15",
-    "mini-deep-assign": "^0.0.8"
+    "mini-deep-assign": "^0.0.8",
+    "nyc": "^14.1.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-things": "^0.2.0",
     "coveralls": "^3.0.6",
     "eslint": "^6.2.1",
-    "istanbul": "^0.4.5",
     "jshint": "^2.10.2",
     "jsinspect": "^0.12.7",
     "mocha": "^6.2.0",

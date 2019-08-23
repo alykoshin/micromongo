@@ -333,19 +333,29 @@ describe('#comparision operators - development', function() {
 
   describe('#Buffer type', function() {
 
-    it('#same 1', function() {
+    it('#same [1] - [1]', function() {
       expect(match(
         { value: Buffer.from([1]) },
         { value: Buffer.from([1]) }
       )).eql(true);
     });
-    it('#same 2', function() {
+    it('#same [1,2] - [1,2]', function() {
       expect(match(
         { value: Buffer.from([1,2]) },
         { value: Buffer.from([1,2]) }
       )).eql(true);
     });
-    it('#different', function() {
+    it('#different [1] - [1,2]', function() {
+      expect(match(
+        { value: Buffer.from([1]) },
+        { value: Buffer.from([1,2]) } )).eql(false);
+    });
+    it('#different [1,2] - [1]', function() {
+      expect(match(
+        { value: Buffer.from([1,2]) },
+        { value: Buffer.from([1]) } )).eql(false);
+    });
+    it('#different [1,2] - [1,3]', function() {
       expect(match(
         { value: Buffer.from([1,2]) },
         { value: Buffer.from([1,3]) } )).eql(false);

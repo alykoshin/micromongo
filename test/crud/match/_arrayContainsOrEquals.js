@@ -23,9 +23,9 @@ describe('# _arrayEqlOrElementEql', function() {
     });
 
     it('# scalars', function () {
-      expect(_ae([ 1, 2 ], [ 1, 2   ])).eql(true);
-      expect(_ae([ 1, 2 ], [ 1     ])).eql(false);
-      expect(_ae([ 1, 2 ], [ 1, 3 ])).eql(false);
+      expect(_ae([ 1, 2 ], [ 1, 2    ])).eql(true);
+      expect(_ae([ 1, 2 ], [ 1       ])).eql(false);
+      expect(_ae([ 1, 2 ], [ 1,    3 ])).eql(false);
       expect(_ae([ 1, 2 ], [ 1, 2, 3 ])).eql(false);
     });
 
