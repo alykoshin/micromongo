@@ -36,7 +36,9 @@
     "travis-before-install": "",
     "travis-before-script": "",
     "travis-script": "npm run test",
-    "travis-after-script": "npm run _coveralls"
+    "travis-after-script": "npm run _coveralls",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "mongo,mongodb,query,find,findone,array,arrays,objects,collection,collections,find,findOne"
@@ -54,7 +56,8 @@
   "dependencies": {
     "lodash": "^4.17.15",
     "mini-deep-assign": "^0.0.8",
-    "nyc": "^14.1.1"
+    "nyc": "^14.1.1",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
@@ -67,5 +70,6 @@
     "mockery": "^2.1.0",
     "require-dir-all": "^0.4.15",
     "sinon": "^7.4.1"
-  }
+  },
+  "snyk": true
 }
