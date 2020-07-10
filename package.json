@@ -52,7 +52,7 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.16",
     "mini-deep-assign": "^0.0.8",
     "nyc": "^14.1.1"
   },
