@@ -55,7 +55,7 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "mini-deep-assign": "^0.0.8",
     "minimist": "^1.2.5",
     "nyc": "^15.1.0"
