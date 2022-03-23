@@ -57,7 +57,7 @@
   "dependencies": {
     "lodash": "^4.17.19",
     "mini-deep-assign": "^0.0.8",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "nyc": "^15.1.0"
   },
   "devDependencies": {
