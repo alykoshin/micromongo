@@ -39,7 +39,9 @@
     "travis-before-install": "",
     "travis-before-script": "",
     "travis-script": "npm run test",
-    "travis-after-script": "npm run _coveralls"
+    "travis-after-script": "npm run _coveralls",
+    "prepare": "npm run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "keywords": [
     "mongo,mongodb,query,find,findone,array,arrays,objects,collection,collections,find,findOne"
@@ -55,10 +57,11 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.20",
     "mini-deep-assign": "^0.0.8",
     "minimist": "^1.2.5",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "chai": "^4.2.0",
@@ -71,5 +74,6 @@
     "mockery": "^2.1.0",
     "require-dir-all": "^0.4.15",
     "sinon": "^9.0.2"
-  }
+  },
+  "snyk": true
 }
