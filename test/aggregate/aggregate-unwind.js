@@ -197,6 +197,35 @@ var aggregate = require('../../lib/aggregate/');
         ).eql(r);
       });
 
+      // Regression: nested path must unwind the correct (own `path`) field, and
+      // the index field must land at the TOP level of the document (MongoDB semantics),
+      // not nested next to the array field. See docs/compatibility.md "Known bugs".
+      it('# nested path - index field at top level', function() {
+        var a2 = [
+          { a: { c: [ 10, 20 ] } }
+        ];
+        var r = [
+          { a: { c: 10 }, idx: 0 },
+          { a: { c: 20 }, idx: 1 },
+        ];
+        expect(
+          aggregate._aggregateStageOps.$unwind(a2, { path: '$a.c', includeArrayIndex: 'idx' })
+        ).eql(r);
+      });
+
+      it('# nested path - array of objects, index at top level', function() {
+        var a3 = [
+          { a: { c: [ { b: 1 }, { b: 2 } ] } }
+        ];
+        var r = [
+          { a: { c: { b: 1 } }, idx: 0 },
+          { a: { c: { b: 2 } }, idx: 1 },
+        ];
+        expect(
+          aggregate._aggregateStageOps.$unwind(a3, { path: '$a.c', includeArrayIndex: 'idx' })
+        ).eql(r);
+      });
+
     });
 
   //});
