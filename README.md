@@ -16,8 +16,11 @@ Array of objects (documents in Mongodb's terminology) is a very common data stru
 If your application widely using this type of data, if you are looking for something relatively lightweight 
 and you are familiar with Mongodb syntax, you may consider this package to handle the arrays of objects.  
 
-Please, be aware that this module is working on unsorted arrays and does not uses indexes, so it is not intended to be used with relatively big arrays (thousands of elements) and not purposed for that tasks (see [performance](#performance) section).
-If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
+By default a query is a linear scan over the array, which is plenty fast for typical in-memory data.
+For larger collections, wrap the data in a `Collection` and add an index (`createIndex(field)`) to
+turn single-field equality lookups into O(1) — see the [performance](#performance) section for the
+measured scan-vs-index numbers. The functional `mm.find(array, …)` API stays a scan (it can't own the
+array to keep an index valid); the `Collection` API is the path to scale.
 
 
 Currently following methods are supported:
@@ -311,6 +314,63 @@ If you have different needs regarding the functionality, please add a [feature r
 
 
 
+# CLI
+
+`micromongo` ships a command-line tool ([`cli.js`](cli.js)) whose invocation mirrors
+[`mongosh`](https://www.mongodb.com/docs/mongodb-shell/reference/options/), minus the parts that
+imply a server (micromongo is in-memory). Since there's no server to connect to, instead of a
+connection string you load local JSON arrays as collections with `--load file.json:name`.
+
+### Interactive shell (bare invocation, like `mongosh`)
+
+```sh
+micromongo --load orders.json:orders
+```
+
+Drops you into a REPL where `db.<collection>` resolves a `Collection`, with tab-completion of
+collection/method names:
+
+```
+micromongo> show collections
+[ { name: 'orders', count: 5 } ]
+micromongo> db.orders.find({ status: 'A' }).sort({ qty: -1 }).limit(2).toArray()
+[ { _id: 3, status: 'A', qty: 90 }, … ]
+micromongo> db.orders.createIndex({ status: 1 })
+{ collection: 5 docs, indexes: [status] }
+micromongo> db.orders.find({ status: 'A' }).explain()
+{ stage: 'IXSCAN', indexed: true, exact: true, plan: { index: 'status_1', op: 'eq', usedHash: true }, … }
+micromongo> db.orders.aggregate([ { $group: { _id: "$status", n: { $sum: 1 } } } ])
+```
+
+Shell commands: `show collections` / `show dbs`, `use <name>` (single namespace — cosmetic),
+`load("file.json","name")`, `save("name","file.json")`, `help`, `exit`. Anything else runs as
+JavaScript against the live API (`mm.configure(...)`, `mm.registerOperator(...)`, … all work).
+
+### One-shot `--eval` (like `mongosh --eval`)
+
+Evaluate one or more expressions; repeatable, and only the **last** result prints (mongosh's rule):
+
+```sh
+micromongo --eval "db.orders.find({status:'A'}).toArray()" --load orders.json:orders
+micromongo --eval "db.orders.createIndex({status:1})" \
+           --eval "db.orders.find({status:'A'}).explain()" --load orders.json:orders
+micromongo --json --eval "db.orders.find({status:'B'}).toArray()" --load orders.json:orders
+```
+
+### Run a script file (`--file` / `-f`, like `mongosh --file`)
+
+```sh
+micromongo --file report.js --load orders.json:orders
+```
+
+The script runs in the same sandbox (`db`, `mm`, `print()` in scope). Add `--shell` to drop into the
+interactive shell after `--eval`/`--file`; `--quiet` suppresses the startup banner.
+
+See [`examples/cli/run.sh`](examples/cli/run.sh) and [`examples/cli/report.js`](examples/cli/report.js)
+for runnable examples.
+
+
+
 # Testing
 
 For unit tests run:
@@ -322,7 +382,10 @@ npm run _test
 
 # Performance
 
-As it was mentioned, `micromongo` runs on unsorted unindexed data, so it can't show good performance on big arrays.
+A bare query (the functional `mm.*` API, or a `Collection` with no index) is a linear scan — O(n) in
+the array length. That's fast for typical in-memory sizes; the numbers below show where it stands, and
+the [indexed-lookups](#indexed-lookups-collection-vs-linear-scan) section shows how a `Collection`
+index collapses single-equality lookups to O(1) for larger data.
 
 Test system: 
 - Intel® Core™ i7-3520M (2.90 GHz, 4MB L3, 1600MHz FSB)
@@ -355,7 +418,58 @@ Processed 5000 elements - Elapsed: 2997 ms
 
 For `node` version < 5.3.0 `$where` is significantly slower due to imementation of `vm`.
 
-You may have a look on the data used for the tests in `tests/performance.js`, and running tests by yourself by `npm run _test` and checking the console log for `performance` output.
+These numbers are produced by [`test/performance.js`](test/performance.js) — the `count`/`find`/
+`$sort`/`$where` timing cases above. The `10000`/`100000`-element rows are `it.skip`-ped by default
+(they're slow); un-skip them in that file to reproduce the larger sizes. Run them and read the
+`#performance` console output via `npm run _test` (the timings print to stdout; the cases assert only
+loosely, since wall-clock assertions are flaky on shared machines).
+
+## Indexed lookups (Collection) vs. linear scan
+
+The functional API (`mm.find(array, …)`) is **always** a linear scan — it can't be otherwise, because
+the caller owns the array and mutates it directly, so micromongo can't keep an index valid (see the
+[Indexes section in docs/compatibility.md](docs/compatibility.md)). A [`Collection`](docs/architecture.md),
+which *owns* its data, can opt into an **equality (hash) index** that turns a single plain-equality
+query (`{ field: value }` / `{ field: { $eq: value } }`) into an O(1) lookup instead of an O(n) scan:
+
+```js
+var c = new mm.Collection(bigArray);
+c.createIndex('sku');             // build a Map<value, docs[]> once
+c.findOne({ sku: 'sku-42' });     // served from the index, no scan
+c.find({ sku: { $gt: 'x' } });    // NOT a plain-equality query -> falls back to a scan
+```
+
+Measured by [`test/performance-index.js`](test/performance-index.js) — single-equality `findOne`
+lookups (spread evenly across the whole array, so the average scan depth grows with `n`) against an
+index-less `Collection` (linear scan) vs. one with `createIndex('sku')`. Timing uses
+`process.hrtime.bigint()` (nanosecond resolution) and reports the best of several warmed-up runs to
+shed GC/scheduler noise. Run it with `node ./node_modules/mocha/bin/_mocha test/performance-index.js`;
+it prints this copy-paste block (numbers from one run on the test system — they vary slightly):
+
+```
+  index-vs-scan: best of 5 runs of evenly-spread single-equality findOne() lookups (after warmup)
+
+  Collection size scan (us/lookup)  indexed (us/lookup)  speedup
+  ---------------------------------------------------------------
+  1 000           101.82            0.46                 222x
+  10 000          1075.79           0.22                 4788x
+  100 000         10011.61          0.26                 38373x
+```
+
+This is the O(1)-vs-O(n) story in numbers: the scan cost grows ~**10× for each 10×** more data
+(~100 µs → ~1 ms → ~10 ms per lookup), while the indexed lookup stays ~0.25 µs **regardless of
+collection size** (a single hash hit). So the speedup itself scales with the data — from ~200× at
+1 000 docs to ~40 000× at 100 000. The bigger the collection, the more the index is worth (on the one
+query shape it covers).
+
+Caveats (current): the index accelerates **only** a single plain-equality predicate on the indexed
+field — range/`$or`/`$regex`/multi-field queries and aggregation all transparently fall back to the
+scan, returning identical results. (Range + sort acceleration is the next step — see the roadmap in
+[docs/implementation-plan.md](docs/implementation-plan.md).) Maintenance is **rebuild-after-write**
+(provably consistent; O(n) per write, so best for read-heavy use), and the `Collection` must be the
+sole writer (mutating `toArray()` directly bypasses it; `reindex()` recovers). Indexes are opt-in and
+never change *what* a query returns — only how fast.
+Reproduce with `node ./node_modules/mocha/bin/_mocha test/performance-index.js`.
 
 
 

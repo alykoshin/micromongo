@@ -1,24 +1,43 @@
 #!/usr/bin/env bash
+#
+# Examples for the micromongo CLI (mongosh-flavored, in-memory).
+#
+#   micromongo                          interactive shell (bare, like `mongosh`)
+#   micromongo --eval "<expr>"          evaluate one line (repeatable; last result prints)
+#   micromongo --file script.js         run a script file
+#   --load file.json:name               load a JSON array as a collection (no server to connect to)
+#
+# Run from this directory: bash run.sh
 
-echo "* Data from command line arguments"
+CLI="../../cli.js"
+LOAD="--load ./orders.json:orders"
 
-../../cli.js find --array-json '[{"a":"b"},{"a":"c"}]' --qj '{"a":"b"}'
+echo "=== --eval one-shot ==="
 
-echo "* Data from files"
+echo "* find + sort + limit"
+$CLI --eval "db.orders.find({status:'A'}).sort({qty:-1}).limit(2).toArray()" $LOAD
 
-../../cli.js find --array-file ./array.json --qf ./query.json
+echo "* createIndex + explain (the chosen plan: IXSCAN vs COLLSCAN)"
+$CLI --eval "db.orders.createIndex({status:1})" \
+     --eval "db.orders.find({status:'A'}).explain()" $LOAD
 
-echo "* Array from stdin, stdout to file"
+echo "* range query served by an ordered index"
+$CLI --eval "db.orders.createIndex({qty:1})" \
+     --eval "db.orders.find({qty:{\$gte:50}}).explain()" $LOAD
 
-rm ../temp/result.json
-../../cli.js find --qf ./query.json < ./array.json > ../temp/result.json
-cat ../temp/result.json
+echo "* aggregate: group by status"
+$CLI --eval 'db.orders.aggregate([{$group:{_id:"$status",n:{$sum:1},total:{$sum:"$qty"}}}])' $LOAD
+
+echo "* show collections (--json output)"
+$CLI --json --eval 'show collections' $LOAD
 
 
-echo "* _crud._match true"
+echo ""
+echo "=== --file script ==="
+$CLI --file ./report.js $LOAD
 
-../../cli.js --array-json '{"a":"b"}' _crud._match --qj '{"a":"b"}'
 
-echo "* _crud._match false"
-
-../../cli.js --array-json '{"a":"b"}' _crud._match --qj '{"a":"c"}'
+echo ""
+echo "=== interactive shell (piped here; normally just run: micromongo $LOAD) ==="
+printf 'show collections\ndb.orders.createIndex({status:1})\ndb.orders.find({status:"A"}).explain()\nexit\n' \
+  | $CLI --quiet $LOAD

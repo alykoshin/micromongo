@@ -1,109 +1,117 @@
 #!/usr/bin/env node
 
-const _ = require('lodash');
-const fs = require('fs');//.promises;
-const argv = require('minimist')(process.argv.slice(2));
+/**
+ * micromongo CLI — mongosh-flavored, over an in-memory db/Collection model.
+ *
+ * Invocation mirrors mongosh (https://www.mongodb.com/docs/mongodb-shell/reference/options/),
+ * minus anything that implies a server connection (micromongo is in-memory):
+ *
+ *   micromongo                              interactive shell (like bare `mongosh`)
+ *   micromongo --eval "<expr>"              evaluate one line and print the result
+ *   micromongo --eval a --eval b            repeatable; only the LAST result prints (mongosh rule)
+ *   micromongo --file script.js  (-f)       run a script file (like `mongosh --file`)
+ *   micromongo --eval "…" --shell           run --eval/--file, then drop into the shell
+ *
+ *   --load file.json:name                   micromongo-specific: there is no server to connect
+ *                                           to, so instead of a connection string you load a
+ *                                           local JSON array as a collection (repeatable)
+ *   --quiet                                 suppress the startup banner (default for non-TTY)
+ *   --json                                  print results as JSON instead of inspect-formatted
+ *   -h/--help   --version
+ *
+ * The shell/eval/script all share the evaluator in lib/repl.js.
+ */
 
-const mm = require('./');
+'use strict';
 
+const fs = require('fs');
+const argv = require('minimist')(process.argv.slice(2), {
+  boolean: [ 'quiet', 'shell', 'json', 'help', 'h', 'version', 'nodb' ],
+  alias: { f: 'file', h: 'help', e: 'eval' },
+});
+
+const repl = require('./lib/repl');
 const pkg = require('./package.json');
+
 
 function help() {
   console.log([
     '',
-    '  Package name:    ' + pkg.name,
-    '  Package version: ' + pkg.version,
+    '  ' + pkg.name + ' v' + pkg.version + ' — ' + pkg.description,
     '',
-    '  Package description: ' + pkg.description,
+    '  Usage (mongosh-flavored, in-memory):',
+    '    micromongo                          start the interactive shell',
+    '    micromongo --eval "<expr>"          evaluate one line (repeatable; last result prints)',
+    '    micromongo --file script.js   (-f)  run a script file',
+    '    micromongo --eval "<expr>" --shell  run, then enter the shell',
     '',
-    '  Example:',
-    '    ' + pkg.name,
-    '    node node_modules/' + pkg.name + '/cli.js',
+    '  Loading data (no server → load local JSON instead of a connection string):',
+    '    --load file.json:name               register a JSON array as collection <name> (repeatable)',
+    '',
+    '  Options:  --quiet   --json   -h/--help   --version',
+    '',
+    '  Examples:',
+    '    micromongo --load orders.json:orders',
+    '    micromongo --eval "db.orders.find({status:\'A\'}).toArray()" --load orders.json:orders',
+    '    micromongo --file report.js --load orders.json:orders',
     '',
   ].join('\n'));
 }
 
-function version() {
-  console.log([
-    '* version():',
-    '* package.json version: ' + pkg.version,
-    '* process.version: ' + process.version,
-    ''
-  ].join('\n'));
+
+/** Apply `--load file.json:name` flags (one or many) to the registry. */
+function applyLoads(ctx) {
+  let loads = argv.load;
+  if (typeof loads === 'undefined') { return; }
+  if (!Array.isArray(loads)) { loads = [ loads ]; }
+  loads.forEach(function (spec) {
+    const idx = String(spec).lastIndexOf(':');
+    if (idx < 0) { throw new Error('--load expects file.json:name, got: ' + spec); }
+    repl.loadFile(ctx, String(spec).slice(0, idx), String(spec).slice(idx + 1));
+  });
 }
 
-function getFromStdin() {
-  return fs.readFileSync(0, "utf-8");
-}
-
-async function getJsonStr(fileSwitch, jsonSwitch, stdinEnabled) {
-  let jsonStr = '';
-  const filename = fileSwitch.map(s=>argv[s]).filter(s=>!!s)[0];
-  //console.log('getJsonStr(): filename:', filename);
-  if (filename) {
-    jsonStr = await fs.readFileSync(filename);
-    //console.log('getJsonStr(): jsonStr:', jsonStr);
-  } else {
-    //jsonStr = argv[jsonSwitch] || '';
-    jsonStr = jsonSwitch.map(s=>argv[s]).filter(s=>!!s)[0];
-    //console.log('getJsonStr(): jsonStr:', jsonStr);
-    if (!jsonStr && stdinEnabled) {
-      jsonStr = getFromStdin();
-    }
+function printResult(value) {
+  if (argv.json) {
+    if (typeof value !== 'undefined') { console.log(JSON.stringify(value, null, 2)); }
+    return;
   }
-  return jsonStr || '';
+  const out = repl.formatResult(value);
+  if (typeof out !== 'undefined') { console.log(out); }
 }
 
-async function getJson(f,j, stdinEnabled,defaultValue) {
-  const jsonStr = (await getJsonStr(f,j, stdinEnabled));
-  //console.log('getJson():', jsonStr);
-  if (jsonStr || !defaultValue) {
-    try {
-      return JSON.parse(jsonStr);
-    } catch (e) {
-      console.error('ERROR parsing JSON:', jsonStr);
-      throw e;
-    }
-  } else {
-    return defaultValue;
+
+function main() {
+  if (argv.help) { help(); return; }
+  if (argv.version) { console.log(pkg.name + ' ' + pkg.version + ' (node ' + process.version + ')'); return; }
+
+  const ctx = repl.createContext();
+  applyLoads(ctx);
+
+  // Collect --eval expressions (repeatable) and a --file, mongosh-style.
+  let evals = argv.eval;
+  if (typeof evals !== 'undefined' && !Array.isArray(evals)) { evals = [ evals ]; }
+  const file = argv.file;
+
+  const nonInteractive = (evals && evals.length) || file;
+
+  if (nonInteractive) {
+    let last;
+    if (evals) { evals.forEach(function (expr) { last = repl.evalLine(ctx, String(expr)); }); }
+    if (file) { last = repl.runScript(ctx, file); }
+    if (!argv.shell) { printResult(last); return; } // mongosh: only the last result prints
   }
+
+  // Interactive shell (bare invocation, or after --eval/--file with --shell).
+  repl.startShell({ context: ctx, quiet: argv.quiet });
 }
 
-async function handleArgv() {
-  //console.log('handleArgv:', argv);
-  if (argv.h || argv.help) {
-    help();
-    process.exit(0);
-
-  } else if (argv.v || argv.version) {
-    version();
-    process.exit(0);
-
-  } else if (argv._[0]/* === 'find'*/) {
-
-    // ./cli.js find '[{"a":"b"},{"a":"c"}]' '{"a":"b"}'
-    // ./cli.js find --array '[{"a":"b"},{"a":"c"}]' '{"a":"b"}'
-    // ./cli.js find --aj '[{"a":"b"},{"a":"c"}]' --qj '{"a":"b"}'
-    // ./cli.js find --af '[{"a":"b"},{"a":"c"}]' --qj '{"a":"b"}'
-    // ./cli.js find --array-json '[{"a":"b"},{"a":"c"}]' --qj '{"a":"b"}'
-    // ./cli.js find --array-file '[{"a":"b"},{"a":"c"}]' --qj '{"a":"b"}'
-
-    const array = await getJson(['af','array-file'],['aj','array-json'], true, []);
-    const query = await getJson(['qf','query-file'],['qj','query-json'], false, {});
-    const projection = await getJson(['pf','projection-file'],['pj','projection-json'], false, {});
-    //console.log(array,query,projection);
-
-    const fnName =  argv._[0];
-    const fn = _.get(mm, fnName);
-    if (typeof fn !== 'function') throw new Error(`${fnName} is not a function`);
-
-    const result = fn(array, query,projection);
-    console.log(result);
-
-  } else {
-    throw new Error('Invalid command');
-  }
+// Guard: minimist parses a leftover positional? In mongosh that's a connection
+// string; we have no server, so reject it with a hint toward --load/--file.
+if (argv._.length) {
+  console.error('micromongo: unexpected argument "' + argv._[0] + '".');
+  console.error('There is no server to connect to — use --load file.json:name for data, --file for a script, or --eval. See --help.');
+  process.exit(1);
+} else {
+  main();
 }
-
-
-handleArgv();

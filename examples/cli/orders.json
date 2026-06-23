@@ -1,0 +1,7 @@
+[
+  { "_id": 1, "status": "A", "item": "widget",  "qty": 50 },
+  { "_id": 2, "status": "B", "item": "gadget",  "qty": 20 },
+  { "_id": 3, "status": "A", "item": "gizmo",   "qty": 90 },
+  { "_id": 4, "status": "A", "item": "doohickey","qty": 30 },
+  { "_id": 5, "status": "C", "item": "thing",   "qty": 70 }
+]

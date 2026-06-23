@@ -105,6 +105,23 @@ describe('# update methods', function () {
         .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
       expect(c.toArray()[0]).eql({ _id: 1, n: 6 });
     });
+
+    it('# Collection.updateOne upsert inserts and keeps indexes consistent', function () {
+      var c = new mm.Collection([ { _id: 1, sku: 'a' } ]);
+      c.createIndex('sku');
+      var res = c.updateOne({ sku: 'b' }, { $set: { _id: 2, qty: 9 } }, { upsert: true });
+      expect(res.upsertedCount).eql(1);
+      expect(res.upsertedId).eql(2);
+      expect(c.toArray()).eql([ { _id: 1, sku: 'a' }, { sku: 'b', _id: 2, qty: 9 } ]);
+      // index rebuilt after the upsert insert: the new doc is findable by it.
+      expect(c.findOne({ sku: 'b' })).eql({ sku: 'b', _id: 2, qty: 9 });
+    });
+
+    it('# Collection.updateMany forwards arrayFilters', function () {
+      var c = new mm.Collection([ { _id: 1, grades: [ 95, 110, 100 ] } ]);
+      c.updateMany({}, { $set: { 'grades.$[g]': 100 } }, { arrayFilters: [ { g: { $gte: 100 } } ] });
+      expect(c.toArray()[0]).eql({ _id: 1, grades: [ 95, 100, 100 ] });
+    });
   });
 
 });

@@ -256,6 +256,72 @@ describe('# update operators', function () {
     });
   });
 
+  describe('# $bit (edge cases)', function () {
+    it('# missing field is treated as 0', function () {
+      var d = {};
+      expect(applyUpdate(d, { $bit: { flags: { or: 5 } } })).eql(true);
+      expect(d).eql({ flags: 5 }); // 0 | 5
+    });
+    it('# applies and/or/xor in order within one spec', function () {
+      var d = { f: 12 };               // 1100
+      applyUpdate(d, { $bit: { f: { and: 10, or: 1 } } }); // (1100 & 1010)=1000 ; |0001 =1001
+      expect(d).eql({ f: 9 });
+    });
+    it('# no-op when the value is unchanged', function () {
+      var d = { f: 8 };
+      expect(applyUpdate(d, { $bit: { f: { and: 8 } } })).eql(false); // 8 & 8 = 8
+    });
+    it('# throws on a non-integer field', function () {
+      expect(function () { applyUpdate({ f: 'x' }, { $bit: { f: { and: 1 } } }); })
+        .throw(/integer field/);
+    });
+    it('# throws on an unsupported sub-operator', function () {
+      expect(function () { applyUpdate({ f: 1 }, { $bit: { f: { not: 1 } } }); })
+        .throw(/and, or, xor/);
+    });
+  });
+
+  describe('# positional array paths (edge cases)', function () {
+    it('# $[] on a missing array is a no-op (no path expands)', function () {
+      var d = { _id: 1 };
+      expect(applyUpdate(d, { $inc: { 'a.$[]': 1 } })).eql(false);
+      expect(d).eql({ _id: 1 });
+    });
+    it('# $[<id>] with no matching elements changes nothing', function () {
+      var d = { a: [ 1, 2, 3 ] };
+      expect(applyUpdate(d, { $set: { 'a.$[x]': 9 } }, { arrayFilters: [ { x: { $gt: 100 } } ] }))
+        .eql(false);
+      expect(d).eql({ a: [ 1, 2, 3 ] });
+    });
+    it('# missing array filter for an identifier throws', function () {
+      expect(function () {
+        applyUpdate({ a: [ 1 ] }, { $set: { 'a.$[y]': 9 } }, { arrayFilters: [ { x: { $gt: 0 } } ] });
+      }).throw(/array filter/);
+    });
+    it('# expandPositionalPaths resolves concrete indices', function () {
+      var doc = { a: [ 10, 20, 30 ] };
+      var paths = applyUpdate.expandPositionalPaths(doc, 'a.$[id].v',
+        { id: { id: { $gte: 20 } } });
+      // a[1] and a[2] match (>=20) — but they're scalars, so v paths still form:
+      expect(paths).eql([ 'a.1.v', 'a.2.v' ]);
+    });
+  });
+
+  describe('# upsert document builder', function () {
+    it('# seeds equality fields from the query, skips operators', function () {
+      var doc = applyUpdate.buildUpsertDoc({ a: 1, b: { $gt: 5 } }, { $set: { c: 3 } });
+      expect(doc).eql({ a: 1, c: 3 }); // b ($gt) contributes nothing
+    });
+    it('# applies $setOnInsert on the built doc', function () {
+      var doc = applyUpdate.buildUpsertDoc({ _id: 1 }, { $set: { x: 1 }, $setOnInsert: { y: 2 } });
+      expect(doc).eql({ _id: 1, x: 1, y: 2 });
+    });
+    it('# replacement upsert fills query equality the replacement omits', function () {
+      var doc = applyUpdate.buildUpsertDoc({ _id: 9 }, { name: 'z' });
+      expect(doc).eql({ name: 'z', _id: 9 });
+    });
+  });
+
   describe('# multiple operators & validation', function () {
     it('# applies multiple operators in one spec', function () {
       var d = { a: 1 };
