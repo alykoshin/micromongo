@@ -21,19 +21,21 @@ describe('# configure()', function () {
 
   describe('# read / write', function () {
 
+    var DEFAULTS = { idProjectionMongo: true, whereTimeout: 1000, textSearch: 'lightweight' };
+
     it('# returns current settings (defaults) when called with no args', function () {
-      expect(mm.configure()).eql({ idProjectionMongo: true, whereTimeout: 1000 });
+      expect(mm.configure()).eql(DEFAULTS);
     });
 
     it('# merges provided keys and returns the updated settings', function () {
       var res = mm.configure({ idProjectionMongo: false });
-      expect(res).eql({ idProjectionMongo: false, whereTimeout: 1000 });
-      expect(mm.configure()).eql({ idProjectionMongo: false, whereTimeout: 1000 });
+      expect(res).eql({ idProjectionMongo: false, whereTimeout: 1000, textSearch: 'lightweight' });
+      expect(mm.configure()).eql({ idProjectionMongo: false, whereTimeout: 1000, textSearch: 'lightweight' });
     });
 
     it('# ignores unknown keys', function () {
       mm.configure({ nope: 123 });
-      expect(mm.configure()).eql({ idProjectionMongo: true, whereTimeout: 1000 });
+      expect(mm.configure()).eql(DEFAULTS);
     });
 
     it('# coerces idProjectionMongo to boolean', function () {
@@ -44,7 +46,7 @@ describe('# configure()', function () {
     it('# reset() restores defaults', function () {
       mm.configure({ idProjectionMongo: false, whereTimeout: 50 });
       settings.reset();
-      expect(mm.configure()).eql({ idProjectionMongo: true, whereTimeout: 1000 });
+      expect(mm.configure()).eql(DEFAULTS);
     });
 
   });

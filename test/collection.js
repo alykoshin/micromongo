@@ -56,9 +56,9 @@ describe('# Collection', function () {
       expect(c.count({ qty: { $gte: 10 } })).eql(mm.count(data, { qty: { $gte: 10 } }));
     });
 
-    it('# find (with projection)', function () {
+    it('# find (with projection) — returns a Cursor; .toArray() matches mm.find', function () {
       var c = new Collection(data);
-      expect(c.find({ qty: { $gt: 5 } }, { item: 1 }))
+      expect(c.find({ qty: { $gt: 5 } }, { item: 1 }).toArray())
         .eql(mm.find(data, { qty: { $gt: 5 } }, { item: 1 }));
     });
 
@@ -79,7 +79,7 @@ describe('# Collection', function () {
 
     it('# reads are deep-immutable (mutating a result leaves the data untouched)', function () {
       var c = new Collection([ { a: { b: 1 } } ]);
-      var out = c.find({});
+      var out = c.find({}).toArray();
       out[0].a.b = 999;
       expect(c.toArray()[0].a.b).eql(1);
     });
@@ -124,6 +124,50 @@ describe('# Collection', function () {
       a.insertOne({ x: 9 });
       expect(a.toArray().length).eql(2);
       expect(b.toArray().length).eql(1);
+    });
+
+  });
+
+  describe('# delegates the full write/update surface', function () {
+    // Parity with the functional API for the methods not covered above — each
+    // delegation forwards to crud and mutates the owned array.
+
+    it('# insert (dispatches to insertMany for an array)', function () {
+      var c = new Collection([]);
+      expect(c.insert([ { a: 1 }, { a: 2 } ])).eql({ nInserted: 2 });
+      expect(c.toArray().length).eql(2);
+    });
+
+    it('# updateMany', function () {
+      var c = new Collection([ { x: 1 }, { x: 1 }, { x: 2 } ]);
+      expect(c.updateMany({ x: 1 }, { $inc: { x: 10 } }))
+        .eql({ acknowledged: true, matchedCount: 2, modifiedCount: 2 });
+      expect(c.toArray()).eql([ { x: 11 }, { x: 11 }, { x: 2 } ]);
+    });
+
+    it('# replaceOne', function () {
+      var c = new Collection([ { _id: 1, x: 1 } ]);
+      expect(c.replaceOne({ _id: 1 }, { _id: 1, y: 2 }))
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+      expect(c.toArray()[0]).eql({ _id: 1, y: 2 });
+    });
+
+    it('# findOneAndUpdate returns the before-doc', function () {
+      var c = new Collection([ { _id: 1, x: 1 } ]);
+      expect(c.findOneAndUpdate({ _id: 1 }, { $set: { x: 9 } })).eql({ _id: 1, x: 1 });
+      expect(c.toArray()[0]).eql({ _id: 1, x: 9 });
+    });
+
+    it('# findOneAndReplace returns the before-doc', function () {
+      var c = new Collection([ { _id: 1, x: 1 } ]);
+      expect(c.findOneAndReplace({ _id: 1 }, { _id: 1, y: 2 })).eql({ _id: 1, x: 1 });
+      expect(c.toArray()[0]).eql({ _id: 1, y: 2 });
+    });
+
+    it('# findOneAndDelete returns and removes the doc', function () {
+      var c = new Collection([ { _id: 1 }, { _id: 2 } ]);
+      expect(c.findOneAndDelete({ _id: 1 })).eql({ _id: 1 });
+      expect(c.toArray()).eql([ { _id: 2 } ]);
     });
 
   });
