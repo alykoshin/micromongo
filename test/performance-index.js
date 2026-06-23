@@ -26,7 +26,7 @@ var expect = chai.expect;
 var fs = require('fs');
 var path = require('path');
 
-var mm = require('../lib/');
+var mm = require('../dist/');
 
 // Accumulate every measured table here and write it under var/performance/ (which
 // is gitignored — generated benchmark artifacts, not committed source). Written

@@ -16,8 +16,8 @@ var expect = chai.expect;
 var path = require('path');
 var execFileSync = require('child_process').execFileSync;
 
-var mm = require('../lib/');
-var repl = require('../lib/repl');
+var mm = require('../dist/');
+var repl = require('../dist/repl');
 
 var CLI = path.join(__dirname, '..', 'cli.js');
 var ORDERS = [

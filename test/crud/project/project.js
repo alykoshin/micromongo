@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var project = require('../../../lib/crud/project');
+var project = require('../../../dist/crud/project');
 
 
 describe('# projection - development', function() {

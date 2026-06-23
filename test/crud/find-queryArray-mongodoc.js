@@ -11,8 +11,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var crud     = require('../../lib/crud/');
-var ObjectId = require('../../lib/utils.js').ObjectId;
+var crud     = require('../../dist/crud/');
+var ObjectId = require('../../dist/utils.js').ObjectId;
 
 
 describe('# query operator array - mongo docs', function() {

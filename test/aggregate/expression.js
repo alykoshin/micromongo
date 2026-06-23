@@ -11,7 +11,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var evaluate = require('../../lib/aggregate/expression');
+var evaluate = require('../../dist/aggregate/expression');
 
 
 describe('# aggregation expressions', function () {

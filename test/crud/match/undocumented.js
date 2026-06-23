@@ -11,8 +11,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var crud = require('../../../lib/crud/');
-var match = require('../../../lib/crud/match');
+var crud = require('../../../dist/crud/');
+var match = require('../../../dist/crud/match');
 
 
 describe('# undocumented side cases', function() {

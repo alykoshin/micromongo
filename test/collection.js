@@ -13,8 +13,8 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../lib/');
-var Collection = require('../lib/collection');
+var mm = require('../dist/');
+var Collection = require('../dist/collection');
 
 
 describe('# Collection', function () {

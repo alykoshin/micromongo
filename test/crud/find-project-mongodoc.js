@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 
 
 // https://docs.mongodb.org/v3.2/tutorial/project-fields-from-query-results/

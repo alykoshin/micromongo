@@ -18,8 +18,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-//var mm = require('../../lib/');
-var aggregate = require('../../lib/aggregate/');
+//var mm = require('../../dist/');
+var aggregate = require('../../dist/aggregate/');
 
 
 //describe('# aggregate', function() {

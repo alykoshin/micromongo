@@ -14,8 +14,8 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../../lib/');
-var settings = require('../../lib/settings');
+var mm = require('../../dist/');
+var settings = require('../../dist/settings');
 
 function ids(res) { return res.map(function (d) { return d._id; }).sort(); }
 

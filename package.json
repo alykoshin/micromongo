@@ -3,13 +3,27 @@
   "version": "0.3.1",
   "description": "Mongodb-like queries over standard arrays of objects",
   "main": "./index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "micromongo": "./cli.js"
   },
+  "files": [
+    "dist",
+    "index.js",
+    "cli.js",
+    "README.md"
+  ],
   "engines": {
     "node": ">=8"
   },
   "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc -p tsconfig.json",
+    "rebuild": "npm run clean && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run rebuild",
+    "pre_test": "npm run build",
     "_npm-audit": "npm audit || echo '\n*** Please check warnings above ***\n' && npm audit --production --audit-level high && echo '\n*** npm audit reported no high-level vulnerabilities for production configuration ***\n' ",
     "_deps-check": "npm-check-updates --error-level 2",
     "_deps-update": "echo '* Updating packages versions... '; npm-check-updates -u --upgradeAll --error-level 1 && npm install",
@@ -61,6 +75,8 @@
     "nyc": "^15.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@typescript-eslint/parser": "^5.62.0",
     "chai": "^4.2.0",
     "chai-things": "^0.2.0",
     "coveralls": "^3.1.0",
@@ -70,6 +86,7 @@
     "mocha": "^8.0.1",
     "mockery": "^2.1.0",
     "require-dir-all": "^0.4.15",
-    "sinon": "^9.0.2"
+    "sinon": "^9.0.2",
+    "typescript": "^5.9.3"
   }
 }

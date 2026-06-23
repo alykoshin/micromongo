@@ -12,9 +12,9 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../lib/');
-var Collection = require('../lib/collection');
-var Cursor = require('../lib/cursor');
+var mm = require('../dist/');
+var Collection = require('../dist/collection');
+var Cursor = require('../dist/cursor');
 
 
 describe('# Cursor', function () {

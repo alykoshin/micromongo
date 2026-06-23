@@ -16,7 +16,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 
 
 describe('# $type query operator - mongo docs', function () {

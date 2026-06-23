@@ -16,7 +16,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var Collection = require('../lib/collection');
+var Collection = require('../dist/collection');
 
 function ids(arr) { return arr.map(function (d) { return d._id; }).sort(function (a, b) { return a - b; }); }
 

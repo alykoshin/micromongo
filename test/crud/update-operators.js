@@ -10,7 +10,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var applyUpdate = require('../../lib/crud/update');
+var applyUpdate = require('../../dist/crud/update');
 
 
 describe('# update operators', function () {

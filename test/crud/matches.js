@@ -13,7 +13,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 var matches = crud._matches;
 
 

@@ -16,8 +16,8 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../../../lib/');
-var match = require('../../../lib/crud/match');
+var mm = require('../../../dist/');
+var match = require('../../../dist/crud/match');
 
 
 describe('# registerOperator', function () {

@@ -19,7 +19,7 @@ var expect = chai.expect;
 var sinon = require('sinon');
 var _ = require('lodash');
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 
 
 describe('#delete - development', function() {

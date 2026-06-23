@@ -9,8 +9,8 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../lib/');
-var settings = require('../lib/settings');
+var mm = require('../dist/');
+var settings = require('../dist/settings');
 
 
 describe('# configure()', function () {

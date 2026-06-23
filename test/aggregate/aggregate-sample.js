@@ -14,7 +14,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../../lib/');
+var mm = require('../../dist/');
 
 var data = [ { _id: 1 }, { _id: 2 }, { _id: 3 }, { _id: 4 }, { _id: 5 } ];
 

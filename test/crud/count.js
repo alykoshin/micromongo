@@ -18,7 +18,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var mm = require('../../lib/');
+var mm = require('../../dist/');
 
 
 describe('#count - mongodb docs', function() {

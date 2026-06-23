@@ -17,7 +17,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 
 function ids(res) { return res.map(function (d) { return d._id; }); }
 

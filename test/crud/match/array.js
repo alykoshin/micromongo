@@ -11,8 +11,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var match = require('../../../lib/crud/match');
-var prepareQuery = require('../../../lib/crud/match').prepareQuery;
+var match = require('../../../dist/crud/match');
+var prepareQuery = require('../../../dist/crud/match').prepareQuery;
 
 
 describe('# array query operators', function() {

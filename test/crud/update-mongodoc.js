@@ -16,7 +16,7 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var mm = require('../../lib/');
+var mm = require('../../dist/');
 
 
 describe('# update operators - mongo docs', function () {
