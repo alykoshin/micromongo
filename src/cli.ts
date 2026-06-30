@@ -60,18 +60,18 @@ function help(): void {
 
 
 /** Apply `--load file.json:name` flags (one or many) to the registry. */
-function applyLoads(ctx: any): void {
+function applyLoads(ctx: Record<string, any>): void {
   let loads = argv.load;
   if (typeof loads === 'undefined') { return; }
   if (!Array.isArray(loads)) { loads = [ loads ]; }
-  loads.forEach(function (spec: any) {
+  loads.forEach(function (spec: string) {
     const idx = String(spec).lastIndexOf(':');
     if (idx < 0) { throw new Error('--load expects file.json:name, got: ' + spec); }
     repl.loadFile(ctx, String(spec).slice(0, idx), String(spec).slice(idx + 1));
   });
 }
 
-function printResult(value: any): void {
+function printResult(value: any): void { // value: a heterogeneous eval/script result
   if (argv.json) {
     if (typeof value !== 'undefined') { console.log(JSON.stringify(value, null, 2)); }
     return;
@@ -97,7 +97,7 @@ function main(): void {
 
   if (nonInteractive) {
     let last;
-    if (evals) { evals.forEach(function (expr: any) { last = repl.evalLine(ctx, String(expr)); }); }
+    if (evals) { evals.forEach(function (expr: string) { last = repl.evalLine(ctx, String(expr)); }); }
     if (file) { last = repl.runScript(ctx, file); }
     if (!argv.shell) { printResult(last); return; } // mongosh: only the last result prints
   }

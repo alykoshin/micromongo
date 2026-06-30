@@ -18,11 +18,13 @@
 
 'use strict';
 
-var preOperators: any = {};
-var postOperators: any = {};
-var preprocessOps: any = {};
+import type { MatchOperatorFn } from '../../types';
 
-var TABLES: any = {
+var preOperators: Record<string, MatchOperatorFn> = {};
+var postOperators: Record<string, MatchOperatorFn> = {};
+var preprocessOps: Record<string, MatchOperatorFn> = {};
+
+var TABLES: Record<string, Record<string, MatchOperatorFn>> = {
   pre: preOperators,
   post: postOperators,
   preprocess: preprocessOps,
@@ -41,7 +43,7 @@ var TABLES: any = {
  * @param fn - (doc, query, options, siblings) => boolean
  * @returns fn (for convenience/chaining)
  */
-function registerOperator(kind: 'pre' | 'post' | 'preprocess', name: string, fn: Function): Function {
+function registerOperator(kind: 'pre' | 'post' | 'preprocess', name: string, fn: MatchOperatorFn): MatchOperatorFn {
   var table = TABLES[kind];
   if (!table) {
     throw new Error("registerOperator(kind, name, fn): kind must be 'pre', 'post' or 'preprocess', got " + JSON.stringify(kind));

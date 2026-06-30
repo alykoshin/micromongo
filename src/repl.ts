@@ -21,6 +21,8 @@
 
 'use strict';
 
+import type { Document } from './types';
+
 var vm = require('vm');
 var util = require('util');
 var fs = require('fs');
@@ -29,12 +31,15 @@ var mm = require('./index');
 var Cursor = require('./cursor');
 var ObjectId = require('./utils').ObjectId;
 
+// The shell context: the bound sandbox + shell state (`dbName`, `sandbox`).
+type Ctx = Record<string, any>;
+
 
 /**
  * Build a shell context: the sandbox bound into evaluated lines + shell state.
  */
-function createContext(): any {
-  var ctx: any = {
+function createContext(): Ctx {
+  var ctx: Ctx = {
     dbName: 'micromongo',
     sandbox: null,
   };
@@ -45,9 +50,9 @@ function createContext(): any {
     ObjectId: ObjectId,
     print: function () { console.log.apply(console, arguments as any); },
     // Helpers (mongosh-ish):
-    load: function (file: any, name: any) { return loadFile(ctx, file, name); },
-    save: function (name: any, file: any) { return saveFile(name, file); },
-    show: function (what: any) { return showText(what); },
+    load: function (file: string, name: string) { return loadFile(ctx, file, name); },
+    save: function (name: string, file: string) { return saveFile(name, file); },
+    show: function (what: string) { return showText(what); },
   };
   vm.createContext(sandbox);
   ctx.sandbox = sandbox;
@@ -56,14 +61,14 @@ function createContext(): any {
 
 
 /** List collection names with doc counts (for `show collections`). */
-function collectionsList(): any {
+function collectionsList(): Document[] {
   var names = mm._registry.names();
-  return names.map(function (n: any) {
+  return names.map(function (n: string) {
     return { name: n, count: mm.collection(n).toArray().length };
   });
 }
 
-function showText(what: any): any {
+function showText(what: string): any { // value (summary rows: collections list or db list)
   if (what === 'dbs' || what === 'databases') {
     return [ { name: 'micromongo', collections: mm._registry.names().length } ];
   }
@@ -73,7 +78,7 @@ function showText(what: any): any {
 
 
 /** Load a JSON file (an array of docs) into a named collection. */
-function loadFile(ctx: any, file: any, name: any): any {
+function loadFile(ctx: Ctx, file: string, name: string): Document {
   var raw = fs.readFileSync(file, 'utf-8');
   var arr = JSON.parse(raw);
   if (!Array.isArray(arr)) { throw new Error('load(): ' + file + ' must contain a JSON array of documents'); }
@@ -82,7 +87,7 @@ function loadFile(ctx: any, file: any, name: any): any {
 }
 
 /** Save a collection back to a JSON file. */
-function saveFile(name: any, file: any): any {
+function saveFile(name: string, file: string): Document {
   var arr = mm.collection(name).toArray();
   fs.writeFileSync(file, JSON.stringify(arr, null, 2) + '\n');
   return { saved: name, count: arr.length, file: file };
@@ -93,7 +98,7 @@ function saveFile(name: any, file: any): any {
  * file is evaluated as JS with `db`/`mm`/helpers in scope; the script controls its
  * own output via print()/console.log. Returns the final expression's value.
  */
-function runScript(ctx: any, file: any): any {
+function runScript(ctx: Ctx, file: string): any { // value (final expression result)
   var code = fs.readFileSync(file, 'utf-8');
   return vm.runInContext(code, ctx.sandbox, { filename: file, timeout: 30000 });
 }
@@ -104,7 +109,7 @@ function runScript(ctx: any, file: any): any {
  * run as JS in the sandbox. Returns the result value (a Cursor is materialized).
  * Special return: the string '__EXIT__' signals the REPL to quit.
  */
-function evalLine(ctx: any, line: any): any {
+function evalLine(ctx: Ctx, line: string): any { // value (result of evaluating the line, or a sentinel string)
   var trimmed = line.trim();
   if (trimmed === '') { return undefined; }
 
@@ -128,7 +133,7 @@ function evalLine(ctx: any, line: any): any {
 }
 
 
-function helpText(): any {
+function helpText(): string {
   return [
     'micromongo shell — mongosh-flavored commands over an in-memory db.',
     '',
@@ -152,15 +157,15 @@ function helpText(): any {
 // Method/keyword lists derived by REFLECTION from the real API, so completion can
 // never drift from what the code actually exposes. Public methods = own enumerable
 // + prototype-chain function names that don't start with '_'.
-function publicMethods(target: any): any {
-  var seen: any = {};
-  var out: any[] = [];
+function publicMethods(target: any): string[] {
+  var seen: Record<string, boolean> = {};
+  var out: string[] = [];
   var obj = target;
   while (obj && obj !== Object.prototype) {
-    Object.getOwnPropertyNames(obj).forEach(function (name: any) {
+    Object.getOwnPropertyNames(obj).forEach(function (name: string) {
       if (seen[name] || name === 'constructor' || name.charAt(0) === '_') { return; }
       seen[name] = true;
-      var val;
+      var val: any; // reflected value
       try { val = obj[name]; } catch (e) { return; } // skip throwing getters
       if (typeof val === 'function') { out.push(name); }
     });
@@ -175,7 +180,7 @@ var CURSOR_METHODS = publicMethods(Cursor.prototype);
 // Top-level: the shell keywords + the public `mm` surface members (functions/objects).
 var SHELL_KEYWORDS = [ 'db.', 'show collections', 'show dbs', 'use ', 'help', 'exit', 'load(', 'save(' ];
 var TOP_LEVEL = SHELL_KEYWORDS.concat(
-  Object.keys(mm).filter(function (k: any) { return k.charAt(0) !== '_'; }).map(function (k: any) { return 'mm.' + k; })
+  Object.keys(mm).filter(function (k: string) { return k.charAt(0) !== '_'; }).map(function (k: string) { return 'mm.' + k; })
 ).sort();
 
 /**
@@ -184,19 +189,19 @@ var TOP_LEVEL = SHELL_KEYWORDS.concat(
  * top-level command keywords otherwise.
  * Returns [hits, partial] — Node's completer contract.
  */
-function completer(line: any): any {
+function completer(line: string): [string[], string] {
   // db.<coll>.<methodPartial>
   var m = /db\.([A-Za-z0-9_$]+)\.([A-Za-z0-9_$]*)$/.exec(line);
   if (m) {
     var partial = m[2];
-    var hits = COLLECTION_METHODS.filter(function (x: any) { return x.indexOf(partial) === 0; });
+    var hits = COLLECTION_METHODS.filter(function (x: string) { return x.indexOf(partial) === 0; });
     return [ hits.length ? hits : COLLECTION_METHODS, partial ];
   }
   // after a cursor: ….find(...).<methodPartial>  (heuristic: a ')' before the dot)
   var c = /\)\.([A-Za-z0-9_$]*)$/.exec(line);
   if (c) {
     var cp = c[1];
-    var chits = CURSOR_METHODS.filter(function (x: any) { return x.indexOf(cp) === 0; });
+    var chits = CURSOR_METHODS.filter(function (x: string) { return x.indexOf(cp) === 0; });
     return [ chits.length ? chits : CURSOR_METHODS, cp ];
   }
   // db.<collPartial>
@@ -204,17 +209,17 @@ function completer(line: any): any {
   if (d) {
     var cn = d[1];
     var names = mm._registry.names();
-    var nhits = names.filter(function (x: any) { return x.indexOf(cn) === 0; });
+    var nhits = names.filter(function (x: string) { return x.indexOf(cn) === 0; });
     return [ nhits.length ? nhits : names, cn ];
   }
   // top-level
-  var thits = TOP_LEVEL.filter(function (x: any) { return x.indexOf(line) === 0; });
+  var thits = TOP_LEVEL.filter(function (x: string) { return x.indexOf(line) === 0; });
   return [ thits.length ? thits : TOP_LEVEL, line ];
 }
 
 
 /** Format a result for display (mongosh-ish: pretty, depth-limited). */
-function formatResult(value: any): any {
+function formatResult(value: any): any { // value (any result: Cursor/array/Collection/string/...) → string|undefined
   if (typeof value === 'undefined') { return undefined; }
   if (typeof value === 'string') { return value; }
   // A chainable method (e.g. createIndex) returns the Collection itself — don't
@@ -232,7 +237,7 @@ function formatResult(value: any): any {
  * mongosh mini-language) and writer (cursor-aware pretty-print).
  * @param opts - { context } a pre-built ctx (e.g. with --load already applied)
  */
-function startShell(opts?: any): any {
+function startShell(opts?: Record<string, any>): any { // returns a Node repl.REPLServer (repl types not imported)
   var repl = require('repl');
   opts = opts || {};
   var ctx = opts.context || createContext();
@@ -241,9 +246,9 @@ function startShell(opts?: any): any {
     console.log('micromongo shell — type "help", "show collections", or db.<coll>.<method>(...). "exit" to quit.');
   }
 
-  var server = repl.start({
+  var server: any = repl.start({ // Node repl.REPLServer (repl types not imported)
     prompt: ctx.dbName + '> ',
-    eval: function (cmd: any, replCtx: any, filename: any, callback: any) {
+    eval: function (cmd: string, replCtx: any, filename: string, callback: (err: any, result?: any) => void) {
       try {
         var result = evalLine(ctx, cmd);
         if (result === '__EXIT__') { server.close(); return callback(null); }
@@ -252,7 +257,7 @@ function startShell(opts?: any): any {
         callback(null, '[error] ' + (e && e.message ? e.message : String(e)));
       }
     },
-    writer: function (value: any) {
+    writer: function (value: any) { // value (the result to render)
       var out = formatResult(value);
       return typeof out === 'undefined' ? '' : out;
     },

@@ -29,12 +29,15 @@
 
 'use strict';
 
+import type { Query, MatchOperatorFn } from '../../types';
+
 var registry = require('./registry');
 var helpers = require('./helpers');
 var engine = require('./engine');
 
 // Load built-in operators — each self-registers into the registry tables.
 require('./operators/logical');
+require('./operators/expr');
 require('./operators/comparison');
 require('./operators/element');
 require('./operators/evaluation');
@@ -48,7 +51,7 @@ require('./operators/preprocess');
 // operators micromongo supports — $slice, $elemMatch, and positional $ — live in
 // lib/crud/project.js. This table is kept (empty) only for the historical export
 // shape; it was dead code in the original file.
-var projectionOps: any = {};
+var projectionOps: Record<string, any> = {};
 
 
 /**
@@ -57,14 +60,14 @@ var projectionOps: any = {};
  */
 interface MatchFn {
   (doc: any, query: any): any;
-  prepareQuery: (query: any) => any;
-  preOperators: any;
-  postOperators: any;
-  preprocessOps: any;
-  projectionOps: any;
+  prepareQuery: (query: Query) => Query;
+  preOperators: Record<string, MatchOperatorFn>;
+  postOperators: Record<string, MatchOperatorFn>;
+  preprocessOps: Record<string, MatchOperatorFn>;
+  projectionOps: Record<string, any>;
   registerOperator: (kind: any, name: any, fn: any) => any;
-  _eql: (a: any, b: any) => any;
-  _arrayEqlOrElementEql: (...args: any[]) => any;
+  _eql: (a: any /* value */, b: any /* value */) => boolean;
+  _arrayEqlOrElementEql: (...args: any[]) => boolean;
 }
 
 // The default export is the callable matcher; the rest hangs off it, mirroring

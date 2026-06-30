@@ -20,7 +20,7 @@
 
 // Type rank — lower sorts first. Roughly MongoDB's bracket order for the types we
 // support: null < numbers < strings < objects < arrays < booleans < dates.
-function typeRank(v: any): number {
+function typeRank(v: any /* value */): number {
   if (v === null || typeof v === 'undefined') { return 0; }
   if (typeof v === 'number') { return 1; }
   if (typeof v === 'string') { return 2; }
@@ -36,7 +36,7 @@ function typeRank(v: any): number {
  * For same-type comparable values uses JS relational operators (so it matches the
  * scan); for different types falls back to the type rank.
  */
-function compareValues(a: any, b: any): number {
+function compareValues(a: any /* value */, b: any /* value */): number {
   var ra = typeRank(a), rb = typeRank(b);
   if (ra !== rb) { return ra < rb ? -1 : 1; }
 
@@ -58,7 +58,7 @@ function compareValues(a: any, b: any): number {
  * Compare two index KEYS. A key is either a scalar (single-field index) or an
  * array of scalars (compound index), compared lexicographically.
  */
-function compareKeys(a: any, b: any): number {
+function compareKeys(a: any /* key */, b: any /* key */): number {
   var aArr = Array.isArray(a), bArr = Array.isArray(b);
   if (aArr || bArr) {
     var ka = aArr ? a : [ a ];

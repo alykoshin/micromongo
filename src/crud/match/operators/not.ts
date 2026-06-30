@@ -16,7 +16,7 @@ var registry = require('../registry');
 var engine = require('../engine');
 
 
-registry.registerOperator('post', '$not', function (this: any, doc: any, query: any) {
+registry.registerOperator('post', '$not', function (this: any, doc: any /* value */, query: any /* value (sub-expression) */) {
   if (DEBUG) debug('$not: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   var res = ! engine.doExpr.call(this, doc, query);
   return res;

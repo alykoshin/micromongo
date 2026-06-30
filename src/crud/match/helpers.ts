@@ -13,8 +13,9 @@
 
 'use strict';
 
-var assert = require('assert');
-var _ = require('lodash');
+var assert = require('../../assert');
+
+import type { Document } from '../../types';
 
 var dbg = require('./debug');
 var DEBUG = dbg.DEBUG;
@@ -23,7 +24,7 @@ var debug = dbg.debug;
 var geo = require('../geo');
 
 
-function xor(a: any, b: any): any {
+function xor(a: any /* flag */, b: any /* flag */): any /* truthy result of the flags */ {
   return ( a || b ) && !( a && b );
 }
 
@@ -41,7 +42,7 @@ function xor(a: any, b: any): any {
  * @param [options.regex]   - allow regex in query
  * @private
  */
-function _contains(target: any, source: any, options: any): boolean {
+function _contains(target: any /* value */, source: any /* value */, options: Record<string, any>): boolean {
   if (DEBUG) debug('_contains(): target: ' + JSON.stringify(target) + ', source: ' + JSON.stringify(source) + ', options: ' + JSON.stringify(options));
   assert(xor(options.any, options.all), 'options any and all are mutually exclusive');
 
@@ -93,7 +94,7 @@ function _contains(target: any, source: any, options: any): boolean {
  * or equals if scalar
  * @private
  */
-function _containsAllDeep(target: any, source: any, options: any): any {
+function _containsAllDeep(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   options.all  = true;
   if (DEBUG) debug('_containsAllDeep: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source));
@@ -105,7 +106,7 @@ function _containsAllDeep(target: any, source: any, options: any): any {
  * or equals if scalar
  * @private
  */
-function _containsAnyDeep(target: any, source: any, options: any): any {
+function _containsAnyDeep(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   options.any  = true;
   if (DEBUG) debug('_containsAnyDeep: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source));
@@ -115,14 +116,14 @@ function _containsAnyDeep(target: any, source: any, options: any): any {
 /**
  * Deep compare.
  */
-function _eql(target: any, source: any, options: any): any {
+function _eql(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_eql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source));
   return _containsAllDeep(target, source, { sameOrder: options.sameOrder }) && _containsAllDeep(source, target, { sameOrder: options.sameOrder });
 }
 
 
-function _arrayEql(target: any, source: any, options: any): any {
+function _arrayEql(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -131,7 +132,7 @@ function _arrayEql(target: any, source: any, options: any): any {
   return _eql(target, source, options); // arrays are equal
 }
 
-function _arrayElementEql(target: any, source: any, options: any): any {
+function _arrayElementEql(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEqlOrElementEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -144,7 +145,7 @@ function _arrayElementEql(target: any, source: any, options: any): any {
   return false;
 }
 
-function _arrayEqlOrElementEql(target: any, source: any, options: any): any {
+function _arrayEqlOrElementEql(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEqlOrElementEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -152,7 +153,7 @@ function _arrayEqlOrElementEql(target: any, source: any, options: any): any {
 }
 
 
-function _arrayContainsAll(target: any, source: any, options: any): any {
+function _arrayContainsAll(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -161,7 +162,7 @@ function _arrayContainsAll(target: any, source: any, options: any): any {
   return _containsAllDeep(target, source, options); // arrays are equal
 }
 
-function _arrayElementContainsAll(target: any, source: any, options: any): any {
+function _arrayElementContainsAll(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEqlOrElementEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -174,7 +175,7 @@ function _arrayElementContainsAll(target: any, source: any, options: any): any {
   return false;
 }
 
-function _arrayOrElementContainsAll(target: any, source: any, options: any): any {
+function _arrayOrElementContainsAll(target: any /* value */, source: any /* value */, options?: Record<string, any>): boolean {
   options = options || {};
   if (DEBUG) debug('_arrayEqlOrElementEql: target: '+JSON.stringify(target)+', source: '+JSON.stringify(source)+', options: '+JSON.stringify(options));
 
@@ -231,7 +232,7 @@ function _bitsMatch(doc: any, operand: number | number[], mode: 'allSet' | 'anyS
  * Is point `pt` within a GeoJSON Polygon / MultiPolygon `geometry`?
  * Uses the outer ring(s); inner rings (holes) are not modeled.
  */
-function _geoWithinGeometry(pt: any, geometry: any): any {
+function _geoWithinGeometry(pt: any /* value (point) */, geometry: Document): boolean {
   if (!geometry || typeof geometry !== 'object') { return false; }
   if (geometry.type === 'Polygon') {
     return geo.pointInPolygon(pt, geometry.coordinates[0]); // outer ring
@@ -255,7 +256,7 @@ function _geoWithinGeometry(pt: any, geometry: any): any {
  * @param siblings  the full operator object, carrying $maxDistance/$minDistance for the legacy form
  * @param kind  legacy distance metric
  */
-function _near(doc: any, operand: any, siblings: any, kind: 'planar' | 'spherical'): boolean {
+function _near(doc: any /* value (point) */, operand: any /* value */, siblings: Document, kind: 'planar' | 'spherical'): boolean {
   var pt = geo.asPoint(doc);
   if (!pt) { return false; }
   siblings = siblings || {};

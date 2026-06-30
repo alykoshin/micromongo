@@ -21,13 +21,17 @@
 'use strict';
 
 //var assert = require('assert');
-var _ = require('lodash');
-var util = require('util');
-var deepAssign = require('mini-deep-assign');
+var get = require('lodash/get');
+var set = require('lodash/set');
+var unset = require('lodash/unset');
+
+var cloneDeep = require('lodash/cloneDeep');
 
 var settings = require('../settings');
 var match = require('./match');
 var textSearch = require('./text');
+
+import type { Document, Query, Projection } from '../types';
 
 /**
  * If true, handle _id similar to Mongodb,
@@ -39,15 +43,15 @@ var textSearch = require('./text');
 function idProjectionMongo(): boolean { return settings.idProjectionMongo; }
 
 
-var includeField = function(source: any, target: any, path: string): void {
-  var value = _.get(source, path);  // get value at path
-  value = deepAssign({}, value);       // make full copy
-  _.set(target, path, value);
+var includeField = function(source: Document, target: Document, path: string): void {
+  var value = get(source, path);  // get value at path
+  value = cloneDeep(value);       // make full copy
+  set(target, path, value);
 };
 
 
-var excludeField = function(source: any, target: any, path: string): void {
-  _.unset(target, path);
+var excludeField = function(source: Document, target: Document, path: string): void {
+  unset(target, path);
 };
 
 
@@ -57,7 +61,7 @@ var excludeField = function(source: any, target: any, path: string): void {
  * participate in inclusion/exclusion mode detection.
  * @returns the operator name, or null if `value` is a plain projection
  */
-var _projectionOperator = function(value: any): string | null {
+var _projectionOperator = function(value: any): string | null { // value (a projection field value)
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     for (var k in value) { if (value.hasOwnProperty(k)) {
       if (k === '$slice' || k === '$elemMatch' || k === '$' || k === '$meta') { return k; }
@@ -72,8 +76,8 @@ var _projectionOperator = function(value: any): string | null {
  * count: positive => first n, negative => last n.
  * [skip, limit]: skip (neg = from end) then take limit.
  */
-var _applySlice = function(target: any, path: string, spec: any): void {
-  var arr = _.get(target, path);
+var _applySlice = function(target: Document, path: string, spec: any): void { // spec: $slice operand value
+  var arr = get(target, path);
   if (!Array.isArray(arr)) { return; } // $slice on a non-array field is a no-op
   var result;
   if (typeof spec === 'number') {
@@ -85,7 +89,7 @@ var _applySlice = function(target: any, path: string, spec: any): void {
   } else {
     throw new Error('Invalid $slice projection value: ' + JSON.stringify(spec));
   }
-  _.set(target, path, result);
+  set(target, path, result);
 };
 
 
@@ -94,17 +98,17 @@ var _applySlice = function(target: any, path: string, spec: any): void {
  * (from `source`) matching `condition`. If no element matches, the field is
  * removed from `target` (Mongo omits it entirely).
  */
-var _applyElemMatch = function(source: any, target: any, path: string, condition: any): void {
-  var arr = _.get(source, path);
-  if (!Array.isArray(arr)) { _.unset(target, path); return; }
+var _applyElemMatch = function(source: Document, target: Document, path: string, condition: any): void { // condition: query operand value
+  var arr = get(source, path);
+  if (!Array.isArray(arr)) { unset(target, path); return; }
   var preparedQuery = match.prepareQuery({ _v: condition });
   for (var i = 0; i < arr.length; ++i) {
     if (match({ _v: arr[i] }, preparedQuery)) {
-      _.set(target, path, [ deepAssign({}, arr[i]) ]); // single-element array, deep copy
+      set(target, path, [ cloneDeep(arr[i]) ]); // single-element array, deep copy
       return;
     }
   }
-  _.unset(target, path); // no match => field omitted
+  unset(target, path); // no match => field omitted
 };
 
 
@@ -114,11 +118,11 @@ var _applyElemMatch = function(source: any, target: any, path: string, condition
  * field. Requires the originating query. The condition on `field` in the query is
  * reused to pick the element.
  */
-var _applyPositional = function(source: any, target: any, fieldDollarPath: string, query: any): void {
+var _applyPositional = function(source: Document, target: Document, fieldDollarPath: string, query?: Query): void {
   // fieldDollarPath is e.g. 'grades.$' — the array field is everything before '.$'.
   var field = fieldDollarPath.replace(/\.\$$/, '');
-  var arr = _.get(source, field);
-  if (!Array.isArray(arr)) { _.unset(target, field); return; }
+  var arr = get(source, field);
+  if (!Array.isArray(arr)) { unset(target, field); return; }
   if (!query || typeof query !== 'object' || !(field in query)) {
     throw new Error('Positional $ projection requires the array field (\'' + field + '\') in the query');
   }
@@ -126,15 +130,15 @@ var _applyPositional = function(source: any, target: any, fieldDollarPath: strin
   var preparedQuery = match.prepareQuery({ _v: condition });
   for (var i = 0; i < arr.length; ++i) {
     if (match({ _v: arr[i] }, preparedQuery)) {
-      _.set(target, field, [ deepAssign({}, arr[i]) ]);
+      set(target, field, [ cloneDeep(arr[i]) ]);
       return;
     }
   }
-  _.unset(target, field);
+  unset(target, field);
 };
 
 
-var _validateProjectionValue = function(projectionValue: any): void {
+var _validateProjectionValue = function(projectionValue: any): void { // value (a projection field value)
   var allowedProjectionValues = [ false, true, 0, 1 ];
   if (allowedProjectionValues.indexOf(projectionValue) < 0) {
     throw new Error('Values for projection musty be [' + allowedProjectionValues.join(', ') + '], found: '+JSON.stringify(projectionValue));
@@ -142,7 +146,7 @@ var _validateProjectionValue = function(projectionValue: any): void {
 };
 
 
-var _projectionModeByValue = function(value: any): 'inclusion' | 'exclusion' {
+var _projectionModeByValue = function(value: any): 'inclusion' | 'exclusion' { // value (a projection field value)
   return value ? 'inclusion' : 'exclusion';
 };
 
@@ -158,7 +162,7 @@ var _projectionModeByValue = function(value: any): 'inclusion' | 'exclusion' {
  * @returns exclusion mode (return all the fields except listed),
  *          or inclusion (return only listed fields)
  */
-var projectionMode = function(projection: any): 'inclusion' | 'exclusion' {
+var projectionMode = function(projection: Projection): 'inclusion' | 'exclusion' {
 
   for (var path in projection) { if (projection.hasOwnProperty(path)) {
 
@@ -177,13 +181,14 @@ var projectionMode = function(projection: any): 'inclusion' | 'exclusion' {
 };
 
 
-var initDoc = function(source: any, target: any, mode: 'inclusion' | 'exclusion'): any {
+var initDoc = function(source: Document, target: Document, mode: 'inclusion' | 'exclusion'): Document {
   target = target || {};
   //var target;
   if (mode === 'exclusion') {        // exclusion mode
-    //target = deepAssign({}, source); // make full deep copy
-    //deepAssign(target, source); // make full deep copy
-    deepAssign(target, source); // make full deep copy
+    // Full deep copy of source into the (empty) target, in place: cloneDeep makes
+    // fresh nested objects/Dates/RegExps, Object.assign copies the top-level keys
+    // into the caller's `target` reference (mutate-in-place, like the old deepAssign).
+    Object.assign(target, cloneDeep(source));
 
   } else {
     //target = {};
@@ -195,7 +200,7 @@ var initDoc = function(source: any, target: any, mode: 'inclusion' | 'exclusion'
 };
 
 
-var validateProjection = function(mode: any, path: string, projectionValue: any): any {
+var validateProjection = function(mode: any, path: string, projectionValue: any): 'inclusion' | 'exclusion' { // mode may be null; projectionValue is a value
   _validateProjectionValue(projectionValue);
   // check projection mode
   if (idProjectionMongo() && path === '_id') {
@@ -224,7 +229,7 @@ var validateProjection = function(mode: any, path: string, projectionValue: any)
  * - in exclusion mode target must be deep copy of source
  * - in inclusion mode target must initially be empty
  */
-var projectIncludeExclude = function(source: any, target: any, path: string, projection: any): void {
+var projectIncludeExclude = function(source: Document, target: Document, path: string, projection: any): void { // projection: the per-field projection value
   if (!projection) {
     excludeField(source, target, path);
 
@@ -242,24 +247,24 @@ var projectIncludeExclude = function(source: any, target: any, path: string, pro
  * `var`-bound function expression) gives a precise `.d.ts` for `export =`.
  */
 interface ProjectFn {
-  (source: any, projection: any, query?: any): any;
-  _includeField: (source: any, target: any, path: string) => void;
-  _excludeField: (source: any, target: any, path: string) => void;
-  _projectionMode: (projection: any) => 'inclusion' | 'exclusion';
-  _initDoc: (source: any, target: any, mode: 'inclusion' | 'exclusion') => any;
-  _validateProjection: (mode: any, path: string, projectionValue: any) => any;
-  _projectIncludeExclude: (source: any, target: any, path: string, projection: any) => void;
+  (source: Document, projection: Projection, query?: Query): Document;
+  _includeField: (source: Document, target: Document, path: string) => void;
+  _excludeField: (source: Document, target: Document, path: string) => void;
+  _projectionMode: (projection: Projection) => 'inclusion' | 'exclusion';
+  _initDoc: (source: Document, target: Document, mode: 'inclusion' | 'exclusion') => Document;
+  _validateProjection: (mode: any, path: string, projectionValue: any) => 'inclusion' | 'exclusion';
+  _projectIncludeExclude: (source: Document, target: Document, path: string, projection: any) => void;
 }
 
-var project = (function(source: any, projection: any, query?: any): any {
+var project = (function(source: Document, projection: Projection, query?: Query): Document {
   var mode = projectionMode(projection);
   //var mode = null;
-  var target: any = {};
+  var target: Document = {};
   //var target = initDoc(source, target, mode);
   initDoc(source, target, mode);
 
-  var operatorFields: any[] = []; // applied after inclusion/exclusion
-  var positionalFields: any[] = []; // 'field.$' projections, applied with the query
+  var operatorFields: any[] = []; // applied after inclusion/exclusion (heterogeneous { path, op, spec } records)
+  var positionalFields: string[] = []; // 'field.$' projection paths, applied with the query
 
   // iterate through projection properties
   for (var path in projection) { if (projection.hasOwnProperty(path)) {
@@ -277,7 +282,7 @@ var project = (function(source: any, projection: any, query?: any): any {
       // exclusion mode the full copy already has it). $elemMatch builds its own
       // result from `source`, so don't pre-copy.
       if (op === '$slice' && mode === 'inclusion') { includeField(source, target, path); }
-      operatorFields.push({ path: path, op: op, spec: projection[path][op] });
+      operatorFields.push({ path: path, op: op, spec: (projection[path] as { [op: string]: any })[op] });
       continue;
     }
 
@@ -299,7 +304,7 @@ var project = (function(source: any, projection: any, query?: any): any {
       // this document (NaN/undefined if there was no $text query in the operation).
       if (f.spec === 'textScore') {
         var score = textSearch.getScore(source);
-        _.set(target, f.path, typeof score === 'undefined' ? null : score);
+        set(target, f.path, typeof score === 'undefined' ? null : score);
       } else {
         throw new Error('$meta: only "textScore" is supported (got ' + JSON.stringify(f.spec) + ')');
       }

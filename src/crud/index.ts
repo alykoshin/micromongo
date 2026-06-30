@@ -5,8 +5,10 @@
 'use strict';
 
 //var assert = require('assert');
-var _ = require('lodash');
-var deepAssign = require('mini-deep-assign');
+var get = require('lodash/get');
+var isEqual = require('lodash/isEqual');
+
+var cloneDeep = require('lodash/cloneDeep');
 
 //var debug = function(/*arguments*/) {
   //console.log.apply(this, arguments);
@@ -15,6 +17,13 @@ var deepAssign = require('mini-deep-assign');
 var match = require('./match');
 var project = require('./project');
 var applyUpdate = require('./update');
+var settings = require('../settings');   // live read: settings.autoId at call time
+
+import type {
+  Doc, Document, Query, UpdateSpec, Projection,
+  InsertOneReport, InsertManyReport, DeleteReport, RemoveReport,
+  BulkWriteOperation, BulkWriteResult,
+} from '../types';
 
 
 /**
@@ -31,7 +40,7 @@ var applyUpdate = require('./update');
  * @param  array
  * @param query
  */
-function* matches(array: any[], query: any): any {
+function* matches(array: Doc[], query: Query): any {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   query = match.prepareQuery(query);
   for (var len=array.length, i=0; i<len; ++i) {
@@ -43,21 +52,21 @@ function* matches(array: any[], query: any): any {
 }
 
 
-var count = function(array: any, query: any, options?: any): number {
+var count = function(array: Doc[], query: Query, options?: Record<string, any>): number {
   var res = 0;
   for (var _m of matches(array, query)) { res++; } // eslint-disable-line no-unused-vars
   return res;
 };
 
 
-var copyTo = function(array: any, target: any): number {
+var copyTo = function(array: Doc[], target: Doc[]): number {
   if (!Array.isArray(array) || !Array.isArray(target)) { throw new TypeError('Arrays expected as both parameters'); }
 
   var copiedCount = 0;
   //target.length = 0; // do not clear the target array
   for (var len=array.length, i=0; i<len; ++i) {
     var s = array[i];
-    var t = deepAssign({}, s);
+    var t = cloneDeep(s);
     target.push(t);
     copiedCount++;
   }
@@ -65,7 +74,7 @@ var copyTo = function(array: any, target: any): number {
 };
 
 
-var findOne = function(array: any, query: any, projection?: any): any {
+var findOne = function(array: Doc[], query: Query, projection?: Projection): Doc | null {
   for (var m of matches(array, query)) { // lazy: generator stops after the first match
     return project(m.doc, projection, query);
   }
@@ -73,8 +82,8 @@ var findOne = function(array: any, query: any, projection?: any): any {
 };
 
 
-var find = function(array: any, query: any, projection?: any): any {
-  var res: any[] = [];
+var find = function(array: Doc[], query: Query, projection?: Projection): Doc[] {
+  var res: Doc[] = [];
   for (var m of matches(array, query)) {
     res.push( project(m.doc, projection, query) );
   }
@@ -87,46 +96,52 @@ var find = function(array: any, query: any, projection?: any): any {
  * `query`. Array-valued fields are flattened (each element is a distinct value),
  * matching MongoDB. Values are deduped by deep equality. Dotted paths supported.
  */
-var distinct = function(array: any, field: any, query: any): any {
+var distinct = function(array: Doc[], field: string, query: Query): any[] {
   if (typeof field !== 'string') { throw new TypeError('distinct: field must be a string'); }
-  var values: any[] = [];
-  var add = function(v: any) {
+  var values: any[] = []; // genuine values
+  var add = function(v: any) { // value
     if (typeof v === 'undefined') { return; }
-    for (var i = 0; i < values.length; ++i) { if (_.isEqual(values[i], v)) { return; } }
+    for (var i = 0; i < values.length; ++i) { if (isEqual(values[i], v)) { return; } }
     values.push(v);
   };
   for (var m of matches(array, query)) {
-    var v = _.get(m.doc, field);
+    var v = get(m.doc, field);
     if (Array.isArray(v)) { v.forEach(add); } else { add(v); }
   }
   return values;
 };
 
 
-var deleteOne = function(array: any, query: any): any {
+var deleteOne = function(array: Doc[], query: Query): DeleteReport {
   for (var m of matches(array, query)) { // lazy: stop at first match
     array.splice(m.i, 1);
-    return { deletedCount: 1 };
+    return { acknowledged: true, deletedCount: 1 };
   }
-  return { deletedCount: 0 };
+  return { acknowledged: true, deletedCount: 0 };
 };
 
 
-var deleteMany = function(array: any, query: any): any {
+var deleteMany = function(array: Doc[], query: Query): DeleteReport {
   // Collect matching indices forward, then splice back-to-front so earlier
   // splices don't shift the indices of later ones.
-  var indices: any[] = [];
+  var indices: number[] = [];
   for (var m of matches(array, query)) {
     indices.push(m.i);
   }
   for (var j = indices.length - 1; j >= 0; --j) {
     array.splice(indices[j], 1);
   }
-  return { deletedCount: indices.length };
+  return { acknowledged: true, deletedCount: indices.length };
 };
 
 
-var remove = function(array: any, query: any, options?: any): any {
+/**
+ * @deprecated Legacy alias for delete (the MongoDB driver dropped `remove()` in
+ * v4). Returns the legacy `{ nRemoved }` shape, NOT a driver `DeleteResult`. Use
+ * `deleteOne`/`deleteMany` (which return `{ acknowledged, deletedCount }`)
+ * instead. Scheduled for removal in v1.0.
+ */
+var remove = function(array: Doc[], query: Query, options?: any): RemoveReport {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   if (typeof options === 'boolean') {
     options = { justOne: options };
@@ -140,38 +155,42 @@ var remove = function(array: any, query: any, options?: any): any {
 };
 
 
-var insertOne = function(array: any, source: any, options?: any): any {
+var insertOne = function(array: Doc[], source: Document, options?: Record<string, any>): InsertOneReport {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
-  var nInserted = 0;
-  array.push(deepAssign({}, source));
-  nInserted++;
-  return { nInserted: nInserted };
+  var doc = cloneDeep(source);
+  array.push(doc);
+  // By default micromongo does NOT auto-generate _id (reads stay non-mutating), so
+  // insertedId is the doc's own _id, or undefined if it had none. With the `autoId`
+  // setting on (mm.configure({ autoId: true })), an absent _id is generated here —
+  // matching MongoDB, which always assigns one.
+  maybeGenerateId(doc);
+  return { acknowledged: true, insertedId: doc._id, insertedCount: 1 };
 };
 
 
-var insertMany = function(array: any, source: any, options?: any): any {
+var insertMany = function(array: Doc[], source: Document[], options?: Record<string, any>): InsertManyReport {
   if (!Array.isArray(array) || !Array.isArray(source)) { throw new TypeError('Arrays expected as both parameters'); }
   options = options || {};
   options.ordered = typeof options.ordered === 'undefined' ? true : options.ordered;
-  var nInserted = 0;
+  var insertedCount = 0;
+  var insertedIds: { [index: number]: any } = {}; // index → inserted doc's _id (driver shape)
   for (var len=source.length, i=0; i<len; ++i) {
     try {
-      //var doc = source[ i ];
-      //array.push(deepAssign({}, doc));
       var res = insertOne(array, source[i], options);
-      nInserted += res.nInserted;
+      insertedIds[insertedCount] = res.insertedId;
+      insertedCount += res.insertedCount;
     } catch(e) {
       //if (options.ordered) {
       throw e;
       //}
     }
   }
-  return { nInserted: nInserted };
+  return { acknowledged: true, insertedCount: insertedCount, insertedIds: insertedIds };
 };
 
 
-var insert = function(array: any, source: any, options?: any): any {
+var insert = function(array: Doc[], source: Document | Document[], options?: Record<string, any>): InsertOneReport | InsertManyReport {
   return Array.isArray(source) ? insertMany(array, source, options)
     : insertOne(array, source, options);
 };
@@ -185,25 +204,33 @@ var insert = function(array: any, source: any, options?: any): any {
 // (built from the query's equality fields + the update) and the report also
 // carries { upsertedId, upsertedCount }.
 
-// Monotonic fallback _id for an upsert insert that doesn't specify one. The
-// ObjectId stub (lib/utils) is identity, so we just need a unique-ish token;
-// the -mongodoc.js examples all supply an explicit _id, so they don't rely on it.
-var _upsertSeq = 0;
-function generateId(): any {
-  _upsertSeq++;
-  return 'mm_' + Date.now().toString(16) + '_' + _upsertSeq.toString(16);
+// Monotonic fallback _id token. The ObjectId stub (lib/utils) is identity, so we
+// just need a unique-ish value; the -mongodoc.js examples all supply an explicit
+// _id, so they don't rely on its format.
+var _idSeq = 0;
+function generateId(): any { // value (an _id token)
+  _idSeq++;
+  return 'mm_' + Date.now().toString(16) + '_' + _idSeq.toString(16);
+}
+
+// Mongo-style _id generation, gated on the `autoId` setting (default off): when
+// on, stamp an `_id` onto `doc` if it has none. Returns `doc._id` either way.
+// Shared by insert* and upsert so they follow one agreement.
+function maybeGenerateId(doc: Document): any { // value (the doc's _id, possibly just generated)
+  if (settings.autoId && typeof doc._id === 'undefined') { doc._id = generateId(); }
+  return doc._id;
 }
 
 // Build + insert the upsert document; return the upsert half of the report.
-function doUpsert(array: any, query: any, update: any): any {
+function doUpsert(array: Doc[], query: Query, update: UpdateSpec): any { // report
   var doc = applyUpdate.buildUpsertDoc(query, update);
-  if (typeof doc._id === 'undefined') { doc._id = generateId(); }
+  maybeGenerateId(doc); // honors `autoId` (default off ⇒ _id left undefined if none)
   array.push(doc);
   return { upsertedId: doc._id, upsertedCount: 1 };
 }
 
 
-var updateOne = function(array: any, query: any, update: any, options?: any): any {
+var updateOne = function(array: Doc[], query: Query, update: UpdateSpec, options?: Record<string, any>): any { // report
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
   // `update` must be an operator document; a replacement doc belongs to replaceOne.
@@ -213,10 +240,11 @@ var updateOne = function(array: any, query: any, update: any, options?: any): an
   var matchedCount = 0, modifiedCount = 0;
   for (var m of matches(array, query)) { // lazy: first match only
     matchedCount = 1;
-    if (applyUpdate(m.doc, update, options)) { modifiedCount = 1; }
+    // Pass the query so a positional `$` in the update binds to the matched element.
+    if (applyUpdate(m.doc, update, { arrayFilters: options.arrayFilters, query: query })) { modifiedCount = 1; }
     break;
   }
-  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount };
+  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
   if (matchedCount === 0 && options.upsert) {
     var up = doUpsert(array, query, update);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -225,20 +253,21 @@ var updateOne = function(array: any, query: any, update: any, options?: any): an
 };
 
 
-var updateMany = function(array: any, query: any, update: any, options?: any): any {
+var updateMany = function(array: Doc[], query: Query, update: UpdateSpec, options?: Record<string, any>): any { // report
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
   if (!applyUpdate.hasOperators(update)) {
     throw new Error('updateMany requires an update document with operators ($set, …)');
   }
   // Snapshot matching docs first; the update never changes array membership.
-  var docs: any[] = [];
+  var docs: Doc[] = [];
   for (var m of matches(array, query)) { docs.push(m.doc); }
   var modifiedCount = 0;
   for (var i = 0; i < docs.length; ++i) {
-    if (applyUpdate(docs[i], update, options)) { modifiedCount++; }
+    // Per-doc positional `$`: resolvePositional binds to each doc's own matched element.
+    if (applyUpdate(docs[i], update, { arrayFilters: options.arrayFilters, query: query })) { modifiedCount++; }
   }
-  var report: any = { acknowledged: true, matchedCount: docs.length, modifiedCount: modifiedCount };
+  var report: any = { acknowledged: true, matchedCount: docs.length, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
   if (docs.length === 0 && options.upsert) {
     var up = doUpsert(array, query, update);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -247,7 +276,7 @@ var updateMany = function(array: any, query: any, update: any, options?: any): a
 };
 
 
-var replaceOne = function(array: any, query: any, replacement: any, options?: any): any {
+var replaceOne = function(array: Doc[], query: Query, replacement: Document, options?: Record<string, any>): any { // report
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
   if (applyUpdate.hasOperators(replacement)) {
@@ -256,12 +285,12 @@ var replaceOne = function(array: any, query: any, replacement: any, options?: an
   var matchedCount = 0, modifiedCount = 0;
   for (var m of matches(array, query)) { // lazy: first match only
     matchedCount = 1;
-    var copy = deepAssign({}, replacement);
-    if (!_.isEqual(array[m.i], copy)) { modifiedCount = 1; }
+    var copy = cloneDeep(replacement);
+    if (!isEqual(array[m.i], copy)) { modifiedCount = 1; }
     array[m.i] = copy; // replace whole document in place, preserving position
     break;
   }
-  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount };
+  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
   if (matchedCount === 0 && options.upsert) {
     var up = doUpsert(array, query, replacement);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -275,12 +304,12 @@ var replaceOne = function(array: any, query: any, replacement: any, options?: an
 // Thin wrappers that return the affected document. By default Mongo returns the
 // document as it was *before* the modification; we follow that default.
 
-var findOneAndUpdate = function(array: any, query: any, update: any, options?: any): any {
+var findOneAndUpdate = function(array: Doc[], query: Query, update: UpdateSpec, options?: Record<string, any>): Doc | null {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
   for (var m of matches(array, query)) {
-    var before = deepAssign({}, m.doc);
-    applyUpdate(m.doc, update, options);
+    var before = cloneDeep(m.doc);
+    applyUpdate(m.doc, update, { arrayFilters: options.arrayFilters, query: query });
     return before; // Mongo default: return the document as it was before
   }
   if (options.upsert) { doUpsert(array, query, update); } // inserted; no before-doc
@@ -288,7 +317,7 @@ var findOneAndUpdate = function(array: any, query: any, update: any, options?: a
 };
 
 
-var findOneAndReplace = function(array: any, query: any, replacement: any, options?: any): any {
+var findOneAndReplace = function(array: Doc[], query: Query, replacement: Document, options?: Record<string, any>): Doc | null {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   options = options || {};
   if (applyUpdate.hasOperators(replacement)) {
@@ -296,7 +325,7 @@ var findOneAndReplace = function(array: any, query: any, replacement: any, optio
   }
   for (var m of matches(array, query)) {
     var before = array[m.i];
-    array[m.i] = deepAssign({}, replacement);
+    array[m.i] = cloneDeep(replacement);
     return before;
   }
   if (options.upsert) { doUpsert(array, query, replacement); } // inserted; no before-doc
@@ -304,7 +333,7 @@ var findOneAndReplace = function(array: any, query: any, replacement: any, optio
 };
 
 
-var findOneAndDelete = function(array: any, query: any): any {
+var findOneAndDelete = function(array: Doc[], query: Query): Doc | null {
   if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
   for (var m of matches(array, query)) {
     var doc = array[m.i];
@@ -312,6 +341,105 @@ var findOneAndDelete = function(array: any, query: any): any {
     return doc;
   }
   return null;
+};
+
+
+// --- bulkWrite -------------------------------------------------------------
+//
+// Execute a batch of heterogeneous writes against `array` in one call, returning
+// an aggregated driver-shaped BulkWriteResult. Each operation delegates to the
+// matching single-write method (insertOne/updateOne/updateMany/deleteOne/
+// deleteMany/replaceOne) — bulkWrite is purely batching + result aggregation, it
+// re-uses the existing write semantics (incl. positional `$`, upsert, arrayFilters).
+//
+// ordered (default true): operations run in order and STOP at the first error
+// (preceding writes persist). ordered:false: every operation is attempted and
+// per-operation errors are collected into `writeErrors` (index + errmsg) instead
+// of throwing. The aggregated counts always reflect the operations that succeeded.
+//
+// See https://www.mongodb.com/docs/manual/reference/method/db.collection.bulkWrite/ .
+
+// The six bulkWrite operation kinds, each with a single key.
+var BULK_OPS: Record<string, true> = {
+  insertOne: true, updateOne: true, updateMany: true,
+  deleteOne: true, deleteMany: true, replaceOne: true,
+};
+
+function applyBulkOp(array: Doc[], kind: string, spec: any /* one of the BulkWriteOperation value bags */, result: BulkWriteResult, opIndex: number): void {
+  // `rep`'s concrete shape varies by the dispatched write (dynamic) — honestly `any`.
+  var rep: any;
+  switch (kind) {
+    case 'insertOne': {
+      rep = insertOne(array, spec.document);
+      result.insertedIds[opIndex] = rep.insertedId;
+      result.insertedCount += rep.insertedCount;
+      break;
+    }
+    case 'updateOne':
+    case 'updateMany': {
+      var uopts = { upsert: !!spec.upsert, arrayFilters: spec.arrayFilters };
+      rep = (kind === 'updateOne')
+        ? updateOne(array, spec.filter, spec.update, uopts)
+        : updateMany(array, spec.filter, spec.update, uopts);
+      result.matchedCount += rep.matchedCount;
+      result.modifiedCount += rep.modifiedCount;
+      if (rep.upsertedCount) { result.upsertedCount += rep.upsertedCount; result.upsertedIds[opIndex] = rep.upsertedId; }
+      break;
+    }
+    case 'replaceOne': {
+      rep = replaceOne(array, spec.filter, spec.replacement, { upsert: !!spec.upsert });
+      result.matchedCount += rep.matchedCount;
+      result.modifiedCount += rep.modifiedCount;
+      if (rep.upsertedCount) { result.upsertedCount += rep.upsertedCount; result.upsertedIds[opIndex] = rep.upsertedId; }
+      break;
+    }
+    case 'deleteOne': {
+      rep = deleteOne(array, spec.filter);
+      result.deletedCount += rep.deletedCount;
+      break;
+    }
+    case 'deleteMany': {
+      rep = deleteMany(array, spec.filter);
+      result.deletedCount += rep.deletedCount;
+      break;
+    }
+  }
+}
+
+var bulkWrite = function(array: Doc[], operations: BulkWriteOperation[], options?: Record<string, any>): BulkWriteResult {
+  if (!Array.isArray(array)) { throw new TypeError('Array expected as first parameter'); }
+  if (!Array.isArray(operations)) { throw new TypeError('bulkWrite expects an array of operations'); }
+  options = options || {};
+  var ordered = typeof options.ordered === 'undefined' ? true : options.ordered;
+
+  var result: BulkWriteResult = {
+    acknowledged: true,
+    insertedCount: 0, matchedCount: 0, modifiedCount: 0, deletedCount: 0, upsertedCount: 0,
+    insertedIds: {}, upsertedIds: {},
+  };
+  var writeErrors: { index: number; errmsg: string }[] = [];
+
+  for (var i = 0; i < operations.length; ++i) {
+    var op = operations[i];
+    if (op === null || typeof op !== 'object') {
+      throw new TypeError('bulkWrite operation ' + i + ' must be an object like { insertOne: { … } }');
+    }
+    var keys = Object.keys(op);
+    if (keys.length !== 1 || !BULK_OPS[keys[0]]) {
+      throw new Error('bulkWrite operation ' + i + ' must have exactly one of ' +
+        Object.keys(BULK_OPS).join('/') + ' (got: ' + keys.join(', ') + ')');
+    }
+    var kind = keys[0];
+    try {
+      applyBulkOp(array, kind, (op as Record<string, any>)[kind], result, i);
+    } catch (e) {
+      if (ordered) { throw e; }        // fail-fast: preceding writes persist, rest skipped
+      writeErrors.push({ index: i, errmsg: (e && (e as any).message) || String(e) });
+    }
+  }
+
+  if (writeErrors.length) { result.writeErrors = writeErrors; } // only present for unordered partial failures
+  return result;
 };
 
 
@@ -343,4 +471,6 @@ export = {
   findOneAndUpdate: findOneAndUpdate,
   findOneAndReplace: findOneAndReplace,
   findOneAndDelete: findOneAndDelete,
+
+  bulkWrite: bulkWrite,
 };

@@ -36,20 +36,23 @@
 
 'use strict';
 
-var _ = require('lodash');
+var deburr = require('lodash/deburr');
+
 var settings = require('../settings');
+
+import type { Document } from '../types';
 
 
 // --- vendored Porter stemmer (classic English algorithm; no dependency) -------
 // Compact implementation of the Porter (1980) stemming algorithm.
 
-var step2list: any = {
+var step2list: {[suffix: string]: string} = {
   ational: 'ate', tional: 'tion', enci: 'ence', anci: 'ance', izer: 'ize',
   bli: 'ble', alli: 'al', entli: 'ent', eli: 'e', ousli: 'ous', ization: 'ize',
   ation: 'ate', ator: 'ate', alism: 'al', iveness: 'ive', fulness: 'ful',
   ousness: 'ous', aliti: 'al', iviti: 'ive', biliti: 'ble', logi: 'log',
 };
-var step3list: any = {
+var step3list: {[suffix: string]: string} = {
   icate: 'ic', ative: '', alize: 'al', iciti: 'ic', ical: 'ic', ful: '', ness: '',
 };
 var c = '[^aeiou]', v = '[aeiouy]';
@@ -59,7 +62,7 @@ var meq1 = '^(' + C + ')?' + V + C + '(' + V + ')?$';
 var mgr1 = '^(' + C + ')?' + V + C + V + C;
 var s_v = '^(' + C + ')?' + v;
 
-function porterStem(w: any) {
+function porterStem(w: string): string {
   if (w.length < 3) { return w; }
   var firstch = w.substr(0, 1);
   if (firstch === 'y') { w = firstch.toUpperCase() + w.substr(1); }
@@ -113,7 +116,7 @@ function porterStem(w: any) {
 
 
 // A small English stop-word list (subset of the common MongoDB/Snowball set).
-var STOP_WORDS: any = {
+var STOP_WORDS: {[word: string]: number} = {
   a: 1, an: 1, and: 1, are: 1, as: 1, at: 1, be: 1, but: 1, by: 1, for: 1,
   if: 1, in: 1, into: 1, is: 1, it: 1, no: 1, not: 1, of: 1, on: 1, or: 1,
   such: 1, that: 1, the: 1, their: 1, then: 1, there: 1, these: 1, they: 1,
@@ -122,13 +125,13 @@ var STOP_WORDS: any = {
 
 
 /** Current text-search mode (read at use, so configure() takes effect). */
-function mode() {
+function mode(): string {
   var m = settings.textSearch;
   return (m === 'stemming' || m === 'exact') ? m : 'lightweight';
 }
 
 /** Tokenize a string into normalized terms according to the active mode. */
-function tokenize(str: any, m?: any) {
+function tokenize(str: any, m?: string): string[] {   // str: any — guarded; non-strings return []
   if (typeof str !== 'string') { return []; }
   m = m || mode();
   if (m === 'lightweight') {
@@ -136,7 +139,7 @@ function tokenize(str: any, m?: any) {
   }
   // stemming / exact: deburr (diacritics) FIRST so 'café' folds to 'cafe' before
   // the split treats accented chars as separators; then drop stop words & Porter-stem.
-  var raw = _.deburr(str).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  var raw = deburr(str).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   var out = [];
   for (var i = 0; i < raw.length; ++i) {
     if (STOP_WORDS[raw[i]]) { continue; }
@@ -146,9 +149,9 @@ function tokenize(str: any, m?: any) {
 }
 
 /** Concatenate all string field values of a document into one searchable blob. */
-function docText(doc: any) {
-  var parts: any[] = [];
-  (function walk(v: any) {
+function docText(doc: Document): string {
+  var parts: string[] = [];
+  (function walk(v: any) {   // v: any — genuine value (string/array/object/scalar) walked recursively
     if (typeof v === 'string') { parts.push(v); }
     else if (Array.isArray(v)) { v.forEach(walk); }
     else if (v && typeof v === 'object') { for (var k in v) { if (v.hasOwnProperty(k)) { walk(v[k]); } } }
@@ -160,8 +163,8 @@ function docText(doc: any) {
  * Parse a $search string into { terms: [...], phrases: [["a","b"],...], negations: [...] }.
  * Quoted "..." are phrases; -term are negations; the rest are OR terms.
  */
-function parseSearch(search: any, m?: any) {
-  var terms: any[] = [], phrases: any[] = [], negations: any[] = [];
+function parseSearch(search: string, m?: string) {
+  var terms: string[] = [], phrases: string[][] = [], negations: string[] = [];
   var re = /"([^"]+)"|(\S+)/g, match;
   while ((match = re.exec(search)) !== null) {
     if (match[1] !== undefined) {
@@ -182,23 +185,23 @@ function parseSearch(search: any, m?: any) {
  * to the same function). Typed as one interface for `export = search`.
  */
 interface SearchFn {
-  (doc: any, searchStr: any): { match: boolean; score: number };
-  search: (doc: any, searchStr: any) => { match: boolean; score: number };
-  setScore: (doc: any, score: any) => void;
-  getScore: (doc: any) => any;
-  tokenize: (str: any, m?: any) => any;
-  porterStem: (w: any) => any;
-  mode: () => any;
+  (doc: Document, searchStr: string): { match: boolean; score: number };
+  search: (doc: Document, searchStr: string) => { match: boolean; score: number };
+  setScore: (doc: Document, score: number) => void;
+  getScore: (doc: Document) => number | undefined;
+  tokenize: (str: any, m?: string) => string[];
+  porterStem: (w: string) => string;
+  mode: () => string;
 }
 
 /**
  * Does `doc` match the $text search, and what is its relevance score?
  * @returns the match flag and relevance score
  */
-var search = (function (doc: any, searchStr: any): { match: boolean; score: number } {
+var search = (function (doc: Document, searchStr: string): { match: boolean; score: number } {
   var m = mode();
   var docTokens = tokenize(docText(doc), m);
-  var tokenSet: any = {};
+  var tokenSet: {[token: string]: number} = {};
   for (var i = 0; i < docTokens.length; ++i) { tokenSet[docTokens[i]] = (tokenSet[docTokens[i]] || 0) + 1; }
 
   var parsed = parseSearch(searchStr, m);
@@ -234,7 +237,7 @@ var search = (function (doc: any, searchStr: any): { match: boolean; score: numb
 }) as SearchFn;
 
 /** Relevance score. 'exact' uses the fts_spec coefficient shape; others use plain TF. */
-function relevance(totalTermFreq: any, hitCount: any, numTokens: any, m: any) {
+function relevance(totalTermFreq: number, hitCount: number, numTokens: number, m: string): number {
   if (totalTermFreq === 0) { return 0; }
   if (m === 'exact' && numTokens > 0) {
     // MongoDB fts_spec.cpp coefficient: coeff = (0.5 * count / numTokens) + 0.5,
@@ -244,7 +247,7 @@ function relevance(totalTermFreq: any, hitCount: any, numTokens: any, m: any) {
   return totalTermFreq; // lightweight / stemming: term-frequency
 }
 
-function containsSequence(tokens: any, seq: any) {
+function containsSequence(tokens: string[], seq: string[]): boolean {
   if (seq.length === 0) { return true; }
   for (var i = 0; i + seq.length <= tokens.length; ++i) {
     var ok = true;
@@ -260,10 +263,10 @@ function containsSequence(tokens: any, seq: any) {
 // retrieves it. Keyed by document identity (WeakMap), so docs are not mutated.
 var scoreMap = new WeakMap();
 
-function setScore(doc: any, score: any) {
+function setScore(doc: Document, score: number): void {
   if (doc && typeof doc === 'object') { scoreMap.set(doc, score); }
 }
-function getScore(doc: any) {
+function getScore(doc: Document): number | undefined {
   return (doc && typeof doc === 'object' && scoreMap.has(doc)) ? scoreMap.get(doc) : undefined;
 }
 

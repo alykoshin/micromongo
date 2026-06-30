@@ -12,13 +12,13 @@ var dbg = require('../debug');
 var DEBUG = dbg.DEBUG;
 var debug = dbg.debug;
 
-var assert = require('assert');
+var assert = require('../../../assert');
 
 var registry = require('../registry');
 var h = require('../helpers');
 
 
-registry.registerOperator('post', '$eq', function (doc: any, query: any) {
+registry.registerOperator('post', '$eq', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$eq: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   if (Array.isArray(doc)) {
     if (Array.isArray(query))  {
@@ -34,37 +34,37 @@ registry.registerOperator('post', '$eq', function (doc: any, query: any) {
   }
 });
 
-registry.registerOperator('post', '$ne', function (doc: any, query: any) {
+registry.registerOperator('post', '$ne', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$ne: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   return doc !== query;
 });
 
-registry.registerOperator('post', '$gt', function (doc: any, query: any) {
+registry.registerOperator('post', '$gt', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$gt: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   // Against an array field, match if ANY element satisfies (Mongo semantics).
-  if (Array.isArray(doc)) { return doc.some(function(el: any) { return el > query; }); }
+  if (Array.isArray(doc)) { return doc.some(function(el: any /* value */) { return el > query; }); }
   return doc > query;
 });
 
-registry.registerOperator('post', '$gte', function (doc: any, query: any) {
+registry.registerOperator('post', '$gte', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$gte: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
-  if (Array.isArray(doc)) { return doc.some(function(el: any) { return el >= query; }); }
+  if (Array.isArray(doc)) { return doc.some(function(el: any /* value */) { return el >= query; }); }
   return doc >= query;
 });
 
-registry.registerOperator('post', '$lt', function (doc: any, query: any) {
+registry.registerOperator('post', '$lt', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$lt: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
-  if (Array.isArray(doc)) { return doc.some(function(el: any) { return el < query; }); }
+  if (Array.isArray(doc)) { return doc.some(function(el: any /* value */) { return el < query; }); }
   return doc < query;
 });
 
-registry.registerOperator('post', '$lte', function (doc: any, query: any) {
+registry.registerOperator('post', '$lte', function (doc: any /* value */, query: any /* value */) {
   if (DEBUG) debug('$lte: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
-  if (Array.isArray(doc)) { return doc.some(function(el: any) { return el <= query; }); }
+  if (Array.isArray(doc)) { return doc.some(function(el: any /* value */) { return el <= query; }); }
   return doc <= query;
 });
 
-registry.registerOperator('post', '$in', function (doc: any, query: any) {
+registry.registerOperator('post', '$in', function (doc: any /* value */, query: any /* values */) {
   if (DEBUG) debug('$in(): doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   assert(Array.isArray(query), 'Invalid syntax near \''+JSON.stringify(query)+'\': parameter for $in must be array.');
   var q = query;
@@ -75,7 +75,7 @@ registry.registerOperator('post', '$in', function (doc: any, query: any) {
   }
 });
 
-registry.registerOperator('post', '$nin', function (doc: any, query: any) {
+registry.registerOperator('post', '$nin', function (doc: any /* value */, query: any /* values */) {
   assert(Array.isArray(query), 'Invalid syntax near \''+JSON.stringify(query)+'\': parameter for $nin must be array.');
   var q = query;
   return (q.indexOf(doc) < 0);

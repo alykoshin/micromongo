@@ -12,21 +12,29 @@
  *   - the report carries { matchedCount:0, modifiedCount:0, upsertedId, upsertedCount:1 }.
  *   - if a doc matches, $setOnInsert is a no-op (a normal update happens) and no
  *     upsertedCount is reported.
- *   - when the upsert document has no _id, micromongo generates one (the ObjectId
- *     stub is identity); these tests always supply _id where the doc example does.
+ *   - _id GENERATION on upsert mirrors MongoDB only when `autoId` is enabled
+ *     (mm.configure({ autoId: true })); micromongo's default is off (no _id is
+ *     generated). These tests enable autoId so they match the documented Mongo
+ *     output, where the server always assigns an _id. The default-off behavior is
+ *     covered in test/configure.js.
  */
 
 'use strict';
 
-/* globals describe, it */
+/* globals describe, beforeEach, afterEach, it */
 
 var chai = require('chai');
 var expect = chai.expect;
 
 var mm = require('../../dist/');
+var settings = require('../../dist/settings');
 
 
 describe('# upsert - mongo docs', function () {
+
+  // Mirror the server: an upserted doc with no _id gets one assigned.
+  beforeEach(function () { mm.configure({ autoId: true }); });
+  afterEach(function () { settings.reset(); });
 
   it('# updateOne upsert fills the new doc from filter + update operators', function () {
     // https://www.mongodb.com/docs/manual/reference/method/db.collection.updateOne/

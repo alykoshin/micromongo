@@ -2,8 +2,12 @@
 
 import type {
   Doc, Query, Projection, UpdateSpec, WriteOptions, UpdateReport,
-  Settings, OperatorKind,
+  Settings, OperatorKind, AggStage,
+  InsertOneReport, InsertManyReport, DeleteReport, RemoveReport,
+  BulkWriteOperation, BulkWriteResult,
 } from './types';
+import type CollectionClass = require('./collection');
+import type CursorClass = require('./cursor');
 
 var crud = require('./crud/');
 var aggregate = require('./aggregate/');
@@ -15,17 +19,17 @@ var match = require('./crud/match');
 
 
 /**
- * The public surface of `require('micromongo')`. The high-traffic read/write/
- * aggregate methods are typed against the boundary interfaces in `./types`; the
- * internal/extension members (`_crud`, `_registry`, `db`, the engine seams) stay
- * `any` — they're dynamic by nature and reached by advanced/test code. This is
- * the "real types at the boundaries, pragmatic `any` at the dynamic seams"
- * split the migration plan calls for.
+ * The public surface of `require('micromongo')`. The read/write/aggregate methods
+ * are **generic on the document shape `T`** (inferred from the array argument, so
+ * the object literal IS the schema), defaulting to `Doc` — an untyped array stays
+ * fully permissive, while a typed array gets query keys/operands and update specs
+ * checked against `T` (Mongo-driver style). Internal/extension members (`_crud`,
+ * `_registry`, `db`, the engine seams) stay `any` — dynamic by nature.
  */
 interface Micromongo {
   configure(options?: Partial<Settings>): Settings;
-  Collection: any;
-  Cursor: any;
+  Collection: typeof CollectionClass;
+  Cursor: typeof CursorClass;
   collection: typeof collection;
   db: any;
   _registry: any;
@@ -33,31 +37,34 @@ interface Micromongo {
   /** Register a custom query operator (the blessed extension point). */
   registerOperator(kind: OperatorKind, name: string, fn: (doc: any, query: any) => any): any;
 
-  count(array: Doc[], query?: Query, options?: any): number;
-  copyTo(array: Doc[], target: Doc[]): number;
+  count<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): number;
+  copyTo<T extends Doc = Doc>(array: T[], target: T[]): number;
 
-  find(array: Doc[], query?: Query, projection?: Projection, options?: any): Doc[];
-  findOne(array: Doc[], query?: Query, projection?: Projection, options?: any): Doc | null;
-  distinct(array: Doc[], field: string, query?: Query): any[];
+  find<T extends Doc = Doc>(array: T[], query?: Query<T>, projection?: Projection, options?: any): T[];
+  findOne<T extends Doc = Doc>(array: T[], query?: Query<T>, projection?: Projection, options?: any): T | null;
+  distinct<T extends Doc = Doc>(array: T[], field: string, query?: Query<T>): any[];
 
-  deleteOne(array: Doc[], query?: Query): any;
-  deleteMany(array: Doc[], query?: Query): any;
-  remove(array: Doc[], query?: Query, options?: any): any;
+  deleteOne<T extends Doc = Doc>(array: T[], query?: Query<T>): DeleteReport;
+  deleteMany<T extends Doc = Doc>(array: T[], query?: Query<T>): DeleteReport;
+  /** @deprecated Use `deleteOne`/`deleteMany`. Returns the legacy `{ nRemoved }` shape. */
+  remove<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): RemoveReport;
 
-  insertOne(array: Doc[], doc: Doc): any;
-  insertMany(array: Doc[], docs: Doc[]): any;
-  insert(array: Doc[], docOrDocs: Doc | Doc[]): any;
+  insertOne<T extends Doc = Doc>(array: T[], doc: T): InsertOneReport;
+  insertMany<T extends Doc = Doc>(array: T[], docs: T[]): InsertManyReport;
+  insert<T extends Doc = Doc>(array: T[], docOrDocs: T | T[]): InsertOneReport | InsertManyReport;
 
-  updateOne(array: Doc[], query: Query, update: UpdateSpec, options?: WriteOptions): UpdateReport;
-  updateMany(array: Doc[], query: Query, update: UpdateSpec, options?: WriteOptions): UpdateReport;
-  replaceOne(array: Doc[], query: Query, replacement: Doc, options?: WriteOptions): UpdateReport;
+  updateOne<T extends Doc = Doc>(array: T[], query: Query<T>, update: UpdateSpec<T>, options?: WriteOptions): UpdateReport;
+  updateMany<T extends Doc = Doc>(array: T[], query: Query<T>, update: UpdateSpec<T>, options?: WriteOptions): UpdateReport;
+  replaceOne<T extends Doc = Doc>(array: T[], query: Query<T>, replacement: T, options?: WriteOptions): UpdateReport;
 
-  findOneAndUpdate(array: Doc[], query: Query, update: UpdateSpec, options?: WriteOptions): any;
-  findOneAndReplace(array: Doc[], query: Query, replacement: Doc, options?: WriteOptions): any;
-  findOneAndDelete(array: Doc[], query: Query, options?: any): any;
+  findOneAndUpdate<T extends Doc = Doc>(array: T[], query: Query<T>, update: UpdateSpec<T>, options?: WriteOptions): T | null;
+  findOneAndReplace<T extends Doc = Doc>(array: T[], query: Query<T>, replacement: T, options?: WriteOptions): T | null;
+  findOneAndDelete<T extends Doc = Doc>(array: T[], query: Query<T>, options?: any): T | null;
+
+  bulkWrite<T extends Doc = Doc>(array: T[], operations: BulkWriteOperation<T>[], options?: WriteOptions & { ordered?: boolean }): BulkWriteResult;
 
   _crud: any;
-  aggregate(array: Doc[], stages: any[]): Doc[];
+  aggregate(array: Doc[], stages: AggStage[]): Doc[];
 }
 
 
@@ -71,7 +78,7 @@ interface Micromongo {
  *
  * Named collections are resolvable by `$out`/`$lookup` via their string name.
  */
-function collection(name: any, array?: any): any {
+function collection<T extends Doc = Doc>(name: string, array?: T[] | CollectionClass<T>): CollectionClass<T> {
   if (typeof name !== 'string') { throw new TypeError('collection(name): name must be a string'); }
   if (typeof array !== 'undefined') {
     var coll = (array instanceof Collection) ? array : new Collection(array);
@@ -117,6 +124,8 @@ var mm: Micromongo = {
   findOneAndUpdate: crud.findOneAndUpdate,
   findOneAndReplace: crud.findOneAndReplace,
   findOneAndDelete: crud.findOneAndDelete,
+
+  bulkWrite: crud.bulkWrite,
 
   _crud: crud,
   aggregate: aggregate,

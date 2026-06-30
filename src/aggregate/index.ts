@@ -4,9 +4,13 @@
 
 'use strict';
 
-var assert = require('assert');
-var _ = require('lodash');
-var deepAssign = require('mini-deep-assign');
+var get = require('lodash/get');
+var isEqual = require('lodash/isEqual');
+var keys = require('lodash/keys');
+var set = require('lodash/set');
+var unset = require('lodash/unset');
+
+var cloneDeep = require('lodash/cloneDeep');
 
 
 var copyTo = require('../crud/').copyTo;
@@ -16,6 +20,8 @@ var geo     = require('../crud/geo');
 var evaluate = require('./expression');
 var registry = require('../registry');
 
+import type { Doc, Document, Query, AccumulatorFn, StageFn, AggStage } from '../types';
+
 
 /**
  * Resolve a collection reference (used by $out/$lookup) into a target object.
@@ -23,22 +29,22 @@ var registry = require('../registry');
  * a Collection (has `_data`), or a plain array.
  * @returns a handle { data, set } to read/replace the data, or null if unresolved
  */
-function _resolveCollection(ref: any, createIfMissing: any): any {
+function _resolveCollection(ref: any, createIfMissing: boolean): any {   // ref: name | Collection | array; returns handle | null
   if (typeof ref === 'string') {
     var coll = registry.get(ref);
     if (!coll) {
       if (!createIfMissing) { return null; }
       coll = registry.set(ref, new (require('../collection'))([]));
     }
-    return { data: coll._data, set: function (arr: any) { coll._data.length = 0; Array.prototype.push.apply(coll._data, arr); } };
+    return { data: coll._data, set: function (arr: Doc[]) { coll._data.length = 0; Array.prototype.push.apply(coll._data, arr); } };
   }
   if (ref && Array.isArray(ref._data)) { // a Collection
     var c = ref;
-    return { data: c._data, set: function (arr: any) { c._data.length = 0; Array.prototype.push.apply(c._data, arr); } };
+    return { data: c._data, set: function (arr: Doc[]) { c._data.length = 0; Array.prototype.push.apply(c._data, arr); } };
   }
   if (Array.isArray(ref)) {
     var a = ref;
-    return { data: a, set: function (arr: any) { a.length = 0; Array.prototype.push.apply(a, arr); } };
+    return { data: a, set: function (arr: Doc[]) { a.length = 0; Array.prototype.push.apply(a, arr); } };
   }
   return null;
 }
@@ -63,7 +69,7 @@ var _parseFieldPath = function(fieldPath: string): string {
  * `key` isn't given, sniff the first document for a common location field name.
  * @returns the location field path
  */
-var _geoNearDefaultKey = function(array: any): string {
+var _geoNearDefaultKey = function(array: Doc[]): string {
   var candidates = [ 'location', 'loc', 'geometry', 'coordinates', 'pos', 'position' ];
   var first = array[0] || {};
   for (var i = 0; i < candidates.length; ++i) {
@@ -78,8 +84,8 @@ var _geoNearDefaultKey = function(array: any): string {
  * argument expression, and folds across the group. Non-numeric values are
  * ignored by $sum/$avg (Mongo semantics).
  */
-var _groupAccumulators: {[name: string]: any} = {
-  $sum: function(docs: any, expr: any) {
+var _groupAccumulators: Record<string, AccumulatorFn> = {   // accumulators fold a group → a genuine value
+  $sum: function(docs: Doc[], expr: any): number {   // expr: accumulator argument expression
     var total = 0;
     for (var i = 0; i < docs.length; ++i) {
       var v = evaluate(expr, docs[i]);
@@ -87,7 +93,7 @@ var _groupAccumulators: {[name: string]: any} = {
     }
     return total;
   },
-  $avg: function(docs: any, expr: any) {
+  $avg: function(docs: Doc[], expr: any) {   // expr: argument expression; returns number | null
     var total = 0, n = 0;
     for (var i = 0; i < docs.length; ++i) {
       var v = evaluate(expr, docs[i]);
@@ -95,7 +101,7 @@ var _groupAccumulators: {[name: string]: any} = {
     }
     return n === 0 ? null : total / n;
   },
-  $min: function(docs: any, expr: any) {
+  $min: function(docs: Doc[], expr: any) {   // expr: argument expression; returns min value | null
     var min;
     for (var i = 0; i < docs.length; ++i) {
       var v = evaluate(expr, docs[i]);
@@ -104,7 +110,7 @@ var _groupAccumulators: {[name: string]: any} = {
     }
     return typeof min === 'undefined' ? null : min;
   },
-  $max: function(docs: any, expr: any) {
+  $max: function(docs: Doc[], expr: any) {   // expr: argument expression; returns max value | null
     var max;
     for (var i = 0; i < docs.length; ++i) {
       var v = evaluate(expr, docs[i]);
@@ -113,24 +119,24 @@ var _groupAccumulators: {[name: string]: any} = {
     }
     return typeof max === 'undefined' ? null : max;
   },
-  $push: function(docs: any, expr: any) {
-    return docs.map(function(d: any) { return evaluate(expr, d); });
+  $push: function(docs: Doc[], expr: any): any[] {   // expr: argument expression
+    return docs.map(function(d: Doc) { return evaluate(expr, d); });
   },
-  $addToSet: function(docs: any, expr: any) {
+  $addToSet: function(docs: Doc[], expr: any): any[] {   // expr: argument expression
     var out: any[] = [];
     for (var i = 0; i < docs.length; ++i) {
       var v = evaluate(expr, docs[i]);
-      if (!out.some(function(x: any) { return _.isEqual(x, v); })) { out.push(v); }
+      if (!out.some(function(x: any) { return isEqual(x, v); })) { out.push(v); }   // x, v: genuine values
     }
     return out;
   },
-  $first: function(docs: any, expr: any) {
+  $first: function(docs: Doc[], expr: any) {   // expr: argument expression; returns first value | null
     return docs.length ? evaluate(expr, docs[0]) : null;
   },
-  $last: function(docs: any, expr: any) {
+  $last: function(docs: Doc[], expr: any) {   // expr: argument expression; returns last value | null
     return docs.length ? evaluate(expr, docs[docs.length - 1]) : null;
   },
-  $count: function(docs: any /*, expr */) {
+  $count: function(docs: Doc[] /*, expr */): number {
     return docs.length;
   },
 };
@@ -143,7 +149,7 @@ var REDACT_PRUNE   = '__$$PRUNE__';
 var REDACT_KEEP    = '__$$KEEP__';
 var REDACT_VARS = { DESCEND: REDACT_DESCEND, PRUNE: REDACT_PRUNE, KEEP: REDACT_KEEP };
 
-function _isPlainObject(v: any): any {
+function _isPlainObject(v: any): boolean {   // v: genuine value
   return v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && !(v instanceof Buffer);
 }
 
@@ -151,16 +157,16 @@ function _isPlainObject(v: any): any {
  * Recursively apply a $redact expression to one document level.
  * @returns the redacted document, or REDACT_PRUNE if this level is pruned.
  */
-function _redactDoc(doc: any, expr: any): any {
+function _redactDoc(doc: Document, expr: any): any {   // expr: redact expression; returns doc | PRUNE sentinel
   var decision = evaluate(expr, doc, REDACT_VARS);
   if (decision === REDACT_PRUNE) { return REDACT_PRUNE; }
-  if (decision === REDACT_KEEP)  { return deepAssign({}, doc); } // keep whole level, no descent
+  if (decision === REDACT_KEEP)  { return cloneDeep(doc); } // keep whole level, no descent
   if (decision !== REDACT_DESCEND) {
     throw new Error('$redact expression must resolve to $$DESCEND, $$PRUNE, or $$KEEP');
   }
 
   // $$DESCEND: keep scalar fields; recurse into embedded docs / arrays-of-docs.
-  var out: any = {};
+  var out: Document = {};
   for (var k in doc) { if (doc.hasOwnProperty(k)) {
     var v = doc[k];
     if (_isPlainObject(v)) {
@@ -185,13 +191,13 @@ function _redactDoc(doc: any, expr: any): any {
 }
 
 
-var _aggregateStageOps: {[stage: string]: any} = {
+var _aggregateStageOps: Record<string, StageFn> = {
 
-  $project: function(array: any, projection: any, options: any) {
+  $project: function(array: Doc[], projection: Document, options?: Record<string, any>) {
 
     // Split plain inclusion/exclusion (0/1/true/false) from COMPUTED fields
     // (any other value is an aggregation expression to evaluate per document).
-    var plain: any = {}, computed: any = {}, hasComputed = false;
+    var plain: Document = {}, computed: Document = {}, hasComputed = false;
     for (var p in projection) { if (projection.hasOwnProperty(p)) {
       var v = projection[p];
       if (v === 0 || v === 1 || v === true || v === false) { plain[p] = v; }
@@ -222,7 +228,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
       // evaluate computed fields against the source document
       for (var cpath in computed) { if (computed.hasOwnProperty(cpath)) {
-        _.set(tgt, cpath, evaluate(computed[cpath], src));
+        set(tgt, cpath, evaluate(computed[cpath], src));
       }}
 
       target.push(tgt);
@@ -234,12 +240,12 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
   // $addFields / $set — add or overwrite fields with computed expression values,
   // keeping all existing fields.
-  $addFields: function(array: any, spec: any, options: any) {
+  $addFields: function(array: Doc[], spec: Document, options?: Record<string, any>) {
     var target = [];
     for (var i = 0; i < array.length; ++i) {
-      var tgt = deepAssign({}, array[i]);
+      var tgt = cloneDeep(array[i]);
       for (var path in spec) { if (spec.hasOwnProperty(path)) {
-        _.set(tgt, path, evaluate(spec[path], array[i]));
+        set(tgt, path, evaluate(spec[path], array[i]));
       }}
       target.push(tgt);
     }
@@ -248,12 +254,12 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
 
   // $unset — remove one field or a list of fields from each document.
-  $unset: function(array: any, spec: any, options: any) {
+  $unset: function(array: Doc[], spec: any, options?: Record<string, any>) {   // spec: string | string[] (field name(s))
     var fields = Array.isArray(spec) ? spec : [ spec ];
     var target = [];
     for (var i = 0; i < array.length; ++i) {
-      var tgt = deepAssign({}, array[i]);
-      for (var f = 0; f < fields.length; ++f) { _.unset(tgt, fields[f]); }
+      var tgt = cloneDeep(array[i]);
+      for (var f = 0; f < fields.length; ++f) { unset(tgt, fields[f]); }
       target.push(tgt);
     }
     return target;
@@ -261,11 +267,11 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
 
   // $count — output a single document { <fieldName>: <number of input docs> }.
-  $count: function(array: any, fieldName: any, options: any) {
+  $count: function(array: Doc[], fieldName: any, options?: Record<string, any>) {   // fieldName: string (validated)
     if (typeof fieldName !== 'string' || !fieldName) {
       throw new Error('$count requires a non-empty string field name');
     }
-    var out: any = {};
+    var out: Document = {};
     out[fieldName] = array.length;
     return [ out ];
   },
@@ -273,7 +279,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
   // $replaceRoot / $replaceWith — promote the document resolved from `newRoot`
   // (an expression) to the top level, replacing all existing fields.
-  $replaceRoot: function(array: any, params: any, options: any) {
+  $replaceRoot: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: { newRoot: expr } | expr
     var expr = (params && 'newRoot' in params) ? params.newRoot : params;
     var target = [];
     for (var i = 0; i < array.length; ++i) {
@@ -281,7 +287,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
       if (v === null || typeof v !== 'object' || Array.isArray(v)) {
         throw new Error('$replaceRoot newRoot must resolve to a document');
       }
-      target.push(deepAssign({}, v));
+      target.push(cloneDeep(v));
     }
     return target;
   },
@@ -289,13 +295,13 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
   // $sortByCount — { _id: <expr value>, count: n } sorted by count desc.
   // Equivalent to $group by the expression then $sort by count descending.
-  $sortByCount: function(array: any, expr: any, options: any) {
+  $sortByCount: function(array: Doc[], expr: any, options?: Record<string, any>) {   // expr: group-key expression
     var grouped = _aggregateStageOps.$group(array, { _id: expr, count: { $sum: 1 } }, options);
-    return grouped.sort(function(a: any, b: any) { return b.count - a.count; });
+    return grouped.sort(function(a: Doc, b: Doc) { return b.count - a.count; });
   },
 
 
-  $match: function(array: any, query: any, options: any) {
+  $match: function(array: Doc[], query: Query, options?: Record<string, any>) {
     const target = [];
     for (let len=array.length, i=0; i<len; ++i) {
       const doc = array[i];
@@ -308,7 +314,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $redact: function(array: any, params: any, options: any) {
+  $redact: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: redact expression
     var result = [];
     for (var i = 0; i < array.length; ++i) {
       var redacted = _redactDoc(array[i], params);
@@ -318,35 +324,35 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $limit: function(array: any, params: any, options: any) {
+  $limit: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: number (validated)
     if (typeof params !== 'number') { throw new TypeError('Number expected'); }
     return array.slice(0, params);
   },
 
 
-  $skip: function(array: any, params: any, options: any) {
+  $skip: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: number (validated)
     if (typeof params !== 'number') { throw new TypeError('Number expected'); }
     return array.slice(params);
   },
 
 
-  $unwind: function(array: any, params: any) {
+  $unwind: function(array: Doc[], params: any) {   // params: '$path' string | { path, … } spec
 
-    var _unwindDoc = function(doc: any, path: any, includeArrayIndex: any) {
+    var _unwindDoc = function(doc: Doc, path: string, includeArrayIndex: any) {   // includeArrayIndex: string | false
       var res = [];
-      var value = _.get(doc, path);
+      var value = get(doc, path);
 
       for (var len=value.length, i=0; i<len; ++i) {
 
-        var newDoc = deepAssign({}, doc);
+        var newDoc = cloneDeep(doc);
 
         if (includeArrayIndex) {
           // MongoDB places includeArrayIndex at the top level of the document,
           // regardless of whether `path` is nested (e.g. '$a.c').
-          _.set(newDoc, includeArrayIndex, i);
+          set(newDoc, includeArrayIndex, i);
         }
 
-        _.set(newDoc, path, value[i]);
+        set(newDoc, path, value[i]);
 
         res.push(newDoc);
       }
@@ -362,11 +368,11 @@ var _aggregateStageOps: {[stage: string]: any} = {
     if (params.includeArrayIndex && typeof params.includeArrayIndex !== 'string') { throw new TypeError('includeArrayIndex must be a string'); }
 
     var p = _parseFieldPath(params.path);
-    var res: any[] = [];
+    var res: Doc[] = [];
 
     for (var len=array.length, i=0; i<len; ++i) {
       var doc = array[i];
-      var value = _.get(doc, p);
+      var value = get(doc, p);
 
       if (typeof value === 'undefined' || value === null) { // skip doc
         if (params.preserveNullAndEmptyArrays) { res.push(doc); }
@@ -387,16 +393,16 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $group: function(array: any, params: any, options: any) {
+  $group: function(array: Doc[], params: Document, options?: Record<string, any>) {   // params: $group spec
     if (!params || typeof params !== 'object' || !('_id' in params)) {
       throw new Error('$group requires an _id field');
     }
 
     // Bucket documents by group key (deep-equal on the evaluated _id expression).
-    var groups: any[] = []; // [{ key, keyJson, docs }]
+    var groups: any[] = []; // [{ key, keyJson, docs }] — internal bucket records
     for (var i = 0; i < array.length; ++i) {
       var doc = array[i];
-      var key = evaluate(params._id, doc);
+      var key = evaluate(params._id, doc);   // key: genuine value (the group key)
       var keyJson = JSON.stringify(key === undefined ? null : key);
       var bucket = null;
       for (var g = 0; g < groups.length; ++g) {
@@ -409,10 +415,10 @@ var _aggregateStageOps: {[stage: string]: any} = {
     // Apply accumulators per group.
     var result = [];
     for (var b = 0; b < groups.length; ++b) {
-      var out: any = { _id: groups[b].key };
+      var out: Document = { _id: groups[b].key };
       for (var field in params) { if (params.hasOwnProperty(field) && field !== '_id') {
         var accSpec = params[field];
-        var accName = _.keys(accSpec)[0];
+        var accName = keys(accSpec)[0];
         var accFn = _groupAccumulators[accName];
         if (!accFn) { throw new Error('Unsupported $group accumulator: ' + accName); }
         out[field] = accFn(groups[b].docs, accSpec[accName]);
@@ -423,7 +429,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $sample: function(array: any, params: any, options: any) {
+  $sample: function(array: Doc[], params: Document, options?: Record<string, any>) {   // params: { size }
     if (!params || typeof params.size !== 'number' || params.size < 0) {
       throw new Error('$sample requires { size: <non-negative number> }');
     }
@@ -442,13 +448,13 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $sort: function(array: any, params: any, options: any) {
-    return array.sort(function(doc1: any,doc2: any) {
+  $sort: function(array: Doc[], params: Document, options?: Record<string, any>) {   // params: { field: 1|-1 }
+    return array.sort(function(doc1: Doc,doc2: Doc) {
       for (var p in params) { if (params.hasOwnProperty(p)) {
         var dir = params[p];
         if ([-1,1 ].indexOf(dir) < 0 ) { throw new Error('Sort direction may be -1 or 1'); }
-        var v1 = _.get(doc1, p);
-        var v2 = _.get(doc2, p);
+        var v1 = get(doc1, p);
+        var v2 = get(doc2, p);
 
         var res = (v1 < v2) ? -1 : ((v1 > v2) ? 1 : 0);
         res = res * dir;
@@ -463,7 +469,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
   },
 
 
-  $geoNear: function(array: any, params: any, options: any) {
+  $geoNear: function(array: Doc[], params: Document, options?: Record<string, any>) {   // params: $geoNear spec
     if (!params || typeof params !== 'object') { throw new Error('$geoNear requires a parameters document'); }
     if (typeof params.near === 'undefined') { throw new Error('$geoNear requires a \'near\' point'); }
     if (typeof params.distanceField !== 'string') { throw new Error('$geoNear requires a string \'distanceField\''); }
@@ -483,7 +489,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
       var doc = array[i];
       if (preparedQuery && !match(doc, preparedQuery)) { continue; }
 
-      var loc = key ? _.get(doc, key) : doc;
+      var loc = key ? get(doc, key) : doc;
       var pt = geo.asPoint(loc);
       if (!pt) { continue; } // no location => not near anything
 
@@ -497,11 +503,11 @@ var _aggregateStageOps: {[stage: string]: any} = {
     }
 
     // sort by distance ascending, then write the distanceField (supports dotted path)
-    withDist.sort(function(a: any, b: any) { return a.distance - b.distance; });
+    withDist.sort(function(a: any, b: any) { return a.distance - b.distance; });   // a, b: { doc, distance } records
     var result = [];
     for (var j = 0; j < withDist.length; ++j) {
-      var out = deepAssign({}, withDist[j].doc);
-      _.set(out, params.distanceField, withDist[j].distance);
+      var out = cloneDeep(withDist[j].doc);
+      set(out, params.distanceField, withDist[j].distance);
       result.push(out);
     }
     return result;
@@ -512,7 +518,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
   // or an array. For each input doc, collects foreign docs where foreignField equals
   // the input's localField, into the `as` array. Array-valued localField matches each
   // element (no $unwind needed), per MongoDB.
-  $lookup: function(array: any, params: any, options: any) {
+  $lookup: function(array: Doc[], params: Document, options?: Record<string, any>) {   // params: { from, localField, foreignField, as }
     if (!params || typeof params.from === 'undefined' ||
         typeof params.localField !== 'string' || typeof params.foreignField !== 'string' ||
         typeof params.as !== 'string') {
@@ -524,17 +530,17 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
     var result = [];
     for (var i = 0; i < array.length; ++i) {
-      var doc = deepAssign({}, array[i]);
-      var localVal = _.get(array[i], params.localField);
+      var doc = cloneDeep(array[i]);
+      var localVal = get(array[i], params.localField);
       var wanted = Array.isArray(localVal) ? localVal : [ localVal ];
 
       var matched = [];
       for (var f = 0; f < foreign.length; ++f) {
-        var fv = _.get(foreign[f], params.foreignField);
-        var hit = wanted.some(function (w: any) { return _.isEqual(w, fv); });
-        if (hit) { matched.push(deepAssign({}, foreign[f])); }
+        var fv = get(foreign[f], params.foreignField);
+        var hit = wanted.some(function (w: any) { return isEqual(w, fv); });   // w: genuine localField value
+        if (hit) { matched.push(cloneDeep(foreign[f])); }
       }
-      _.set(doc, params.as, matched);
+      set(doc, params.as, matched);
       result.push(doc);
     }
     return result;
@@ -548,7 +554,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
   // or, as a fallback, aggregate options { out: <name|Collection|array> }.
   // The target's contents are REPLACED with the pipeline result (Mongo semantics);
   // the result is also returned. Must be the LAST stage (enforced by the driver).
-  $out: function(array: any, params: any, options: any) {
+  $out: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: name | Collection | array target
     var ref = (typeof params !== 'undefined' && params !== null) ? params
             : (options && options.out);
     if (typeof ref === 'undefined' || ref === null) {
@@ -558,7 +564,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
     if (!handle) { throw new Error('$out target must be a collection name, a Collection, or an array'); }
 
     var result = [];
-    for (var i = 0; i < array.length; ++i) { result.push(deepAssign({}, array[i])); }
+    for (var i = 0; i < array.length; ++i) { result.push(cloneDeep(array[i])); }
     handle.set(result);
     return result;
   },
@@ -568,9 +574,9 @@ var _aggregateStageOps: {[stage: string]: any} = {
   // by Collection.aggregate via options.indexStats (a bare-array aggregate has no
   // indexes, so this yields an empty result). Mongo's $indexStats must be the first
   // stage; we don't enforce that for an in-memory pipeline.
-  $indexStats: function(array: any, params: any, options: any) {
+  $indexStats: function(array: Doc[], params: any, options?: Record<string, any>) {   // params: unused
     var stats = (options && options.indexStats) || [];
-    return stats.map(function (s: any) { return deepAssign({}, s); });
+    return stats.map(function (s: Document) { return cloneDeep(s); });
   },
 
 
@@ -578,7 +584,7 @@ var _aggregateStageOps: {[stage: string]: any} = {
 
 // $set is an alias for $addFields; $replaceWith for $replaceRoot.
 _aggregateStageOps.$set = _aggregateStageOps.$addFields;
-_aggregateStageOps.$replaceWith = function(array: any, expr: any, options: any) {
+_aggregateStageOps.$replaceWith = function(array: Doc[], expr: any, options?: Record<string, any>) {   // expr: newRoot expression
   // $replaceWith takes the expression directly (no { newRoot } wrapper).
   return _aggregateStageOps.$replaceRoot(array, { newRoot: expr }, options);
 };
@@ -592,23 +598,23 @@ _aggregateStageOps.$replaceWith = function(array: any, expr: any, options: any) 
  * `module.exports = aggregate` surface with the statics attached below.
  */
 interface AggregateFn {
-  (array: any, stages: any, options?: any): any;
-  _parseFieldPath: (fieldPath: any) => any;
-  _aggregateStageOps: {[stage: string]: any};
+  (array: Doc[], stages: AggStage[], options?: Record<string, any>): Doc[];   // stages: pipeline stage specs
+  _parseFieldPath: (fieldPath: string) => string;
+  _aggregateStageOps: Record<string, StageFn>;
 }
 
-var aggregate = (function(array: any, stages: any, options?: any): any {
+var aggregate = (function(array: Doc[], stages: AggStage[], options?: Record<string, any>): Doc[] {   // stages: pipeline stage specs
   options = options || {};
 
   if (!Array.isArray(array) || !Array.isArray(stages)) { throw new TypeError('Array expected as both parameters'); }
 
-  var res: any[] = [];
+  var res: Doc[] = [];
   copyTo(array, res);
 
   for (var len=stages.length, i=0; i<len; ++i) {
     var stage = stages[i];
 
-    var stageNames = _.keys(stage);
+    var stageNames = keys(stage);
     if (stageNames.length !== 1) { throw new Error('Each stage must have exactly one stage operator'); }
 
     var stageName = stageNames[0];

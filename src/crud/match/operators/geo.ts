@@ -13,8 +13,10 @@ var registry = require('../registry');
 var geo = require('../../geo');
 var h = require('../helpers');
 
+import type { Document, Query } from '../../../types';
 
-registry.registerOperator('post', '$geoWithin', function (doc: any, query: any) {
+
+registry.registerOperator('post', '$geoWithin', function (doc: any /* value (point) */, query: Query) {
   var pt = geo.asPoint(doc);
   if (!pt) { return false; }
   if (query.$box)          { return geo.pointInBox(pt, query.$box); }
@@ -25,7 +27,7 @@ registry.registerOperator('post', '$geoWithin', function (doc: any, query: any) 
   throw new Error('$geoWithin requires one of $box, $center, $centerSphere, $polygon, $geometry');
 });
 
-registry.registerOperator('post', '$geoIntersects', function (doc: any, query: any) {
+registry.registerOperator('post', '$geoIntersects', function (doc: any /* value (point) */, query: Query) {
   // For point-valued fields, "intersects a polygon" == "within that polygon".
   var pt = geo.asPoint(doc);
   if (!pt) { return false; }
@@ -33,11 +35,11 @@ registry.registerOperator('post', '$geoIntersects', function (doc: any, query: a
   throw new Error('$geoIntersects requires $geometry');
 });
 
-registry.registerOperator('post', '$near', function (doc: any, operand: any, options: any, siblings: any) {
+registry.registerOperator('post', '$near', function (doc: any /* value (point) */, operand: any /* value */, options: any /* value */, siblings: Document) {
   return h._near(doc, operand, siblings, 'planar'); // legacy = planar; GeoJSON form handled inside
 });
 
-registry.registerOperator('post', '$nearSphere', function (doc: any, operand: any, options: any, siblings: any) {
+registry.registerOperator('post', '$nearSphere', function (doc: any /* value (point) */, operand: any /* value */, options: any /* value */, siblings: Document) {
   return h._near(doc, operand, siblings, 'spherical');
 });
 

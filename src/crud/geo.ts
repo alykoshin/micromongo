@@ -23,7 +23,7 @@ var DEG2RAD = Math.PI / 180;
  * Extract a [x, y] point from a stored location value: a legacy pair [x, y],
  * a {lng,lat}-style object, or a GeoJSON Point. Returns null if not a point.
  */
-function asPoint(loc: any): any {
+function asPoint(loc: any): number[] | null {   // loc: a stored location value (legacy pair / object / GeoJSON)
   if (Array.isArray(loc) && loc.length >= 2 &&
       typeof loc[0] === 'number' && typeof loc[1] === 'number') {
     return [ loc[0], loc[1] ];
@@ -44,7 +44,7 @@ function asPoint(loc: any): any {
 
 
 /** Euclidean (planar) distance between two [x,y] points, in coordinate units. */
-function planarDistance(a: any, b: any): number {
+function planarDistance(a: number[], b: number[]): number {
   var dx = a[0] - b[0];
   var dy = a[1] - b[1];
   return Math.sqrt(dx * dx + dy * dy);
@@ -55,7 +55,7 @@ function planarDistance(a: any, b: any): number {
  * Great-circle distance between two [lng,lat] points (degrees), in RADIANS.
  * Multiply by an earth radius to get a length.
  */
-function haversineRadians(a: any, b: any): number {
+function haversineRadians(a: number[], b: number[]): number {
   var lon1 = a[0] * DEG2RAD, lat1 = a[1] * DEG2RAD;
   var lon2 = b[0] * DEG2RAD, lat2 = b[1] * DEG2RAD;
   var dLat = lat2 - lat1, dLon = lon2 - lon1;
@@ -65,13 +65,13 @@ function haversineRadians(a: any, b: any): number {
 }
 
 /** Spherical distance in meters between two [lng,lat] points. */
-function sphericalMeters(a: any, b: any): number {
+function sphericalMeters(a: number[], b: number[]): number {
   return haversineRadians(a, b) * EARTH_RADIUS_M;
 }
 
 
 /** Is point [x,y] inside the axis-aligned box [[minX,minY],[maxX,maxY]]? */
-function pointInBox(pt: any, box: any): boolean {
+function pointInBox(pt: number[], box: number[][]): boolean {
   var minX = Math.min(box[0][0], box[1][0]);
   var maxX = Math.max(box[0][0], box[1][0]);
   var minY = Math.min(box[0][1], box[1][1]);
@@ -84,7 +84,7 @@ function pointInBox(pt: any, box: any): boolean {
  * Ray-casting point-in-polygon test. `polygon` is an array of [x,y] vertices
  * (the ring; a repeated closing vertex is fine). Boundary points count as inside.
  */
-function pointInPolygon(pt: any, polygon: any): boolean {
+function pointInPolygon(pt: number[], polygon: number[][]): boolean {
   var x = pt[0], y = pt[1];
   var inside = false;
   for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -99,12 +99,12 @@ function pointInPolygon(pt: any, polygon: any): boolean {
 
 
 /** Is point within `radius` (planar units) of `center`? */
-function pointInCircle(pt: any, center: any, radius: any): boolean {
+function pointInCircle(pt: number[], center: number[], radius: number): boolean {
   return planarDistance(pt, center) <= radius;
 }
 
 /** Is point within `radiusRadians` (great-circle) of `center` [lng,lat]? */
-function pointInCircleSphere(pt: any, center: any, radiusRadians: any): boolean {
+function pointInCircleSphere(pt: number[], center: number[], radiusRadians: number): boolean {
   return haversineRadians(pt, center) <= radiusRadians;
 }
 

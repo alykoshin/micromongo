@@ -4,12 +4,12 @@
 
 'use strict';
 
-var assert = require('assert');
+var assert = require('../../../assert');
 
 var registry = require('../registry');
 
 
-registry.registerOperator('post', '$exists', function (doc: any, query: any) {
+registry.registerOperator('post', '$exists', function (doc: any /* value */, query: any /* value (operand) */) {
   assert(typeof query === 'boolean', 'Invalid syntax near \'' + JSON.stringify(query) + '\': parameter for $exists must be boolean.');
   var q = query;
   return (
@@ -18,7 +18,7 @@ registry.registerOperator('post', '$exists', function (doc: any, query: any) {
   );
 });
 
-registry.registerOperator('post', '$type', function (doc: any, query: any) {
+registry.registerOperator('post', '$type', function (doc: any /* value */, query: any /* value (operand) */) {
   var allowedDataTypes = [
     'boolean', 'null', 'number', 'object', 'string', 'undefined', // standard Javascript types; object includes null and array
     'array'                                                       // non-standard Javascript types

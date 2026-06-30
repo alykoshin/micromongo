@@ -6,7 +6,7 @@
  * 'object', 'array', …). The doc's string-alias example maps directly; the
  * BSON-numeric-code and multi-type ('number' alias for double/int/long/decimal)
  * forms are intentionally NOT covered — they have no micromongo equivalent
- * (see docs/compatibility.md → $type).
+ * (see planning/compatibility.md → $type).
  */
 
 'use strict';

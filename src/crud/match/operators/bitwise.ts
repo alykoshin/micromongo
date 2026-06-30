@@ -13,18 +13,18 @@ var registry = require('../registry');
 var h = require('../helpers');
 
 
-registry.registerOperator('post', '$bitsAllSet', function (doc: any, query: any) {
+registry.registerOperator('post', '$bitsAllSet', function (doc: any /* value */, query: any /* value (operand) */) {
   return h._bitsMatch(doc, query, 'allSet');
 });
 
-registry.registerOperator('post', '$bitsAnySet', function (doc: any, query: any) {
+registry.registerOperator('post', '$bitsAnySet', function (doc: any /* value */, query: any /* value (operand) */) {
   return h._bitsMatch(doc, query, 'anySet');
 });
 
-registry.registerOperator('post', '$bitsAllClear', function (doc: any, query: any) {
+registry.registerOperator('post', '$bitsAllClear', function (doc: any /* value */, query: any /* value (operand) */) {
   return h._bitsMatch(doc, query, 'allClear');
 });
 
-registry.registerOperator('post', '$bitsAnyClear', function (doc: any, query: any) {
+registry.registerOperator('post', '$bitsAnyClear', function (doc: any /* value */, query: any /* value (operand) */) {
   return h._bitsMatch(doc, query, 'anyClear');
 });

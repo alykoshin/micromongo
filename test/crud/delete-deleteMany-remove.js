@@ -46,7 +46,7 @@ describe('#delete - development', function() {
       var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 0 });
+      expect(result).eql({ acknowledged: true, deletedCount: 0 });
     });
 
     it('# first', function() {
@@ -56,7 +56,7 @@ describe('#delete - development', function() {
       var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 1 });
+      expect(result).eql({ acknowledged: true, deletedCount: 1 });
     });
 
     it('# first of several', function() {
@@ -69,7 +69,7 @@ describe('#delete - development', function() {
       var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 1 });
+      expect(result).eql({ acknowledged: true, deletedCount: 1 });
     });
 
     it('# last', function() {
@@ -79,7 +79,7 @@ describe('#delete - development', function() {
       var result = crud.deleteOne( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 1 });
+      expect(result).eql({ acknowledged: true, deletedCount: 1 });
     });
 
   });
@@ -94,7 +94,7 @@ describe('#delete - development', function() {
       var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 0 });
+      expect(result).eql({ acknowledged: true, deletedCount: 0 });
     });
 
     it('# first', function() {
@@ -104,7 +104,7 @@ describe('#delete - development', function() {
       var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 1 });
+      expect(result).eql({ acknowledged: true, deletedCount: 1 });
     });
 
     it('# several', function() {
@@ -115,7 +115,7 @@ describe('#delete - development', function() {
       var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 3 });
+      expect(result).eql({ acknowledged: true, deletedCount: 3 });
     });
 
     it('# last', function() {
@@ -125,7 +125,7 @@ describe('#delete - development', function() {
       var result = crud.deleteMany( a, q );
 
       expect(a).eql(r);
-      expect(result).eql({ deletedCount: 1 });
+      expect(result).eql({ acknowledged: true, deletedCount: 1 });
     });
 
   });

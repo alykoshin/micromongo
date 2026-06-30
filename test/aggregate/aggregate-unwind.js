@@ -199,7 +199,7 @@ var aggregate = require('../../dist/aggregate/');
 
       // Regression: nested path must unwind the correct (own `path`) field, and
       // the index field must land at the TOP level of the document (MongoDB semantics),
-      // not nested next to the array field. See docs/compatibility.md "Known bugs".
+      // not nested next to the array field. See planning/compatibility.md "Known bugs".
       it('# nested path - index field at top level', function() {
         var a2 = [
           { a: { c: [ 10, 20 ] } }

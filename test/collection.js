@@ -84,27 +84,27 @@ describe('# Collection', function () {
       expect(c.toArray()[0].a.b).eql(1);
     });
 
-    it('# insertOne mutates the owned array, returns { nInserted }', function () {
+    it('# insertOne mutates the owned array, returns a driver-shaped report', function () {
       var c = new Collection([]);
-      expect(c.insertOne({ a: 1 })).eql({ nInserted: 1 });
+      expect(c.insertOne({ a: 1 })).eql({ acknowledged: true, insertedId: undefined, insertedCount: 1 });
       expect(c.toArray()).eql([ { a: 1 } ]);
     });
 
     it('# insertMany mutates and returns count', function () {
       var c = new Collection([]);
-      expect(c.insertMany([ { a: 1 }, { a: 2 } ])).eql({ nInserted: 2 });
+      expect(c.insertMany([ { a: 1 }, { a: 2 } ])).eql({ acknowledged: true, insertedCount: 2, insertedIds: { 0: undefined, 1: undefined } });
       expect(c.toArray().length).eql(2);
     });
 
     it('# deleteOne removes first match in place', function () {
       var c = new Collection([ { a: 1 }, { a: 2 }, { a: 1 } ]);
-      expect(c.deleteOne({ a: 1 })).eql({ deletedCount: 1 });
+      expect(c.deleteOne({ a: 1 })).eql({ acknowledged: true, deletedCount: 1 });
       expect(c.toArray()).eql([ { a: 2 }, { a: 1 } ]);
     });
 
     it('# deleteMany removes all matches in place', function () {
       var c = new Collection([ { a: 1 }, { a: 2 }, { a: 1 } ]);
-      expect(c.deleteMany({ a: 1 })).eql({ deletedCount: 2 });
+      expect(c.deleteMany({ a: 1 })).eql({ acknowledged: true, deletedCount: 2 });
       expect(c.toArray()).eql([ { a: 2 } ]);
     });
 
@@ -134,7 +134,7 @@ describe('# Collection', function () {
 
     it('# insert (dispatches to insertMany for an array)', function () {
       var c = new Collection([]);
-      expect(c.insert([ { a: 1 }, { a: 2 } ])).eql({ nInserted: 2 });
+      expect(c.insert([ { a: 1 }, { a: 2 } ])).eql({ acknowledged: true, insertedCount: 2, insertedIds: { 0: undefined, 1: undefined } });
       expect(c.toArray().length).eql(2);
     });
 

@@ -24,18 +24,20 @@
 
 'use strict';
 
-var RANGE_OPS: any = { $gt: 'gt', $gte: 'gte', $lt: 'lt', $lte: 'lte' };
+import type { Doc, Query } from '../types';
 
-function isPlainObject(v: any): boolean {
+var RANGE_OPS: Record<string, string> = { $gt: 'gt', $gte: 'gte', $lt: 'lt', $lte: 'lte' };
+
+function isPlainObject(v: any /* value */): boolean {
   return v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && !(v instanceof RegExp);
 }
 
 /** Extract a {gt,gte,lt,lte} bounds object from a field condition, or null. */
-function rangeBounds(cond: any): any {
+function rangeBounds(cond: any /* value */): Record<string, any> | null {
   if (!isPlainObject(cond)) { return null; }
   var keys = Object.keys(cond);
   if (keys.length === 0) { return null; }
-  var bounds: any = {};
+  var bounds: Record<string, any> = {}; // values are genuine operand values
   for (var i = 0; i < keys.length; ++i) {
     var op = RANGE_OPS[keys[i]];
     if (!op) { return null; } // a non-range operator present → not a pure range
@@ -45,14 +47,14 @@ function rangeBounds(cond: any): any {
 }
 
 /** Is this condition a plain equality value (not an operator object / regex)? */
-function isEqualityValue(cond: any): boolean {
+function isEqualityValue(cond: any /* value */): boolean {
   if (isPlainObject(cond)) {
     var keys = Object.keys(cond);
     return keys.length === 1 && keys[0] === '$eq';
   }
   return !(cond instanceof RegExp);
 }
-function equalityValue(cond: any): any {
+function equalityValue(cond: any /* value */): any /* value */ {
   return (isPlainObject(cond) && '$eq' in cond) ? cond.$eq : cond;
 }
 
@@ -66,9 +68,9 @@ function equalityValue(cond: any): any {
  * The returned `explain` describes the plan (stage, index, fields, multiKey,
  * usedHash) for Collection.find().explain(); it carries no docs.
  */
-function indexId(idx: any): any { return idx.fields.map(function (f: any) { return f + '_' + idx.spec[f]; }).join('_'); }
+function indexId(idx: any /* OrderedIndex — not importable here (cycle) */): string { return idx.fields.map(function (f: string) { return f + '_' + idx.spec[f]; }).join('_'); }
 
-function plan(query: any, indexes: any, getIndexFor: Function): { docs: any[]; exact: boolean; explain: any } | null {
+function plan(query: Query, indexes: Record<string, any> /* name → OrderedIndex */, getIndexFor: (f: any) => any): { docs: Doc[]; exact: boolean; explain: any /* metadata */ } | null {
   if (!query || typeof query !== 'object' || Array.isArray(query)) { return null; }
   var keys = Object.keys(query);
 
@@ -76,9 +78,9 @@ function plan(query: any, indexes: any, getIndexFor: Function): { docs: any[]; e
   if (keys.length === 1 && keys[0] === '$or') {
     var branches = query.$or;
     if (!Array.isArray(branches) || branches.length === 0) { return null; }
-    var union: any[] = [];
+    var union: Doc[] = [];
     var seen = new Set();
-    var branchPlans: any[] = [];
+    var branchPlans: any[] = []; // explain metadata, heterogeneous
     for (var b = 0; b < branches.length; ++b) {
       var sub = plan(branches[b], indexes, getIndexFor);
       if (!sub) { return null; } // a branch can't use an index → scanning the whole array is simpler
@@ -101,7 +103,7 @@ function plan(query: any, indexes: any, getIndexFor: Function): { docs: any[]; e
 
     // $in → union of equality ranges
     if (isPlainObject(cond) && Object.keys(cond).length === 1 && '$in' in cond && Array.isArray(cond.$in)) {
-      var inUnion: any[] = [];
+      var inUnion: Doc[] = [];
       var inSeen = new Set();
       for (var v = 0; v < cond.$in.length; ++v) {
         var hit = idx.eqRange(cond.$in[v]);
@@ -140,7 +142,7 @@ function plan(query: any, indexes: any, getIndexFor: Function): { docs: any[]; e
       // Build the prefix key in the index's field order; eqRange on the (partial) tuple
       // works because compareKeys compares lexicographically and a shorter query tuple
       // matches the prefix range.
-      var prefix: any[] = [];
+      var prefix: any[] = []; // tuple of equality operand values
       var usable = true;
       for (var fi = 0; fi < cidx.fields.length; ++fi) {
         var f = cidx.fields[fi];

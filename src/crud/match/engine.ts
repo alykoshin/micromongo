@@ -16,7 +16,11 @@
 
 'use strict';
 
-var _ = require('lodash');
+var get = require('lodash/get');
+var isEmpty = require('lodash/isEmpty');
+
+
+import type { Document, Query } from '../../types';
 
 var dbg = require('./debug');
 var DEBUG = dbg.DEBUG;
@@ -28,14 +32,14 @@ var postOperators = registry.postOperators;
 var preprocessOps = registry.preprocessOps;
 
 
-function doPreOp(this: any, doc: any, op: any, subQuery: any, options: any): any {
+function doPreOp(this: any, doc: Document, op: string, subQuery: any /* value */, options: any /* value */): boolean {
   if (typeof preOperators[ op ] === 'undefined') { // execute it
     throw new Error('Invalid operator \''+JSON.stringify(op));
   }
   return preOperators[ op ].call(this, doc, subQuery, options);
 }
 
-function doPostOp(this: any, doc: any, op: any, subQuery: any, options?: any, siblings?: any): any {
+function doPostOp(this: any, doc: any /* value */, op: string, subQuery: any /* value */, options?: any /* value */, siblings?: any /* value */): boolean {
   if (DEBUG) debug('doPostOp(): doc: '+JSON.stringify(doc)+', op:'+JSON.stringify(op)+', subQuery:'+JSON.stringify(subQuery)+', options:'+JSON.stringify(options));
   if (typeof postOperators[ op ] === 'undefined') {
     throw new Error('Invalid operator \'' + JSON.stringify(op) + '\'.');
@@ -45,7 +49,7 @@ function doPostOp(this: any, doc: any, op: any, subQuery: any, options?: any, si
   return postOperators[ op ].call(this, doc, subQuery, options, siblings); // execute it
 }
 
-function doExpr(this: any, doc: any, query: any, options?: any): any {
+function doExpr(this: any, doc: any /* value */, query: any /* value */, options?: any /* value */): boolean {
   if (DEBUG) debug('doExpr(): doc: '+JSON.stringify(doc)+', query:'+JSON.stringify(query));
   var res;
   // as this is not logical operator, this is a field name
@@ -63,7 +67,7 @@ function doExpr(this: any, doc: any, query: any, options?: any): any {
         if (!res) { if (DEBUG) debug('doExpr(): false'); return false; }
 
       } else { // this is a field name, not operator
-        res = doExpr.call(this,  _.get(doc, k2), query[k2], query.$options);
+        res = doExpr.call(this,  get(doc, k2), query[k2], query.$options);
         if (!res) { if (DEBUG) debug('doExpr(): false'); return false; }
       }
     }}
@@ -76,7 +80,7 @@ function doExpr(this: any, doc: any, query: any, options?: any): any {
   return true;
 }
 
-function _match1(this: any, doc: any, query: any): any {
+function _match1(this: any, doc: Document, query: any /* value */): any /* value (scalar query echoed back) */ {
   if (DEBUG) debug('* _match1(): doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
   var res;
 
@@ -87,7 +91,7 @@ function _match1(this: any, doc: any, query: any): any {
   }
 
   // empty query returns all documents (for top-level query only)
-  if (_.isEmpty(query)) { // this includes boolean & numbers
+  if (isEmpty(query)) { // this includes boolean & numbers
     return true;
   }
 
@@ -100,14 +104,14 @@ function _match1(this: any, doc: any, query: any): any {
       res = doPreOp.call(this, doc, k1, query[ k1 ], query.$options); if (!res) { return false; }
 
     } else {
-      res = doExpr.call(this,  _.get(doc, k1), query[k1], query.$options); if (!res) { return false; }
+      res = doExpr.call(this,  get(doc, k1), query[k1], query.$options); if (!res) { return false; }
     }
 
   }}
   return true;
 }
 
-function _match0(this: any, doc: any, query: any): any {
+function _match0(this: any, doc: Document, query: any /* value */): any /* value */ {
   if (DEBUG) debug('* _match0(): doc: '+ JSON.stringify(doc)+', query: '+ JSON.stringify(query));
 
   // handle implicit $where
@@ -118,12 +122,12 @@ function _match0(this: any, doc: any, query: any): any {
   return _match1.call(this, doc, query);
 }
 
-function match(doc: any, query: any): any {
+function match(doc: Document, query: Query): any /* value */ {
   if (DEBUG) debug('* match(): doc: '+ JSON.stringify(doc)+', query: '+ JSON.stringify(query));
   return _match0.call(doc, doc, query); // pass original `doc` as `this`
 }
 
-function prepareQuery(this: any, query: any): any {
+function prepareQuery(this: any, query: Query): Query {
   if (DEBUG) debug('* prepareQuery(): query: '+ JSON.stringify(query));
   for (var op in query) { if (query.hasOwnProperty(op)) {
     if (preprocessOps[op]) {
