@@ -18,6 +18,7 @@
 
 var get = require('lodash/get');
 var isEmpty = require('lodash/isEmpty');
+var isBuffer = require('../../utils').isBuffer;
 
 
 import type { Document, Query } from '../../types';
@@ -54,7 +55,7 @@ function doExpr(this: any, doc: any /* value */, query: any /* value */, options
   var res;
   // as this is not logical operator, this is a field name
   // check if there is an operator inside
-  if (typeof query === 'object' && query!==null && !Array.isArray(query) && !(query instanceof Buffer) ) {
+  if (typeof query === 'object' && query!==null && !Array.isArray(query) && !isBuffer(query) ) {
 
     for (var k2 in query) { if (query.hasOwnProperty(k2)) {
       if (DEBUG) debug('doExpr(): k2: '+k2);

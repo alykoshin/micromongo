@@ -20,9 +20,18 @@
 
 import type { MatchOperatorFn } from '../../types';
 
-var preOperators: Record<string, MatchOperatorFn> = {};
-var postOperators: Record<string, MatchOperatorFn> = {};
-var preprocessOps: Record<string, MatchOperatorFn> = {};
+var singleton = require('../../singleton');
+
+// The three operator tables are pinned on globalThis so a CJS and an ESM copy of
+// micromongo loaded in the same process register into — and dispatch from — the SAME
+// tables (dual-package hazard; see src/singleton.ts). The built-ins self-register into
+// whichever copy loads first; both copies then see every operator.
+var tables: { pre: Record<string, MatchOperatorFn>; post: Record<string, MatchOperatorFn>; preprocess: Record<string, MatchOperatorFn> } =
+  singleton('matchOperatorTables', function () { return { pre: {}, post: {}, preprocess: {} }; });
+
+var preOperators: Record<string, MatchOperatorFn> = tables.pre;
+var postOperators: Record<string, MatchOperatorFn> = tables.post;
+var preprocessOps: Record<string, MatchOperatorFn> = tables.preprocess;
 
 var TABLES: Record<string, Record<string, MatchOperatorFn>> = {
   pre: preOperators,

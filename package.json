@@ -3,7 +3,23 @@
   "version": "0.3.1",
   "description": "Mongodb-like queries over standard arrays of objects",
   "main": "./index.js",
+  "module": "./dist/index.mjs",
+  "browser": "./dist/index.global.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.global.js",
+      "import": "./dist/index.mjs",
+      "require": "./index.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "micromongo": "./cli.js"
   },
@@ -13,17 +29,26 @@
     "cli.js",
     "README.md"
   ],
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.mjs",
+    "./dist/index.global.js",
+    "./dist/crud/match/index.js",
+    "./dist/crud/match/operators/*.js"
+  ],
   "engines": {
     "node": ">=8"
   },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
-    "rebuild": "npm run clean && npm run build",
+    "build:bundles": "tsup",
+    "build:all": "npm run build && npm run build:bundles",
+    "rebuild": "npm run clean && npm run build:all",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test-types": "tsd",
     "gen-mongo-operators": "node scripts/gen-mongo-operators.js",
-    "prepare": "npm run build",
+    "prepare": "npm run build:all",
     "prepublishOnly": "npm run rebuild",
     "pre_test": "npm run build",
     "_npm-audit": "npm audit || echo '\n*** Please check warnings above ***\n' && npm audit --production --audit-level high && echo '\n*** npm audit reported no high-level vulnerabilities for production configuration ***\n' ",
@@ -35,7 +60,8 @@
     "_inspect": "jsinspect --ignore 'coverage|test'",
     "inspect": "echo \"skipping jsinspect\"",
     "pretest": "npm run typecheck && npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
-    "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/ && npm run test-types",
+    "test:bundles": "npm run build:bundles && node bundle-tests/esm-smoke.mjs && node bundle-tests/browser-iife-smoke.cjs && node bundle-tests/dual-package.mjs && node bundle-tests/treeshake-guard.mjs && node bundle-tests/core-smoke.mjs",
+    "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/ && npm run test-types && npm run test:bundles",
     "_test-report": "nyc report --reporter=html && nyc report --reporter=text-lcov > coverage/coverage.lcov",
     "test": "npm run _test && npm run _test-report",
     "test-travis": "npm run _test && npm run _test-report",
@@ -91,6 +117,7 @@
     "require-dir-all": "^0.4.15",
     "sinon": "^9.0.2",
     "tsd": "^0.33.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }
 }

@@ -12,6 +12,8 @@
 
 'use strict';
 
+var singleton = require('./singleton');
+
 /**
  * The exported registry object. Typed via an interface so `this.has(...)` inside
  * `drop` resolves under `strict` (object-literal method `this` would otherwise be
@@ -27,7 +29,9 @@ interface RegistryModule {
   reset: () => void;
 }
 
-var registry: any = {}; // name -> Collection
+// name -> Collection. Pinned on globalThis so a CJS and an ESM copy of micromongo
+// loaded in the same process share ONE registry (dual-package hazard — see singleton.ts).
+var registry: any = singleton('collectionRegistry', function () { return {}; });
 
 var theObj: RegistryModule = {
   /** Register (or replace) a Collection under `name`. */

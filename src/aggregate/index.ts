@@ -12,6 +12,8 @@ var unset = require('lodash/unset');
 
 var cloneDeep = require('lodash/cloneDeep');
 
+var isBuffer = require('../utils').isBuffer;
+
 
 var copyTo = require('../crud/').copyTo;
 var project = require('../crud/project');
@@ -21,6 +23,11 @@ var evaluate = require('./expression');
 var registry = require('../registry');
 
 import type { Doc, Document, Query, AccumulatorFn, StageFn, AggStage } from '../types';
+
+// Injected by the full `micromongo` entry (src/index.ts) with the real Collection
+// constructor; stays null in the functional-core build so aggregate never imports the
+// Collection+index layer (see _resolveCollection). `(arr) => new Collection(arr)`.
+var _collectionFactory: ((arr: Doc[]) => any) | null = null;
 
 
 /**
@@ -34,7 +41,21 @@ function _resolveCollection(ref: any, createIfMissing: boolean): any {   // ref:
     var coll = registry.get(ref);
     if (!coll) {
       if (!createIfMissing) { return null; }
-      coll = registry.set(ref, new (require('../collection'))([]));
+      // Dependency-injection seam: the main entry (src/index.ts) sets
+      // `aggregate._collectionFactory` to the real Collection constructor. Aggregate
+      // does NOT `require('../collection')` itself, so the functional core / `micromongo/core`
+      // build can exclude the Collection+index layer entirely. In a core-only build the
+      // factory is unset, so `$out`/`$lookup` targeting an *unregistered name* throws a
+      // clear error instead of silently pulling Collection in (name-registered targets,
+      // direct-Collection, and array targets all still work — they don't need the factory).
+      if (!_collectionFactory) {
+        throw new Error(
+          "aggregate: $out/$lookup by name '" + ref + "' needs a Collection, unavailable in the " +
+          "functional-core build. Use the full 'micromongo' entry, or pass an array/Collection directly, " +
+          "or pre-register the collection via mm.collection('" + ref + "', [...])."
+        );
+      }
+      coll = registry.set(ref, _collectionFactory([]));
     }
     return { data: coll._data, set: function (arr: Doc[]) { coll._data.length = 0; Array.prototype.push.apply(coll._data, arr); } };
   }
@@ -150,7 +171,7 @@ var REDACT_KEEP    = '__$$KEEP__';
 var REDACT_VARS = { DESCEND: REDACT_DESCEND, PRUNE: REDACT_PRUNE, KEEP: REDACT_KEEP };
 
 function _isPlainObject(v: any): boolean {   // v: genuine value
-  return v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && !(v instanceof Buffer);
+  return v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && !isBuffer(v);
 }
 
 /**
@@ -601,6 +622,8 @@ interface AggregateFn {
   (array: Doc[], stages: AggStage[], options?: Record<string, any>): Doc[];   // stages: pipeline stage specs
   _parseFieldPath: (fieldPath: string) => string;
   _aggregateStageOps: Record<string, StageFn>;
+  /** Set by the full entry to the Collection factory; enables $out/$lookup lazy-create by name. */
+  _setCollectionFactory: (factory: ((arr: Doc[]) => any) | null) => void;
 }
 
 var aggregate = (function(array: Doc[], stages: AggStage[], options?: Record<string, any>): Doc[] {   // stages: pipeline stage specs
@@ -638,5 +661,8 @@ var aggregate = (function(array: Doc[], stages: AggStage[], options?: Record<str
 
 aggregate._parseFieldPath = _parseFieldPath;
 aggregate._aggregateStageOps = _aggregateStageOps;
+aggregate._setCollectionFactory = function (factory: ((arr: Doc[]) => any) | null): void {
+  _collectionFactory = factory;
+};
 
 export = aggregate;

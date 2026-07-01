@@ -10,7 +10,6 @@
 'use strict';
 
 var assert = require('../../../assert');
-var vm = require('vm');
 
 var dbg = require('../debug');
 var DEBUG = dbg.DEBUG;
@@ -109,6 +108,11 @@ registry.registerOperator('pre', '$where', function (this: any, doc: Document, q
   // function operand that references the free `obj` (which a direct call can't supply).
   // `whereTimeout` is read at use so `mm.configure({ whereTimeout })` takes effect.
   var runInVm = function (fnSource: string): any {
+    // Lazy-require `vm` at first use, not at module load, so this engine module
+    // imports cleanly in non-Node runtimes (the browser build never references `vm`
+    // unless string `$where` actually runs — a Node-only feature). The browser build
+    // swaps this evaluator for a `new Function` variant (see the multi-target plan).
+    var vm = require('vm');
     var sandbox = { this: self, obj: self };
     vm.createContext(sandbox);
     var code = '(' + fnSource + ').call(this.this)';

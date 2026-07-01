@@ -1,46 +1,34 @@
 'use strict';
 
+// micromongo/core — the FUNCTIONAL API only (mm.find/aggregate/update… on arrays),
+// deliberately WITHOUT the Collection / Cursor / ordered-index layer. Importing this
+// entry pulls in crud + aggregate + match only; the ~30 KB Collection+index code (and
+// its planner) never enters the bundle. See planning/proposals/multi-target-build.md §6b.
+//
+// Trade-off vs. the full `micromongo` entry: no `Collection`/`Cursor`/`db`/`collection()`,
+// and `$out`/`$lookup` by *unregistered name* throws (pass an array/Collection directly,
+// or use the full entry). Everything else — every query/update operator, every aggregation
+// stage, configure, registerOperator — is identical.
+
 import type {
   Doc, Query, Projection, UpdateSpec, WriteOptions, UpdateReport,
   Settings, OperatorKind, AggStage,
   InsertOneReport, InsertManyReport, DeleteReport, RemoveReport,
   BulkWriteOperation, BulkWriteResult,
 } from './types';
-import type CollectionClass = require('./collection');
-import type CursorClass = require('./cursor');
 
 var crud = require('./crud/');
 var aggregate = require('./aggregate/');
 var settings = require('./settings');
-var Collection = require('./collection');
-var Cursor = require('./cursor');
-var registry = require('./registry');
 var match = require('./crud/match');
-
-// Inject the Collection constructor into aggregate so $out/$lookup can lazy-create a
-// target Collection by name. This is the ONLY place Collection is wired into aggregate;
-// the functional-core entry (src/core.ts) omits it, so aggregate — and thus core — never
-// pulls in the Collection+index layer. See aggregate._resolveCollection.
-aggregate._setCollectionFactory(function (arr: any[]) { return new Collection(arr); });
 
 
 /**
- * The public surface of `require('micromongo')`. The read/write/aggregate methods
- * are **generic on the document shape `T`** (inferred from the array argument, so
- * the object literal IS the schema), defaulting to `Doc` — an untyped array stays
- * fully permissive, while a typed array gets query keys/operands and update specs
- * checked against `T` (Mongo-driver style). Internal/extension members (`_crud`,
- * `_registry`, `db`, the engine seams) stay `any` — dynamic by nature.
+ * The functional-only public surface. Same generic, inferred typing as the full
+ * entry's methods (T inferred from the array argument), minus the Collection layer.
  */
-interface Micromongo {
+interface MicromongoCore {
   configure(options?: Partial<Settings>): Settings;
-  Collection: typeof CollectionClass;
-  Cursor: typeof CursorClass;
-  collection: typeof collection;
-  db: any;
-  _registry: any;
-
-  /** Register a custom query operator (the blessed extension point). */
   registerOperator(kind: OperatorKind, name: string, fn: (doc: any, query: any) => any): any;
 
   count<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): number;
@@ -52,7 +40,6 @@ interface Micromongo {
 
   deleteOne<T extends Doc = Doc>(array: T[], query?: Query<T>): DeleteReport;
   deleteMany<T extends Doc = Doc>(array: T[], query?: Query<T>): DeleteReport;
-  /** @deprecated Use `deleteOne`/`deleteMany`. Returns the legacy `{ nRemoved }` shape. */
   remove<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): RemoveReport;
 
   insertOne<T extends Doc = Doc>(array: T[], doc: T): InsertOneReport;
@@ -74,38 +61,8 @@ interface Micromongo {
 }
 
 
-/**
- * Register or retrieve a named collection (micromongo's `db.collection(name)`).
- *
- *   mm.collection('orders', ordersArray)  // create/replace from an array → Collection
- *   mm.collection('orders', someColl)     // register an existing Collection
- *   mm.collection('orders')               // retrieve (creates an empty one if absent,
- *                                         //  matching Mongo's lazy-collection behavior)
- *
- * Named collections are resolvable by `$out`/`$lookup` via their string name.
- */
-function collection<T extends Doc = Doc>(name: string, array?: T[] | CollectionClass<T>): CollectionClass<T> {
-  if (typeof name !== 'string') { throw new TypeError('collection(name): name must be a string'); }
-  if (typeof array !== 'undefined') {
-    var coll = (array instanceof Collection) ? array : new Collection(array);
-    return registry.set(name, coll);
-  }
-  if (!registry.has(name)) { registry.set(name, new Collection([])); } // lazy-create like Mongo
-  return registry.get(name);
-}
-
-
-var mm: Micromongo = {
+var mm: MicromongoCore = {
   configure: settings.configure,
-  Collection: Collection,
-  Cursor: Cursor,
-  collection: collection,
-  db: registry._map,        // sugar: mm.db.orders === mm.collection('orders')
-  _registry: registry,
-
-  // Extend the query engine with a custom operator (the blessed extension point,
-  // replacing direct mutation of mm._crud._match.postOperators).
-  //   mm.registerOperator('post', '$myOp', function (doc, query) { … })
   registerOperator: match.registerOperator,
 
   count: crud.count,

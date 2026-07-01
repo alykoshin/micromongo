@@ -37,6 +37,7 @@
 'use strict';
 
 var deburr = require('lodash/deburr');
+var singleton = require('../singleton');
 
 var settings = require('../settings');
 
@@ -261,7 +262,10 @@ function containsSequence(tokens: string[], seq: string[]): boolean {
 // --- relevance-score side channel --------------------------------------------
 // $text stashes the matched document's score here; a $meta:"textScore" projection
 // retrieves it. Keyed by document identity (WeakMap), so docs are not mutated.
-var scoreMap = new WeakMap();
+// Pinned on globalThis so the score a CJS-side $text stashes is retrievable by an
+// ESM-side $meta:"textScore" projection (and vice-versa) when both copies are loaded
+// (dual-package hazard — see src/singleton.ts).
+var scoreMap: WeakMap<any, number> = singleton('textScoreMap', function () { return new WeakMap(); });
 
 function setScore(doc: Document, score: number): void {
   if (doc && typeof doc === 'object') { scoreMap.set(doc, score); }
