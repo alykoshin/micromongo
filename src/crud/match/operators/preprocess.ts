@@ -11,7 +11,13 @@
 var registry = require('../registry');
 
 
-registry.registerOperator('preprocess', '$comment', function (doc: any /* value */, query: any /* value (operand) */) {
-  console.log(query);
-  return query;
-});
+// See operators/bitwise.ts for the register(reg) + self-call + `export =` convention.
+function register(reg: any): void {
+  reg.registerOperator('preprocess', '$comment', function (doc: any /* value */, query: any /* value (operand) */) {
+    console.log(query);
+    return query;
+  });
+}
+
+register(registry);
+export = register;

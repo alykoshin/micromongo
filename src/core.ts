@@ -3,7 +3,7 @@
 // micromongo/core — the FUNCTIONAL API only (mm.find/aggregate/update… on arrays),
 // deliberately WITHOUT the Collection / Cursor / ordered-index layer. Importing this
 // entry pulls in crud + aggregate + match only; the ~30 KB Collection+index code (and
-// its planner) never enters the bundle. See planning/proposals/multi-target-build.md §6b.
+// its planner) never enters the bundle. See planning/roadmap.md (the v1.0 build).
 //
 // Trade-off vs. the full `micromongo` entry: no `Collection`/`Cursor`/`db`/`collection()`,
 // and `$out`/`$lookup` by *unregistered name* throws (pass an array/Collection directly,

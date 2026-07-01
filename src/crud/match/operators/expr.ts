@@ -25,7 +25,13 @@ var evaluate = require('../../../aggregate/expression');
 
 import type { Document } from '../../../types';
 
-registry.registerOperator('pre', '$expr', function (doc: Document, query: any /* the aggregation expression */) {
-  // Evaluate the expression against the whole document; match on truthiness.
-  return evaluate._truthy(evaluate(query, doc));
-});
+// See operators/bitwise.ts for the register(reg) + self-call + `export =` convention.
+function register(reg: any): void {
+  reg.registerOperator('pre', '$expr', function (doc: Document, query: any /* the aggregation expression */) {
+    // Evaluate the expression against the whole document; match on truthiness.
+    return evaluate._truthy(evaluate(query, doc));
+  });
+}
+
+register(registry);
+export = register;

@@ -7,7 +7,7 @@
  * Extracts MongoDB's authoritative query/update operator *name sets* from the
  * `mongodb` driver's TypeScript types (`FilterOperators` / `UpdateFilter` /
  * `RootFilterOperators`) via the TypeScript Compiler API, and writes them to
- * `test/crud/match/mongo-operators.generated.json`.
+ * `meta/mongo-operators.generated.json`.
  *
  * The drift guard ([test/crud/match/filter-operators-drift.js]) reads that JSON to
  * verify micromongo's operator vocabulary stays a documented subset of Mongo's.
@@ -26,7 +26,7 @@ var ts = require('typescript');
 var fs = require('fs');
 var path = require('path');
 
-var OUT = path.resolve(__dirname, '..', 'test', 'crud', 'match', 'mongo-operators.generated.json');
+var OUT = path.resolve(__dirname, '..', 'meta', 'mongo-operators.generated.json');
 
 // A throwaway source that references the Mongo types we want to introspect.
 var probeSource = [

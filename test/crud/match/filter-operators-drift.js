@@ -100,7 +100,7 @@ describe('# FilterOperators type ↔ registry drift guard', function () {
  */
 describe('# Mongo-consistency: registry vs MongoDB operator set (generated)', function () {
 
-  var MONGO = require('./mongo-operators.generated.json');
+  var MONGO = require('../../../meta/mongo-operators.generated.json');
 
   // Operators MongoDB declares that micromongo deliberately does NOT implement,
   // each a documented scope decision (see planning/implementation-plan.md "Deferred by

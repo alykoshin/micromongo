@@ -83,8 +83,8 @@ class Collection<T extends Doc = Doc> {
   // write. A rebuild is *guaranteed* consistent — far safer than incremental upkeep
   // across update/replace (where the indexed value itself can change and the crud
   // layer doesn't report what moved). It is O(n) per write, so for very large,
-  // write-heavy collections this is the bottleneck to revisit (incremental upkeep, or
-  // the ordered-index work in implementation-plan.md → Phase 12). For read-heavy use
+  // write-heavy collections this is the bottleneck to revisit (incremental upkeep is
+  // the follow-on if that becomes a target). For read-heavy use
   // it's a non-issue. Invariant: the Collection must be the SOLE writer. Mutating
   // `toArray()` directly bypasses index maintenance (documented; reindex() recovers).
 

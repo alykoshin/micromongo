@@ -655,7 +655,7 @@ These cases live in [`test/performance.js`](test/performance.js) (the `10 000`/`
 
 The functional API (`mm.find(array, …)`) is **always** a linear scan — it can't be otherwise, because
 the caller owns the array and mutates it directly, so micromongo can't keep an index valid (see the
-[Indexes section in planning/compatibility.md](planning/compatibility.md)). A [`Collection`](planning/architecture.md),
+[Indexes section in planning/compatibility.md](planning/compatibility.md)). A `Collection`,
 which _owns_ its data, can opt into an **ordered index** (single-field / multikey / compound) that
 serves equality, range, sort, `$in`, compound-prefix and `$or` queries from the index instead of
 scanning:

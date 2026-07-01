@@ -16,8 +16,14 @@ var registry = require('../registry');
 var engine = require('../engine');
 
 
-registry.registerOperator('post', '$not', function (this: any, doc: any /* value */, query: any /* value (sub-expression) */) {
-  if (DEBUG) debug('$not: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
-  var res = ! engine.doExpr.call(this, doc, query);
-  return res;
-});
+// See operators/bitwise.ts for the register(reg) + self-call + `export =` convention.
+function register(reg: any): void {
+  reg.registerOperator('post', '$not', function (this: any, doc: any /* value */, query: any /* value (sub-expression) */) {
+    if (DEBUG) debug('$not: doc: '+JSON.stringify(doc)+', query: '+JSON.stringify(query));
+    var res = ! engine.doExpr.call(this, doc, query);
+    return res;
+  });
+}
+
+register(registry);
+export = register;
