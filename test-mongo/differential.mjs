@@ -21,7 +21,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import mock from '../dist/mock/index.mjs';
+import { createRequire } from 'node:module';
 
 // --- tiny zero-dependency .env loader: parse KEY=VALUE lines from the repo-root .env.
 // Only fills vars that aren't ALREADY set in the environment (env overrides .env). Supports
@@ -75,90 +75,139 @@ try {
   process.exit(1);
 }
 
-// --- The cases: each is one driver-shaped operation over a fixture, plus how to read a result.
-// `run(collection)` performs the op and returns the value to compare. Keep results ORDER-STABLE
-// (add a final sort) so two backends compare deep-equal without incidental ordering noise.
-const CASES = [
-  {
-    name: 'find + $gte, sorted',
-    fixture: [{ _id: 1, qty: 30 }, { _id: 2, qty: 10 }, { _id: 3, qty: 50 }],
-    run: (c) => c.find({ qty: { $gte: 30 } }).sort({ qty: 1 }).toArray(),
-  },
-  {
-    name: '$or + projection',
-    fixture: [{ _id: 1, s: 'A', n: 1 }, { _id: 2, s: 'B', n: 2 }, { _id: 3, s: 'A', n: 3 }],
-    // NOTE: use an explicit inclusion ({ s: 1 }) rather than only { _id: 1 } — micromongo treats
-    // a projection with no non-_id inclusion field as "include everything", which DIVERGES from
-    // real Mongo (a known difference; that's precisely what a harness like this surfaces).
-    run: (c) => c.find({ $or: [{ s: 'B' }, { n: { $gt: 2 } }] }, { projection: { _id: 0, s: 1 } }).sort({ s: 1 }).toArray(),
-  },
-  {
-    name: 'updateMany $inc → read back',
-    fixture: [{ _id: 1, s: 'A', v: 1 }, { _id: 2, s: 'A', v: 2 }, { _id: 3, s: 'B', v: 9 }],
-    run: async (c) => {
-      const report = await c.updateMany({ s: 'A' }, { $inc: { v: 10 } });
-      const docs = await c.find({}).sort({ _id: 1 }).toArray();
-      // Compare the driver-shaped write report AND the resulting docs.
-      return { matchedCount: report.matchedCount, modifiedCount: report.modifiedCount, docs };
-    },
-  },
-  {
-    name: 'aggregate $group + $sort',
-    fixture: [{ s: 'A', amt: 30 }, { s: 'B', amt: 10 }, { s: 'A', amt: 50 }],
-    run: (c) => c.aggregate([
-      { $group: { _id: '$s', total: { $sum: '$amt' } } },
-      { $sort: { _id: 1 } },
-    ]).toArray(),
-  },
-  {
-    name: '$elemMatch on array of subdocs',
-    fixture: [{ _id: 1, items: [{ p: 5 }, { p: 20 }] }, { _id: 2, items: [{ p: 1 }] }],
-    run: (c) => c.find({ items: { $elemMatch: { p: { $gt: 10 } } } }).sort({ _id: 1 }).toArray(),
-  },
-];
+// --- The cases: the ONE canonical example set (meta/mongo-examples.js). Each record's `do` op is
+// run on a real MongoDB via `applyDriver`, and compared against BOTH the record's documented
+// `expect` AND micromongo's result. So a passing case proves: documented == real Mongo == micromongo.
+// The `real` field controls the live-Mongo comparison: 'exact' (default), 'skip:<why>' (non-
+// deterministic — e.g. $rand), or 'structural:<kind>' (assert a weaker invariant).
+const require2 = createRequire(import.meta.url);
+const { examples } = require2('../meta/mongo-examples.js');
+const { applyDriver, applyMicromongo, normalize } = require2('../meta/apply-example.js');
+const mm = require2('../dist/index.js');
 
-// Strip driver ObjectId noise: cases here all supply explicit _id or group, so results are
-// directly comparable. (If a case omits _id, normalize before comparing.)
-function normalize(v) {
-  return JSON.parse(JSON.stringify(v)); // flatten BSON/ObjectId wrappers to plain JSON
-}
+// regex in a `do` doesn't survive JSON round-trips (used for collection naming) — hash the op+title.
+function caseId(ex, i) { return 'mmdiff_' + i + '_' + String(ex.op).replace(/[^a-z0-9]/gi, ''); }
 
-let failures = 0;
-const mockClient = mock.createClient();
+let failures = 0, skipped = 0, checked = 0;
 const realClient = new RealMongoClient(URI);
 await realClient.connect();
 
 try {
-  for (const kase of CASES) {
-    // Fresh, isolated collection per case per backend.
-    const coll = 'mmdiff_' + Math.abs(hashName(kase.name));
-    const mockColl = await prep(mockClient, coll, kase.fixture);
-    const realColl = await prep(realClient, coll, kase.fixture);
+  for (let i = 0; i < examples.length; i++) {
+    const ex = examples[i];
+    const mode = ex.real || 'exact';
+    if (mode.startsWith('skip')) {
+      skipped++;
+      console.log('  ⊘ ' + ex.op + ' — ' + (ex.title || '') + '  (skip: ' + mode.slice(5) + ')');
+      continue;
+    }
 
-    const mockRes = normalize(await kase.run(mockColl));
-    const realRes = normalize(await kase.run(realColl));
-
-    // clean up the real collection (mock is in-memory, discarded with the process).
-    await realColl.drop().catch(() => {});
-
+    // Seed a fresh real collection with the fixture, run the op, read the result, then drop it.
+    // `ex.collections` (for $lookup `from`) seeds auxiliary collections BY THEIR REAL NAME (so the
+    // pipeline's `from: '<name>'` resolves), dropped afterwards.
+    const coll = await prep(realClient, caseId(ex, i), ex.fixture);
+    const auxNames = ex.collections ? Object.keys(ex.collections) : [];
+    for (const name of auxNames) { await prep(realClient, name, ex.collections[name]); }
+    let realRes;
     try {
-      assert.deepStrictEqual(mockRes, realRes);
-      console.log('  ✓ ' + kase.name);
-    } catch {
+      realRes = normalize(await applyDriver(coll, ex.do));
+    } finally {
+      await coll.drop().catch(() => {});
+      for (const name of auxNames) { await realClient.db(TEST_DB).collection(name).drop().catch(() => {}); }
+    }
+    const mmRes = normalize(applyMicromongo(mm, ex.fixture, ex.do, ex.collections));
+    const want = normalize(ex.expect);
+
+    // Cross-engine normalization (NOT a micromongo behavior change — only fair comparison):
+    //  - The real driver auto-assigns a 24-hex ObjectId `_id` to any inserted doc that lacked one;
+    //    the documented/micromongo results (rightly) don't have it. Strip such AUTO ids (24-hex
+    //    strings) so we compare the fields the example is about — an explicit small-int `_id` in
+    //    the fixture is kept and still compared.
+    //  - `distinct` result ORDER is unspecified in MongoDB — sort scalar-array results.
+    const cmp = (v) => normForCompare(v);
+    const realC = cmp(realRes), mmC = cmp(mmRes), wantC = cmp(want);
+
+    checked++;
+    try {
+      if (mode.startsWith('structural')) {
+        // Weaker invariant both engines must satisfy (e.g. same COUNT / same ORDER, not exact value).
+        assertStructural(mode.slice('structural:'.length), realC, mmC, wantC, ex);
+      } else {
+        // exact: documented == real == micromongo
+        assert.deepStrictEqual(realC, wantC);   // documented result holds on a live server
+        assert.deepStrictEqual(mmC, wantC);     // micromongo matches it too
+      }
+      console.log('  ✓ ' + ex.op + ' — ' + (ex.title || ''));
+    } catch (e) {
       failures++;
-      console.log('  ✗ ' + kase.name);
-      console.log('    micromongo:', JSON.stringify(mockRes));
-      console.log('    real mongo:', JSON.stringify(realRes));
+      console.log('  ✗ ' + ex.op + ' — ' + (ex.title || '') + '   ' + ex.source);
+      console.log('    documented:', JSON.stringify(wantC));
+      console.log('    real mongo:', JSON.stringify(realC));
+      console.log('    micromongo:', JSON.stringify(mmC));
     }
   }
 } finally {
   await realClient.close();
-  await mockClient.close();
 }
 
-console.log(failures === 0
-  ? `\nDifferential conformance: OK (${CASES.length} cases, micromongo == real MongoDB)`
-  : `\nDifferential conformance: ${failures}/${CASES.length} DIVERGED from real MongoDB`);
+// Fair-comparison normalizer. Handles cross-engine noise that isn't a behavior difference:
+//  - drop driver-AUTO `_id`s (24-hex ObjectId strings — never in a documented literal's small ints).
+//  - sort SCALAR arrays (e.g. `distinct`, whose order is unspecified in MongoDB).
+//  - sort NESTED doc-arrays whose elements all have `_id` (e.g. a `$lookup` `as` array — MongoDB
+//    does NOT guarantee its order). The TOP-LEVEL result order is kept (it's often set by `$sort`),
+//    so `depth === 0` is not reordered.
+function normForCompare(v, depth) {
+  depth = depth || 0;
+  const AUTO_ID = /^[0-9a-f]{24}$/;
+  if (Array.isArray(v)) {
+    if (v.every((x) => x === null || typeof x !== 'object')) {
+      return v.slice().sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    }
+    const mapped = v.map((x) => normForCompare(x, depth + 1));
+    // nested array of docs with _id → order-insensitive (join arrays, etc.)
+    if (depth > 0 && mapped.every((x) => x && typeof x === 'object' && x._id !== undefined)) {
+      return mapped.slice().sort((a, b) => {
+        const ai = JSON.stringify(a._id), bi = JSON.stringify(b._id);
+        return ai < bi ? -1 : ai > bi ? 1 : 0;
+      });
+    }
+    return mapped;
+  }
+  if (v && typeof v === 'object') {
+    const out = {};
+    for (const k of Object.keys(v)) {
+      if (k === '_id' && typeof v[k] === 'string' && AUTO_ID.test(v[k])) { continue; } // driver auto id
+      out[k] = normForCompare(v[k], depth + 1);
+    }
+    return out;
+  }
+  return v;
+}
+
+function assertStructural(kind, realRes, mmRes, want, ex) {
+  if (kind === 'count') {
+    // For a non-deterministic sample ($rand), exact counts differ run to run. Assert BOTH engines
+    // return a non-degenerate result (>0 and <= the fixture size) — the shared invariant.
+    const len = (x) => (Array.isArray(x) ? x.length : x);
+    const n = ex.fixture.length;
+    for (const [label, r] of [['real', realRes], ['mm', mmRes]]) {
+      assert.ok(len(r) > 0 && len(r) <= n,
+        ex.op + ' structural:count — ' + label + ' returned ' + len(r) + ' (expected 1..' + n + ')');
+    }
+  } else if (kind === 'order') {
+    // compare only the _id order (values may be non-deterministic, e.g. $geoNear distances)
+    const ids = (x) => x.map((d) => d && d._id);
+    assert.deepStrictEqual(ids(realRes), ids(mmRes), ex.op + ' structural:order real vs mm');
+  } else {
+    throw new Error('unknown structural kind: ' + kind);
+  }
+}
+
+console.log(
+  '\nDifferential conformance vs real MongoDB: ' +
+  (failures === 0 ? 'OK' : failures + ' DIVERGED') +
+  ` (${checked} checked, ${skipped} skipped, ${examples.length} total)`
+);
 process.exit(failures === 0 ? 0 : 1);
 
 // --- helpers ---
@@ -166,11 +215,8 @@ async function prep(client, name, fixture) {
   const db = client.db(TEST_DB);
   const c = db.collection(name);
   await c.deleteMany({}).catch(() => {});
-  if (fixture.length) { await c.insertMany(fixture.map((d) => ({ ...d }))); }
+  // Deep-clone each doc so the driver's insert can't mutate the shared fixture, and regexes in a
+  // query aren't an issue here (fixtures are plain data; queries are applied via applyDriver).
+  if (fixture.length) { await c.insertMany(fixture.map((d) => structuredClone(d))); }
   return c;
-}
-function hashName(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; }
-  return h;
 }

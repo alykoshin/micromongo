@@ -1535,6 +1535,8 @@ module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };</code
 
     <!-- The real engine, committed next to this page (see scripts/build-docs-site.js). -->
     <script src="./micromongo.global.js"></script>
+    <!-- Curated showcase examples (generated from meta/mongo-examples/, verified vs real MongoDB). -->
+    <script src="./examples.generated.js"></script>
     <script>
       (function () {
         // ================================================================
@@ -1868,200 +1870,44 @@ module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };</code
         var OK = '<span class="st ok">✅</span>',
           WARN = '<span class="st warn">⚠️</span>',
           NA = '<span class="st na">—</span>';
-        var OPS = [
-          { group: "Reads" },
-          {
-            name: "count",
-            seed: "[{_id:1,status:'A',qty:30},{_id:2,status:'B',qty:10},{_id:3,status:'A',qty:50}]",
-            func: "mm.count(data, { status: 'A' })",
-            coll: "c.count({ status: 'A' })",
-            compat:
-              OK +
-              "Maps to <code>countDocuments()</code> semantics. Empty/undefined query ⇒ total length.",
-          },
-          {
-            name: "find",
-            seed: "[{_id:1,status:'A',qty:30},{_id:2,status:'B',qty:10},{_id:3,status:'A',qty:50}]",
-            func: "mm.find(data, { status: 'A' })",
-            coll: "c.find({ status: 'A' }).sort({ qty: -1 }).limit(1).toArray()",
-            compat:
-              OK +
-              "Deep copy of matches; <code>_id</code> included by default. Functional returns an array; Collection returns a lazy Cursor.",
-          },
-          {
-            name: "findOne",
-            seed: "[{_id:1,status:'A'},{_id:2,status:'B',qty:10}]",
-            func: "mm.findOne(data, { status: 'B' })",
-            coll: "c.findOne({ status: 'B' })",
-            compat: OK + "First match, or <code>null</code>.",
-          },
-          {
-            name: "distinct",
-            seed: "[{status:'A'},{status:'B'},{status:'A'}]",
-            func: "mm.distinct(data, 'status')",
-            coll: "c.distinct('status')",
-            compat:
-              OK +
-              "Distinct values across matches; array fields flattened; dotted paths; deep-equal dedup.",
-          },
 
-          { group: "Inserts" },
-          {
-            name: "insertOne",
-            mutates: true,
-            seed: "[{_id:1}]",
-            func: "mm.insertOne(data, { _id: 4, status: 'A', qty: 5 })",
-            coll: "c.insertOne({ _id: 4, status: 'A', qty: 5 })",
-            compat:
-              OK +
-              "Mutates the array in place. <code>options.ordered</code> accepted but ignored.",
-          },
-          {
-            name: "insertMany",
-            mutates: true,
-            seed: "[{_id:1}]",
-            func: "mm.insertMany(data, [ { _id: 5 }, { _id: 6 } ])",
-            coll: "c.insertMany([ { _id: 5 }, { _id: 6 } ])",
-            compat:
-              OK +
-              "Mutates in place. (<code>insert</code> — a deprecated Mongo alias — also exists.)",
-          },
-
-          { group: "Updates" },
-          {
-            name: "updateOne",
-            mutates: true,
-            seed: "[{_id:1,status:'A'}]",
-            func: "mm.updateOne(data, { _id: 1 }, { $set: { status: 'C' } })",
-            coll: "c.updateOne({ _id: 1 }, { $set: { status: 'C' } })",
-            compat:
-              OK +
-              "Field + array update operators; requires an operator doc. <code>{ upsert }</code> / <code>{ arrayFilters }</code> supported; <code>modifiedCount</code> is 0 when matched-but-unchanged.",
-          },
-          {
-            name: "updateMany",
-            mutates: true,
-            seed: "[{_id:1,status:'A',qty:1},{_id:2,status:'A',qty:2},{_id:3,status:'B',qty:9}]",
-            func: "mm.updateMany(data, { status: 'A' }, { $inc: { qty: 5 } })",
-            coll: "c.updateMany({ status: 'A' }, { $inc: { qty: 5 } })",
-            compat:
-              OK +
-              "As <code>updateOne</code>, applied to all matches; same <code>upsert</code>/<code>arrayFilters</code> support.",
-          },
-          {
-            name: "replaceOne",
-            mutates: true,
-            seed: "[{_id:1,status:'A'}]",
-            func: "mm.replaceOne(data, { _id: 1 }, { _id: 1, status: 'Z' })",
-            coll: "c.replaceOne({ _id: 1 }, { _id: 1, status: 'Z' })",
-            compat:
-              OK +
-              "Replaces first match in place, preserving position; rejects operator docs. <code>{ upsert }</code> seeds from the query's equality fields.",
-          },
-          {
-            name: "findOneAndUpdate",
-            mutates: true,
-            seed: "[{_id:1,a:1}]",
-            func: "mm.findOneAndUpdate(data, { _id: 1 }, { $set: { a: 2 } })  // → doc BEFORE",
-            coll: "c.findOneAndUpdate({ _id: 1 }, { $set: { a: 2 } })",
-            compat:
-              OK +
-              "Returns the doc <em>before</em> modification (Mongo's default); <code>null</code> on no match. <code>findOneAndReplace</code>/<code>findOneAndDelete</code> too.",
-          },
-
-          { group: "Deletes" },
-          {
-            name: "deleteOne",
-            mutates: true,
-            seed: "[{_id:1},{_id:2}]",
-            func: "mm.deleteOne(data, { _id: 2 })",
-            coll: "c.deleteOne({ _id: 2 })",
-            compat: OK + "Removes first match in place.",
-          },
-          {
-            name: "deleteMany",
-            mutates: true,
-            seed: "[{_id:1,status:'A'},{_id:2,status:'A'},{_id:3,status:'B'}]",
-            func: "mm.deleteMany(data, { status: 'A' })",
-            coll: "c.deleteMany({ status: 'A' })",
-            compat:
-              OK +
-              "Removes all matches in place. (<code>remove</code> — a deprecated Mongo alias — also exists.)",
-          },
-
-          { group: "Batch & aggregate" },
-          {
-            name: "bulkWrite",
-            mutates: true,
-            seed: "[{_id:1},{_id:2}]",
-            func: "mm.bulkWrite(data, [ { insertOne: { document: { _id: 9 } } }, { deleteOne: { filter: { _id: 2 } } } ])",
-            collNote:
-              "no <code>c.bulkWrite</code> — run the functional form over <code>c.toArray()</code>, or loop the single-write methods on <code>c</code>",
-            compat:
-              OK +
-              "Batches all six write kinds; <code>ordered</code> true (fail-fast) / false (continue + <code>writeErrors</code>); aggregated <code>BulkWriteResult</code>.",
-          },
-          {
-            name: "aggregate",
-            seed: "[{status:'A'},{status:'B'},{status:'A'}]",
-            func: "mm.aggregate(data, [ { $group: { _id: '$status', n: { $sum: 1 } } } ])",
-            coll: "c.aggregate([ { $group: { _id: '$status', n: { $sum: 1 } } } ])",
-            compat:
-              WARN +
-              'Subset of stages + a pragmatic expression-operator core; date/type-conversion/set operators and a few stages (<code>$facet</code>/<code>$bucket</code>/…) aren\'t implemented.',
-          },
-          {
-            name: "copyTo",
-            seed: "[{a:1},{a:2},{a:3}]",
-            func: "mm.copyTo(data, [])  // → count copied",
-            collNote:
-              "no <code>c.copyTo</code> — copy from <code>c.toArray()</code>",
-            compat:
-              WARN +
-              "Deep-copies into <code>target</code> (does <em>not</em> clear it first). Non-standard return.",
-          },
-
-          { group: "Indexes & explain (Collection-only)" },
-          {
-            name: "createIndex",
-            seed: "[{_id:1,status:'A'},{_id:2,status:'B'}]",
-            funcNote:
-              "n/a — the functional API can't own the array, so it can't keep an index valid; queries just scan.",
-            coll: "c.createIndex({ status: 1 })  // → the index name (driver shape)",
-            compat:
-              WARN +
-              "Collection-only. One ordered structure serves single-field / multikey / compound indexes (equality, range, sort, <code>$in</code>, compound-prefix, <code>$or</code>). Not <code>unique</code>/<code>partial</code>/<code>sparse</code>; no text/geo/hashed/TTL types.",
-          },
-          {
-            name: "explain",
-            seed: "[{_id:1,status:'A'},{_id:2,status:'B'}]",
-            funcNote: "n/a — always a COLLSCAN",
-            coll: "(c.createIndex({ status: 1 }), c.find({ status: 'A' }).explain())",
-            compat:
-              OK +
-              "Collection-only. Returns the plan without running: <code>COLLSCAN</code>/<code>IXSCAN</code>/<code>IXSCAN+FILTER</code>/<code>OR</code>, index name, <code>exact</code>, candidate count.",
-          },
-
-          { group: "Settings & extension (global — one call, affects both)" },
-          {
-            name: "configure",
-            full: true,
-            seed: "[]",
-            func: "mm.configure({ autoId: true })  // → the full settings object",
-            compat:
-              NA +
-              "micromongo-specific (no Mongo equivalent). The global-defaults layer of config.",
-          },
-          {
-            name: "registerOperator",
-            full: true,
+        // OPS is built from the CANONICAL showcase set (window.__MM_EXAMPLES__, generated by
+        // scripts/gen-docs-examples.js from meta/mongo-examples/ — verified vs micromongo AND real
+        // MongoDB). One card per showcase op; `seed` is the fixture as a JS literal, `func`/`coll`
+        // are the ready-made call strings. A short micromongo-specific tail (registerOperator /
+        // configure — no Mongo equivalent, so not in the canonical set) is appended.
+        function buildOps() {
+          var cards = window.__MM_EXAMPLES__ || [];
+          var ops = [{ group: "MongoDB operators & methods (verified against real MongoDB)" }];
+          cards.forEach(function (c) {
+            ops.push({
+              name: c.op + (c.title ? "  —  " + c.title : ""),
+              seed: JSON.stringify(c.fixture),
+              func: c.func,
+              coll: c.coll,
+              collections: c.collections,
+              compat:
+                OK +
+                'Ported from the <a href="' + c.source + '">MongoDB docs</a>; ' +
+                'result verified identical on micromongo and a live MongoDB server.',
+            });
+          });
+          ops.push({ group: "micromongo-specific (no Mongo equivalent)" });
+          ops.push({
+            name: "registerOperator  —  custom query operator",
             seed: "[{n:2},{n:3},{n:4}]",
             func: "(mm.registerOperator('post', '$isEven', function (v) { return v % 2 === 0; }), mm.find(data, { n: { $isEven: true } }))",
-            compat:
-              NA +
-              "micromongo-specific extension point. Adds a custom query operator (kind <code>pre</code>/<code>post</code>/<code>preprocess</code>); both surfaces see it.",
-          },
-        ];
+            compat: NA + "micromongo extension point — adds a custom query operator visible to both surfaces.",
+          });
+          ops.push({
+            name: "configure  —  global defaults",
+            seed: "[]",
+            func: "mm.configure({ autoId: true })",
+            compat: NA + "micromongo-specific global settings (no Mongo equivalent).",
+          });
+          return ops;
+        }
+        var OPS = buildOps();
 
         // Compact mongosh-style formatter: unquoted keys, single-quoted strings, truncation.
         function fmtVal(v, depth) {

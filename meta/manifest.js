@@ -117,7 +117,6 @@ function joinSurface(kind, mongoList, ourList, allowedExtra, collectionOnly) {
       // one-liner. Generated tables render `notes || summary`; space-tight surfaces use `summary`.
       notes: (authored && authored.notes) || '',
       returns: (authored && authored.returns) || '',   // for the methods table's Returns column
-      example: (authored && authored.example) || null,  // { seed, call, result } drives docs + a test
       mongoDocUrl: inMongo ? docUrl(kind, name) : '',
     };
   });

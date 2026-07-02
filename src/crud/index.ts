@@ -312,6 +312,16 @@ var replaceOne = function(array: Doc[], query: Query, replacement: Document, opt
   for (var m of matches(array, query)) { // lazy: first match only
     matchedCount = 1;
     var copy = cloneDeep(replacement);
+    // The `_id` is immutable across a replace (MongoDB): carry the matched doc's `_id` onto the
+    // replacement when it omits one; reject an attempt to CHANGE it to a different value.
+    var oldId = array[m.i] ? array[m.i]._id : undefined;
+    if (typeof oldId !== 'undefined') {
+      if (typeof copy._id === 'undefined') { copy._id = oldId; }
+      else if (!isEqual(copy._id, oldId)) {
+        throw new Error("replaceOne: the replacement document's _id (" + JSON.stringify(copy._id) +
+          ') differs from the matched document _id (' + JSON.stringify(oldId) + '); _id is immutable');
+      }
+    }
     if (!isEqual(array[m.i], copy)) { modifiedCount = 1; }
     array[m.i] = copy; // replace whole document in place, preserving position
     break;
