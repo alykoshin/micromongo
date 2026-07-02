@@ -1,5 +1,7 @@
-[-] inc major version
-[-] merge into master, publish docs, publish to npm
+[x] inc major version (1.0.0, tag v1.0.0)
+[x] merge into master
+[-] publish docs (GitHub Pages: enable /docs on master), publish to npm
+[-] push master + tags to origin
 
 ---
 
