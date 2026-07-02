@@ -159,8 +159,9 @@ export interface UpdateReport {
   acknowledged: boolean;
   matchedCount: number;
   modifiedCount: number;
-  upsertedId?: any;
-  upsertedCount?: number;
+  // Always present, matching the driver's UpdateResult: 0 / null when no upsert occurred.
+  upsertedCount: number;
+  upsertedId: any;
   [extra: string]: any;
 }
 

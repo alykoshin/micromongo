@@ -25,6 +25,7 @@
   "include": ["src/**/*"],
   "exclude": [
     "node_modules", "dist", "test",
-    "src/vm-browser-stub.ts"
+    "src/vm-browser-stub.ts",
+    "src/stream-browser-stub.ts"
   ]
 }

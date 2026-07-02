@@ -96,9 +96,10 @@ describe('# upsert - mongo docs', function () {
       { $set: { item: 'pear' }, $setOnInsert: { defaultQty: 999 } },
       { upsert: true }
     );
-    // matched => normal update; $setOnInsert did nothing; no upsertedCount.
+    // matched => normal update; $setOnInsert did nothing. Driver shape: upsertedCount 0.
     expect(res.matchedCount).eql(1);
-    expect(res).to.not.have.property('upsertedCount');
+    expect(res.upsertedCount).eql(0);
+    expect(res.upsertedId).eql(null);
     expect(products).eql([ { _id: 1, item: 'pear', defaultQty: 100 } ]);
   });
 
@@ -107,14 +108,14 @@ describe('# upsert - mongo docs', function () {
     var res = mm.updateOne(coll, { _id: 7 }, { $set: { item: 'fig' } }, { upsert: true });
     expect(res.matchedCount).eql(1);
     expect(res.modifiedCount).eql(1);
-    expect(res).to.not.have.property('upsertedId');
+    expect(res.upsertedId).eql(null);   // driver: always present, null when no insert
     expect(coll).eql([ { _id: 7, item: 'fig' } ]);
   });
 
   it('# without upsert, no match is a no-op (matchedCount 0, nothing inserted)', function () {
     var coll = [];
     var res = mm.updateOne(coll, { _id: 1 }, { $set: { x: 1 } }); // no { upsert:true }
-    expect(res).eql({ acknowledged: true, matchedCount: 0, modifiedCount: 0 });
+    expect(res).eql({ acknowledged: true, matchedCount: 0, modifiedCount: 0, upsertedCount: 0, upsertedId: null });
     expect(coll).eql([]);
   });
 

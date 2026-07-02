@@ -19,7 +19,7 @@ describe('# update methods', function () {
     it('# updates the first match, returns the driver report', function () {
       var a = [ { _id: 1, x: 1 }, { _id: 2, x: 1 } ];
       expect(mm.updateOne(a, { x: 1 }, { $set: { y: 9 } }))
-        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null });
       expect(a[0]).eql({ _id: 1, x: 1, y: 9 });
       expect(a[1]).eql({ _id: 2, x: 1 }); // second untouched
     });
@@ -27,12 +27,12 @@ describe('# update methods', function () {
     it('# matched but unchanged => modifiedCount 0', function () {
       var a = [ { _id: 1, x: 5 } ];
       expect(mm.updateOne(a, { x: 5 }, { $set: { x: 5 } }))
-        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 0 });
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 0, upsertedCount: 0, upsertedId: null });
     });
 
     it('# no match => zero counts', function () {
       expect(mm.updateOne([ { x: 1 } ], { x: 99 }, { $set: { y: 1 } }))
-        .eql({ acknowledged: true, matchedCount: 0, modifiedCount: 0 });
+        .eql({ acknowledged: true, matchedCount: 0, modifiedCount: 0, upsertedCount: 0, upsertedId: null });
     });
 
     it('# rejects a replacement document', function () {
@@ -45,7 +45,7 @@ describe('# update methods', function () {
     it('# updates all matches', function () {
       var a = [ { x: 1 }, { x: 1 }, { x: 2 } ];
       expect(mm.updateMany(a, { x: 1 }, { $inc: { x: 10 } }))
-        .eql({ acknowledged: true, matchedCount: 2, modifiedCount: 2 });
+        .eql({ acknowledged: true, matchedCount: 2, modifiedCount: 2, upsertedCount: 0, upsertedId: null });
       expect(a).eql([ { x: 11 }, { x: 11 }, { x: 2 } ]);
     });
     it('# rejects a replacement document', function () {
@@ -58,7 +58,7 @@ describe('# update methods', function () {
     it('# replaces the first match in place, preserving position', function () {
       var a = [ { _id: 1, x: 1 }, { _id: 2, x: 2 } ];
       expect(mm.replaceOne(a, { _id: 2 }, { _id: 2, y: 9 }))
-        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null });
       expect(a).eql([ { _id: 1, x: 1 }, { _id: 2, y: 9 } ]);
     });
 
@@ -102,7 +102,7 @@ describe('# update methods', function () {
     it('# Collection.updateOne', function () {
       var c = new mm.Collection([ { _id: 1, n: 1 } ]);
       expect(c.updateOne({ _id: 1 }, { $inc: { n: 5 } }))
-        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null });
       expect(c.toArray()[0]).eql({ _id: 1, n: 6 });
     });
 

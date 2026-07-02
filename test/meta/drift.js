@@ -61,9 +61,15 @@ describe('# Mongo-operations drift: methods / stages / expression ops (generated
     copyTo: 1,                               // legacy helper (Mongo's server-side copyTo removed in 4.2)
     insert: 1, remove: 1,                    // deprecated Mongo shell aliases we keep
   };
-  // MongoDB Collection methods micromongo deliberately does NOT implement — index/admin/
-  // search/change-stream/bulk-builder operations that need a server or storage engine.
-  var UNSUPPORTED_METHODS_BASELINE = 22;
+  // MongoDB Collection methods micromongo deliberately does NOT implement on the functional
+  // `mm.*` surface — index/admin/search/change-stream/bulk-builder operations that need a
+  // server, storage engine, or a data-owning Collection.
+  // Was 22; dropped to 19 when `countDocuments`/`estimatedDocumentCount`/`drop` were added to
+  // `mm.*` (for parity with the driver + the `micromongo/mock` adapter). Note: the index and
+  // bulk-builder methods (createIndex(es)/listIndexes/indexes/indexExists/initialize*BulkOp/…)
+  // ARE implemented on `Collection`, just not on the functional `mm.*` API this guard reads —
+  // indexes require a data-owning Collection by design.
+  var UNSUPPORTED_METHODS_BASELINE = 19;
 
   it('# collection methods: ours ⊆ Mongo (no non-standard method slipped in)', function () {
     var ours = Object.keys(mm).filter(function (k) { return typeof mm[k] === 'function' && k.charAt(0) !== '_'; });

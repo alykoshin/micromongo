@@ -159,7 +159,7 @@ describe('# Compound indexes (Phase 14) — multi-field, prefix', function () {
   it('# dropIndex by spec', function () {
     var c = new Collection([]);
     c.createIndex({ a: 1, b: 1 });
-    expect(c.dropIndex({ a: 1, b: 1 })).eql(true);
+    expect(c.dropIndex({ a: 1, b: 1 })).eql({ ok: 1 });
     expect(c.getIndexes()).eql([]);
   });
 });

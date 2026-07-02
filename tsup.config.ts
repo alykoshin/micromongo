@@ -34,12 +34,15 @@ export default defineConfig([
   {
     ...shared,
     // `core` excludes the Collection/Cursor/index layer (see src/core.ts); it emits
-    // dist/core.mjs, exposed as the `micromongo/core` subpath.
-    entry: { index: 'src/index.ts', core: 'src/core.ts' },
+    // dist/core.mjs, exposed as the `micromongo/core` subpath. `mock` is the
+    // mongodb-driver adapter (src/mock), exposed as `micromongo/mock` → dist/mock/index.mjs.
+    entry: { index: 'src/index.ts', core: 'src/core.ts', 'mock/index': 'src/mock/index.ts' },
     format: ['esm'],
     platform: 'neutral',
     outExtension() { return { js: '.mjs' }; },
-    external: ['vm', 'fs', 'util', 'repl', 'assert'],
+    // `crypto`/`stream` (mock ObjectId + cursor.stream) and optional `bson` stay external —
+    // Node built-ins resolve via the createRequire banner; `bson` is a guarded optional require.
+    external: ['vm', 'fs', 'util', 'repl', 'assert', 'crypto', 'stream', 'bson'],
     // Native ESM has no `require`; the bundled source reaches Node built-ins via
     // `require('vm')`. Inject a real require so those external requires resolve at
     // runtime (Node only; in the browser these built-ins are simply absent).
@@ -55,10 +58,14 @@ export default defineConfig([
     platform: 'browser',
     globalName: 'micromongo',
     outExtension() { return { js: '.global.js' }; },
-    // No Node built-ins in the browser: alias `vm` to a throwing stub (string $where
-    // is Node-only); the CLI-only fs/util/repl never enter this entry (index.ts).
+    // No Node built-ins in the browser: alias `vm` and `stream` to throwing stubs (string
+    // $where and Cursor.stream() are Node-only; every other cursor terminal works in the
+    // browser). The CLI-only fs/util/repl never enter this entry (index.ts).
     esbuildOptions(options) {
-      options.alias = { vm: path.resolve(__dirname, 'src/vm-browser-stub.ts') };
+      options.alias = {
+        vm: path.resolve(__dirname, 'src/vm-browser-stub.ts'),
+        stream: path.resolve(__dirname, 'src/stream-browser-stub.ts'),
+      };
     },
   },
 ]);

@@ -32,6 +32,9 @@ interface MicromongoCore {
   registerOperator(kind: OperatorKind, name: string, fn: (doc: any, query: any) => any): any;
 
   count<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): number;
+  countDocuments<T extends Doc = Doc>(array: T[], query?: Query<T>, options?: any): number;
+  estimatedDocumentCount<T extends Doc = Doc>(array: T[], options?: any): number;
+  drop<T extends Doc = Doc>(array: T[]): boolean;
   copyTo<T extends Doc = Doc>(array: T[], target: T[]): number;
 
   find<T extends Doc = Doc>(array: T[], query?: Query<T>, projection?: Projection, options?: any): T[];
@@ -66,6 +69,9 @@ var mm: MicromongoCore = {
   registerOperator: match.registerOperator,
 
   count: crud.count,
+  countDocuments: crud.countDocuments,
+  estimatedDocumentCount: crud.estimatedDocumentCount,
+  drop: crud.drop,
   copyTo: crud.copyTo,
 
   find: crud.find,

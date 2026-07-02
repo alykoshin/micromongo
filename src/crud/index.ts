@@ -59,6 +59,30 @@ var count = function(array: Doc[], query: Query, options?: Record<string, any>):
 };
 
 
+// MongoDB-driver alias for count() (the driver's `countDocuments()`; bare `count()` is
+// deprecated there). Same semantics — matches the query, empty/undefined ⇒ all.
+var countDocuments = function(array: Doc[], query?: Query, options?: Record<string, any>): number {
+  return count(array, query || {}, options);
+};
+
+
+// The driver's metadata-based fast count — for a plain array that's just its length.
+var estimatedDocumentCount = function(array: Doc[], options?: Record<string, any>): number {
+  if (!Array.isArray(array)) { throw new TypeError('Array expected as the first parameter'); }
+  return array.length;
+};
+
+
+// The driver's `drop()` — for a caller-owned array, empty it in place (returns true). The
+// functional form has no indexes to drop (indexes are Collection-only by design); the
+// Collection override also drops its indexes.
+var drop = function(array: Doc[]): boolean {
+  if (!Array.isArray(array)) { throw new TypeError('Array expected as the first parameter'); }
+  array.length = 0;
+  return true;
+};
+
+
 var copyTo = function(array: Doc[], target: Doc[]): number {
   if (!Array.isArray(array) || !Array.isArray(target)) { throw new TypeError('Arrays expected as both parameters'); }
 
@@ -244,7 +268,9 @@ var updateOne = function(array: Doc[], query: Query, update: UpdateSpec, options
     if (applyUpdate(m.doc, update, { arrayFilters: options.arrayFilters, query: query })) { modifiedCount = 1; }
     break;
   }
-  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
+  // Driver-shaped UpdateResult: upsertedCount/upsertedId are ALWAYS present (0/null when no
+  // upsert happened), matching MongoDB's driver. An upsert overwrites the defaults.
+  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount, upsertedCount: 0, upsertedId: null };
   if (matchedCount === 0 && options.upsert) {
     var up = doUpsert(array, query, update);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -267,7 +293,7 @@ var updateMany = function(array: Doc[], query: Query, update: UpdateSpec, option
     // Per-doc positional `$`: resolvePositional binds to each doc's own matched element.
     if (applyUpdate(docs[i], update, { arrayFilters: options.arrayFilters, query: query })) { modifiedCount++; }
   }
-  var report: any = { acknowledged: true, matchedCount: docs.length, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
+  var report: any = { acknowledged: true, matchedCount: docs.length, modifiedCount: modifiedCount, upsertedCount: 0, upsertedId: null };
   if (docs.length === 0 && options.upsert) {
     var up = doUpsert(array, query, update);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -290,7 +316,7 @@ var replaceOne = function(array: Doc[], query: Query, replacement: Document, opt
     array[m.i] = copy; // replace whole document in place, preserving position
     break;
   }
-  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount }; // report (dynamic upsertedId)
+  var report: any = { acknowledged: true, matchedCount: matchedCount, modifiedCount: modifiedCount, upsertedCount: 0, upsertedId: null };
   if (matchedCount === 0 && options.upsert) {
     var up = doUpsert(array, query, replacement);
     report.upsertedId = up.upsertedId; report.upsertedCount = up.upsertedCount;
@@ -450,6 +476,9 @@ export = {
   _applyUpdate: applyUpdate,
 
   count: count,
+  countDocuments: countDocuments,
+  estimatedDocumentCount: estimatedDocumentCount,
+  drop: drop,
   copyTo: copyTo,
 
   find: find,

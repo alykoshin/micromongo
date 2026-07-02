@@ -35,14 +35,15 @@ describe('# Collection indexes', function () {
   });
 
   describe('# create / list / drop', function () {
-    it('# createIndex is chainable and idempotent', function () {
-      expect(c.createIndex('sku')).equal(c);
+    it('# createIndex returns the index name (driver shape) and is idempotent', function () {
+      expect(c.createIndex('sku')).eql('sku_1');       // driver: createIndex → name string
+      expect(c.createIndex('sku')).eql('sku_1');       // idempotent
       expect(c.getIndexes()).eql([ 'sku' ]);
     });
-    it('# dropIndex', function () {
-      expect(c.dropIndex('sku')).eql(true);
+    it('# dropIndex returns { ok: 1 } (driver shape)', function () {
+      expect(c.dropIndex('sku')).eql({ ok: 1 });       // 'sku' index created in beforeEach
       expect(c.getIndexes()).eql([]);
-      expect(c.dropIndex('sku')).eql(false);
+      expect(c.dropIndex('sku')).eql({ ok: 1 });       // no-op on absent, still { ok: 1 }
     });
   });
 

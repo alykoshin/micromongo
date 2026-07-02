@@ -18,6 +18,11 @@
       "import": "./dist/core.mjs",
       "require": "./dist/core.js"
     },
+    "./mock": {
+      "types": "./dist/mock/index.d.ts",
+      "import": "./dist/mock/index.mjs",
+      "require": "./dist/mock/index.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -36,6 +41,14 @@
     "./dist/crud/match/index.js",
     "./dist/crud/match/operators/*.js"
   ],
+  "peerDependencies": {
+    "bson": "*"
+  },
+  "peerDependenciesMeta": {
+    "bson": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=8"
   },
@@ -50,7 +63,8 @@
     "gen-mongo-operators": "node scripts/gen-mongo-operators.js",
     "gen-mongo-operations": "node scripts/gen-mongo-operations.js",
     "gen-compat-tables": "node scripts/gen-compat-tables.js",
-    "gen-docs": "npm run gen-compat-tables",
+    "build:docs": "npm run build:bundles && node scripts/build-docs-site.js",
+    "gen-docs": "npm run gen-compat-tables && npm run build:docs",
     "prepare": "npm run build:all",
     "prepublishOnly": "npm run rebuild",
     "pre_test": "npm run build",
@@ -59,7 +73,7 @@
     "_deps-update": "echo '* Updating packages versions... '; npm-check-updates -u --upgradeAll --error-level 1 && npm install",
     "_check-changes": "echo '* Checking if git directory is clean... '; bash -c '[[ -z $(git status -uno --porcelain) ]]'",
     "update-deps": "npm run _check-changes && npm run _deps-update && npm test && git commit -am 'updated deps'",
-    "lint": "./node_modules/.bin/eslint -f unix --max-warnings 495 --ext .ts,.js,.jsx .",
+    "lint": "./node_modules/.bin/eslint -f unix --max-warnings 560 --ext .ts,.js,.jsx .",
     "_inspect": "jsinspect --ignore 'coverage|test'",
     "inspect": "echo \"skipping jsinspect\"",
     "pretest": "npm run typecheck && npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",

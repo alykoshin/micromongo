@@ -27,7 +27,7 @@ describe('# positional `$` update (mongodoc)', function () {
   it('# updateOne({_id:1, grades:80}, {$set:{"grades.$":82}}) updates the first matching element', function () {
     var arr = students();
     var res = mm.updateOne(arr, { _id: 1, grades: 80 }, { $set: { 'grades.$': 82 } });
-    expect(res).eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+    expect(res).eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null });
     // first 80 (index 1) → 82; the second 80 (index 2) is untouched.
     expect(arr[0]).eql({ _id: 1, grades: [ 85, 82, 80 ] });
   });

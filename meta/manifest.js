@@ -43,8 +43,27 @@ function liveRuntime() {
   var expression = req('dist/aggregate/expression');
   var match = req('dist/crud/match');
   var update = req('dist/crud/update');
+  var Collection = req('dist/collection');
+
+  // Methods are exposed on TWO surfaces: the functional `mm.*` API and the `Collection`
+  // class. A method counts as supported if it exists on EITHER. Some (the index family)
+  // exist only on Collection by design — the functional API can't own the array to keep an
+  // index valid — so we record `collectionOnly` for the compat note.
+  var mmMethods = Object.keys(mm).filter(function (k) { return typeof mm[k] === 'function' && k.charAt(0) !== '_'; });
+  var mmSet = {}; mmMethods.forEach(function (k) { mmSet[k] = true; });
+  var collProto = Collection.prototype;
+  var collMethods = Object.getOwnPropertyNames(collProto).filter(function (k) {
+    return k !== 'constructor' && k.charAt(0) !== '_' && typeof collProto[k] === 'function';
+  });
+  var collectionOnly = {};
+  collMethods.forEach(function (k) { if (!mmSet[k]) { collectionOnly[k] = true; } });
+
+  var allMethods = mmMethods.slice();
+  collMethods.forEach(function (k) { if (!mmSet[k]) { allMethods.push(k); } });
+
   return {
-    methods: Object.keys(mm).filter(function (k) { return typeof mm[k] === 'function' && k.charAt(0) !== '_'; }),
+    methods: allMethods,
+    collectionOnlyMethods: collectionOnly,   // name → true, for the compat note
     stages: Object.keys(aggregate._aggregateStageOps),
     exprOps: Object.keys(expression.expressionOps),
     queryOps: Object.keys(match.postOperators).concat(Object.keys(match.preOperators)).concat(Object.keys(match.preprocessOps)),
@@ -68,7 +87,9 @@ function docUrl(kind, name) {
 }
 
 // Join one surface: union of Mongo's set and ours → records with computed status.
-function joinSurface(kind, mongoList, ourList, allowedExtra) {
+// `collectionOnly` (optional) is a name→true map of methods that exist ONLY on the
+// `Collection` class (not the functional `mm.*` API) — surfaced as record.collectionOnly.
+function joinSurface(kind, mongoList, ourList, allowedExtra, collectionOnly) {
   var mongoSet = {}; mongoList.forEach(function (k) { mongoSet[k] = true; });
   var ourSet = {}; ourList.forEach(function (k) { ourSet[k] = true; });
   var names = {};
@@ -90,7 +111,12 @@ function joinSurface(kind, mongoList, ourList, allowedExtra) {
       mongo: inMongo,
       supported: supported,
       status: status,
+      collectionOnly: !!(collectionOnly && collectionOnly[name]),  // Collection-only method?
       summary: (authored && authored.summary) || '',
+      // `notes` is the OPTIONAL rich (may be multi-sentence/markdown) note; `summary` is the
+      // one-liner. Generated tables render `notes || summary`; space-tight surfaces use `summary`.
+      notes: (authored && authored.notes) || '',
+      returns: (authored && authored.returns) || '',   // for the methods table's Returns column
       example: (authored && authored.example) || null,  // { seed, call, result } drives docs + a test
       mongoDocUrl: inMongo ? docUrl(kind, name) : '',
     };
@@ -102,7 +128,7 @@ function buildManifest() {
   return {
     stage: joinSurface('stage', MONGO_OPS.aggregationStages, rt.stages, null),
     exprOp: joinSurface('exprOp', MONGO_OPS.expressionOperators, rt.exprOps, null),
-    method: joinSurface('method', MONGO_OPS.collectionMethods, rt.methods, null),
+    method: joinSurface('method', MONGO_OPS.collectionMethods, rt.methods, null, rt.collectionOnlyMethods),
     queryOp: joinSurface('queryOp', MONGO_OPERATORS.filterOperators.concat(MONGO_OPERATORS.rootOperators), rt.queryOps, null),
     updateOp: joinSurface('updateOp', MONGO_OPERATORS.updateOperators, rt.updateOps, null),
   };

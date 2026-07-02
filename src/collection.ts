@@ -32,6 +32,7 @@ var planner = require('./index/planner');
 import type {
   Doc, Query, Projection, UpdateSpec, IndexSpec, WriteOptions, AggStage,
   InsertOneReport, InsertManyReport, DeleteReport, RemoveReport, UpdateReport,
+  BulkWriteOperation, BulkWriteResult,
 } from './types';
 import type CursorClass = require('./cursor');
 
@@ -102,7 +103,7 @@ class Collection<T extends Doc = Doc> {
    * (multikey) lookups, and compound-prefix equality — everything else falls back to
    * the linear scan.
    */
-  createIndex(spec: IndexSpec | string): this {
+  createIndex(spec: IndexSpec | string): string {
     var s = normalizeSpec(spec);
     var name = indexName(Object.keys(s));
     if (!this._indexes[name]) {
@@ -110,7 +111,9 @@ class Collection<T extends Doc = Doc> {
       idx.build(this._data);
       this._indexes[name] = idx;
     }
-    return this;
+    // Return the MongoDB-style index NAME (e.g. 'a_1', 'a_1_b_-1') — matching the driver's
+    // `createIndex(): Promise<string>`. (Not `this`: the driver's createIndex isn't chainable.)
+    return statName(this._indexes[name]);
   }
 
   /** List index names (single-field indexes list as the bare field name). */
@@ -118,12 +121,14 @@ class Collection<T extends Doc = Doc> {
     return Object.keys(this._indexes);
   }
 
-  /** Drop an index by field name or spec. Returns whether it existed. */
-  dropIndex(spec: IndexSpec | string): boolean {
+  /**
+   * Drop an index by field name or spec. Returns `{ ok: 1 }` (matching the driver's
+   * `dropIndex(): Promise<Document>`); a no-op when the index is absent.
+   */
+  dropIndex(spec: IndexSpec | string): { ok: number } {
     var name = indexName(Object.keys(normalizeSpec(spec)));
-    var existed = this._indexes.hasOwnProperty(name);
     delete this._indexes[name];
-    return existed;
+    return { ok: 1 };
   }
 
   /**
@@ -322,6 +327,91 @@ class Collection<T extends Doc = Doc> {
 
   findOneAndDelete(query: Query<T>): T | null {
     return this._w(crud.findOneAndDelete(this._data, query));
+  }
+
+  /**
+   * Batch heterogeneous writes (`insertOne`/`updateOne`/`updateMany`/`replaceOne`/
+   * `deleteOne`/`deleteMany`) in one call, returning an aggregated `BulkWriteResult`.
+   * The Collection form of the top-level `mm.bulkWrite(array, …)` — each op delegates to
+   * the matching single-write, then indexes rebuild once.
+   */
+  bulkWrite(operations: BulkWriteOperation<T>[], options?: WriteOptions & { ordered?: boolean }): BulkWriteResult {
+    return this._w(crud.bulkWrite(this._data, operations, options));
+  }
+
+  // --- driver-shaped read/index conveniences (map onto the same engine/metadata) ---
+
+  /** MongoDB driver alias for `count(query)` (`countDocuments` semantics). */
+  countDocuments(query?: Query<T>): number {
+    return this.count(query || ({} as Query<T>));
+  }
+
+  /** Fast total-size read — the array length (the driver's metadata-based estimate). */
+  estimatedDocumentCount(): number {
+    return this._data.length;
+  }
+
+  /**
+   * Index specs in the MongoDB driver shape: `[{ v, key: { field: dir }, name }]`
+   * (built from the same metadata `indexStats()` reports). Basis for
+   * `listIndexes`/`indexInformation`/`indexExists`.
+   */
+  indexes(): Array<{ v: number; key: IndexSpec; name: string }> {
+    return this.indexStats().map(function (s: any) {
+      return { v: 2, key: assign({}, s.key), name: s.name };
+    });
+  }
+
+  /** Alias of `indexes()` (the driver's `listIndexes().toArray()` result). */
+  listIndexes(): Array<{ v: number; key: IndexSpec; name: string }> {
+    return this.indexes();
+  }
+
+  /** `{ <indexName>: [[field, dir], …] }` — the driver's `indexInformation()` shape. */
+  indexInformation(): Record<string, Array<[string, number]>> {
+    var out: Record<string, Array<[string, number]>> = {};
+    this.indexStats().forEach(function (s: any) {
+      var pairs: Array<[string, number]> = [];
+      for (var f in s.key) { if (s.key.hasOwnProperty(f)) { pairs.push([f, s.key[f]]); } }
+      out[s.name] = pairs;
+    });
+    return out;
+  }
+
+  /** Whether an index (by Mongo-style name, e.g. `'a_1'`) exists — string or string[]. */
+  indexExists(name: string | string[]): boolean {
+    var have: Record<string, boolean> = {};
+    this.indexStats().forEach(function (s: any) { have[s.name] = true; });
+    var names = Array.isArray(name) ? name : [name];
+    for (var i = 0; i < names.length; ++i) { if (!have[names[i]]) { return false; } }
+    return true;
+  }
+
+  /**
+   * Create several indexes at once. Accepts driver `[{ key: {…} }]` or bare specs. Returns
+   * the created index NAMES (`string[]`), matching the driver's `createIndexes()`.
+   */
+  createIndexes(specs: Array<IndexSpec | { key: IndexSpec }>): string[] {
+    var names: string[] = [];
+    for (var i = 0; i < specs.length; ++i) {
+      var sp: any = specs[i];
+      names.push(this.createIndex(sp && sp.key ? sp.key : sp));
+    }
+    return names;
+  }
+
+  /** Drop every index. Returns `true` (matching the driver's `dropIndexes(): Promise<boolean>`). */
+  dropIndexes(): boolean {
+    var names = this.getIndexes().slice();
+    for (var i = 0; i < names.length; ++i) { this.dropIndex(names[i]); }
+    return true;
+  }
+
+  /** Empty the collection in place and drop all indexes (like the driver's `drop()`). */
+  drop(): boolean {
+    this._data.length = 0;
+    this.dropIndexes();
+    return true;
   }
 
   /** Manually rebuild all indexes — recovery if `toArray()` was mutated directly. */

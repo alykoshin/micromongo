@@ -141,14 +141,14 @@ describe('# Collection', function () {
     it('# updateMany', function () {
       var c = new Collection([ { x: 1 }, { x: 1 }, { x: 2 } ]);
       expect(c.updateMany({ x: 1 }, { $inc: { x: 10 } }))
-        .eql({ acknowledged: true, matchedCount: 2, modifiedCount: 2 });
+        .eql({ acknowledged: true, matchedCount: 2, modifiedCount: 2, upsertedCount: 0, upsertedId: null });
       expect(c.toArray()).eql([ { x: 11 }, { x: 11 }, { x: 2 } ]);
     });
 
     it('# replaceOne', function () {
       var c = new Collection([ { _id: 1, x: 1 } ]);
       expect(c.replaceOne({ _id: 1 }, { _id: 1, y: 2 }))
-        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1 });
+        .eql({ acknowledged: true, matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null });
       expect(c.toArray()[0]).eql({ _id: 1, y: 2 });
     });
 
