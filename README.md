@@ -51,7 +51,9 @@ When a `sort` is combined with a `limit`, it uses a bounded **top-K** heap (O(K)
 materializes the full sorted array):
 
 ```js
-for (const order of c.find({ status: "A" }).limit(5)) { /* … */ } // stops after 5
+for (const order of c.find({ status: "A" }).limit(5)) {
+  /* … */
+} // stops after 5
 c.find({}).sort({ qty: -1 }).limit(10); // top-10 without buffering all N
 ```
 
@@ -98,38 +100,25 @@ Quick links:
   drop-in `mongodb`-driver-shaped adapter for testing (see below).
 - **[Performance](https://alykoshin.github.io/micromongo/#performance)** — scan-vs-index benchmarks.
 
-Runnable snippets are in the [`examples/`](examples/) directory (`node examples/index.js`), and the
-tests in [`test/`](test/) double as executable specs.
-
-Every MongoDB-compatible operator/stage is verified by a `*-mongodoc.js` test ported verbatim from the
-official MongoDB docs. For the full per-operator status see the **[compatibility
-matrix](planning/compatibility.md)**.
+Runnable snippets are in the [`examples/`](examples/) directory (`node examples/index.js`); the
+[`experiments/`](experiments/) directory shows advanced use — extending the engine at runtime with
+custom query/aggregate operators (`registerOperator`); and the tests in [`test/`](test/) double as
+executable specs.
 
 Target `node` version: **>= 8**.
 
-## Compatibility (summary)
+## Compatibility
 
 `micromongo` aims for MongoDB-compatible semantics (baseline: MongoDB 3.2 docs, plus selected newer
-operators like `$expr`/`$rand`). The **full, per-operator status table lives in
-[`planning/compatibility.md`](planning/compatibility.md)** — the canonical, maintained source, verified
-by the `*-mongodoc.js` tests.
+operators like `$expr`/`$rand`). The **full, per-operator status matrix** — every method, query/update
+operator and aggregation stage, with per-operator notes — lives in two always-in-sync places:
 
-| Area                        | Status                                                                                                                                              |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Reads**                   | `count` `find` `findOne` `distinct` + lazy `Cursor` (`sort`/`skip`/`limit`/`project`) — ✅                                                          |
-| **Writes**                  | `insert*` `deleteOne`/`deleteMany`/`remove` `updateOne`/`updateMany` `replaceOne` `findOneAnd*` `bulkWrite` — ✅                                    |
-| **Comparison**              | `$eq` `$ne` `$gt` `$gte` `$lt` `$lte` `$in` `$nin` — ✅ (`$ne`/`$nin` use strict, non-deep compare)                                                 |
-| **Logical**                 | `$and` `$or` `$nor` `$not` — ✅                                                                                                                     |
-| **Element**                 | `$exists` `$type` — ✅ (`$type` uses JS types, not BSON type numbers)                                                                               |
-| **Evaluation**              | `$mod` `$regex` `$where` `$text` `$expr` — ✅ (`$regex` needs a `RegExp` object; `$where` runs JS — see security note)                              |
-| **Array**                   | `$all` `$elemMatch` `$size` — ✅                                                                                                                    |
-| **Bitwise**                 | `$bitsAllSet` `$bitsAnySet` `$bitsAllClear` `$bitsAnyClear` — ✅                                                                                    |
-| **Geospatial**              | `$geoWithin` `$geoIntersects` `$near` `$nearSphere` (legacy + GeoJSON, planar/haversine; no spatial index) — ✅                                     |
-| **Projection**              | inclusion/exclusion,`_id` default, `$slice` `$elemMatch` `$` `$meta:"textScore"` — ✅                                                               |
-| **Update operators**        | field, array (+ modifiers), positional`$`/`$[]`/`$[<id>]`, `$bit`, `upsert` — ✅                                                                    |
-| **Aggregation stages**      | every stage feasible in-memory (`$match`/`$group`/`$project`/`$unwind`/`$lookup`/`$sample`/`$geoNear`/…) — ✅                                       |
-| **Aggregation expressions** | pragmatic core (arithmetic/string/comparison/conditional/boolean/array + accumulators,`$rand`); date/type-conversion/set operators are partial — ⚠️ |
-| **Not supported**           | `mapReduce`, legacy `update`, `$jsonSchema`, and server/storage-bound methods (`stats`/`rename`/`watch`/sharding/…) — by design (no server)         |
+- **[Compatibility on the docs site →](https://alykoshin.github.io/micromongo/#compatibility)** (with a
+  live ops table that runs the real engine in your browser), and
+- **[`planning/compatibility.md`](planning/compatibility.md)** — the generated Markdown table.
+
+Both are verified by the `*-mongodoc.js` tests (ported verbatim from the MongoDB docs) and a differential
+harness that replays the same examples against a real MongoDB server.
 
 > **⚠️ Security — `$where`:** `$where` executes arbitrary JavaScript against each document (in Node via
 > the `vm` module — which is **not** a security sandbox — and in the browser via `new Function`). Treat
@@ -141,33 +130,16 @@ by the `*-mongodoc.js` tests.
 
 `micromongo/mock` is a drop-in, `mongodb`-driver-shaped adapter backed by the in-memory engine — so
 **other projects can run their existing test suites against micromongo instead of a live MongoDB**. It
-mirrors the native driver: `MongoClient` / `Db` / `Collection` / `FindCursor` / `AggregationCursor` /
-`ObjectId`, with async (`Promise`) results, `for await` cursors, auto-`ObjectId` `_id` on insert,
-`bulkWrite` + the fluent `initialize*BulkOp` builders, and index methods.
-
-```js
-const { MongoClient, ObjectId } = require("micromongo/mock");
-
-const client = await MongoClient.connect("mongodb://localhost/test");
-const users = client.db().collection("users");
-
-await users.insertOne({ name: "ada", age: 36 }); // → { acknowledged, insertedId: ObjectId(…) }
-const adults = await users.find({ age: { $gte: 18 } }).sort({ age: -1 }).toArray();
-```
-
-Point the code under test at it without touching that code — e.g. in Jest:
+mirrors the native driver (`MongoClient` / `Db` / `Collection` / cursors / `ObjectId`, async results,
+`for await`), so you can point the code under test at it without touching that code — e.g. in Jest:
 
 ```js
 // jest.config.js
 module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };
 ```
 
-- **Sessions/transactions** run the callback **without real isolation** (documented no-op —
-  `abortTransaction()` does not roll back; there's a single in-memory array).
-- **Server-only features throw loudly** (`watch()` change streams, Atlas `*SearchIndex*`) so a test
-  that depends on a real server fails instead of silently passing.
-- **`ObjectId`** uses the consumer's real [`bson`](https://www.npmjs.com/package/bson) if installed
-  (optional peer dependency), else a self-contained 24-hex fallback.
+See **[the mock adapter docs →](https://alykoshin.github.io/micromongo/#mock)** for the full surface,
+the `bson` `ObjectId` handling, and which server-only features are no-ops vs. throw.
 
 ## Testing
 

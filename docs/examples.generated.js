@@ -6,6 +6,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "method",
     "title": "Find matching documents",
     "source": "https://www.mongodb.com/docs/manual/reference/method/db.collection.find/",
+    "status": "full",
+    "note": "Deep copy of matches; <code>_id</code> included by default.",
     "fixture": [
       {
         "_id": 1,
@@ -46,6 +48,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "method",
     "title": "Distinct field values",
     "source": "https://www.mongodb.com/docs/manual/reference/method/db.collection.distinct/",
+    "status": "full",
+    "note": "Distinct values of <code>field</code> across matches; array fields flattened (each element distinct); dotted paths; deep-equal dedup.",
     "fixture": [
       {
         "s": "A"
@@ -75,6 +79,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "method",
     "title": "Run an aggregation pipeline",
     "source": "https://www.mongodb.com/docs/manual/reference/method/db.collection.aggregate/",
+    "status": "partial",
+    "note": "Subset of stages — see the <a href=\"#aggregation\">Aggregation</a> section. Deep-copies the input, then folds each stage's output into the next, so it never touches the source array.",
     "fixture": [
       {
         "s": "A"
@@ -124,6 +130,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Equals a value",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/eq/",
+    "status": "full",
+    "note": "Deep-equals; array-aware (element-equals + array-equals).",
     "fixture": [
       {
         "_id": 1,
@@ -166,6 +174,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Greater than a value",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/gt/",
+    "status": "full",
+    "note": "Native <code>&gt;</code> (array-aware: any element).",
     "fixture": [
       {
         "_id": 1,
@@ -209,6 +219,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Matches any value in an array",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/in/",
+    "status": "full",
+    "note": "Array membership; supports regex members and array-valued fields.",
     "fixture": [
       {
         "_id": 1,
@@ -254,6 +266,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Logical OR",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/or/",
+    "status": "full",
+    "note": "Any sub-query matches.",
     "fixture": [
       {
         "_id": 1,
@@ -308,6 +322,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Field exists",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/exists/",
+    "status": "full",
+    "note": "Field presence (boolean only).",
     "fixture": [
       {
         "_id": 1,
@@ -342,6 +358,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Regular expression",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/regex/",
+    "status": "partial",
+    "note": "Requires a <code>RegExp</code> object; <code>/pattern/</code> string form via <code>$options</code> partially handled; <code>o</code>/<code>x</code> options unsupported.",
     "fixture": [
       {
         "_id": 1,
@@ -376,6 +394,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Array element matches a sub-query",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/",
+    "status": "full",
+    "note": "An array element matches the sub-query (query + projection forms).",
     "fixture": [
       {
         "_id": 1,
@@ -432,6 +452,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "queryOp",
     "title": "Array of a given length",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/query/size/",
+    "status": "full",
+    "note": "Exact array length (number only).",
     "fixture": [
       {
         "_id": 1,
@@ -474,6 +496,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "updateOp",
     "title": "Set a field",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/update/set/",
+    "status": "full",
+    "note": "Set/create a field; dotted paths supported.",
     "fixture": [
       {
         "_id": 1,
@@ -509,6 +533,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "updateOp",
     "title": "Increment a field",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/update/inc/",
+    "status": "full",
+    "note": "Increment (missing ⇒ set to increment). Numeric only.",
     "fixture": [
       {
         "_id": 1,
@@ -548,6 +574,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "updateOp",
     "title": "Append to an array",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/update/push/",
+    "status": "full",
+    "note": "Creates the array if missing; supports <code>$each</code>/<code>$position</code>/<code>$slice</code>/<code>$sort</code> modifiers.",
     "fixture": [
       {
         "_id": 1,
@@ -586,6 +614,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "updateOp",
     "title": "Remove All Items That Equal a Specified Value",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/update/pull/",
+    "status": "full",
+    "note": "By exact value <strong>or</strong> by query condition (reuses the match engine, e.g. <code>{ $gt: 5 }</code>).",
     "fixture": [
       {
         "_id": 1,
@@ -645,6 +675,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "stage",
     "title": "Equality + comparison match",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/",
+    "status": "full",
+    "note": "Reuses the full query engine, so all query-operator support/limits apply.",
     "fixture": [
       {
         "_id": 1,
@@ -692,6 +724,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "stage",
     "title": "Group + accumulate",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/",
+    "status": "full",
+    "note": "Group key (field/expression/object/<code>null</code>) + accumulators <code>$sum</code> <code>$avg</code> <code>$min</code> <code>$max</code> <code>$push</code> <code>$addToSet</code> <code>$first</code> <code>$last</code> <code>$count</code>.",
     "fixture": [
       {
         "s": "A",
@@ -744,6 +778,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "stage",
     "title": "Unwind an array field",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind/",
+    "status": "partial",
+    "note": "Supports string form and <code>{ path, includeArrayIndex, preserveNullAndEmptyArrays }</code>. (Two <code>includeArrayIndex</code> bugs fixed — see <a href=\"#known-bugs\">Known bugs</a>.)",
     "fixture": [
       {
         "_id": 1,
@@ -781,6 +817,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "stage",
     "title": "Include Specific Fields",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/",
+    "status": "full",
+    "note": "Inclusion/exclusion <strong>and computed/expression fields</strong> (<code>{ total: { $multiply: [...] } }</code>) via the expression engine.",
     "fixture": [
       {
         "_id": "X",
@@ -822,6 +860,8 @@ window.__MM_EXAMPLES__ = [
     "kind": "stage",
     "title": "$lookup joins orders to inventory by array localField (doc example)",
     "source": "https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/",
+    "status": "full",
+    "note": "Left outer equality join. <code>from</code> = a registered name, a <code>Collection</code>, or an array; array-valued <code>localField</code> matches each element.",
     "fixture": [
       {
         "_id": 1,

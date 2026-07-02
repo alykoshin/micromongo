@@ -16,9 +16,39 @@ var path = require('path');
 
 var ROOT = path.join(__dirname, '..');
 var examples = require(path.join(ROOT, 'meta', 'mongo-examples')).examples;
+var buildManifest = require(path.join(ROOT, 'meta', 'manifest')).buildManifest;
 // Emitted as a committed .js that assigns a global (CSP-safe `<script src>` — the page can't
 // `fetch` a sibling JSON under a strict CSP / file://). GitHub Pages serves it verbatim.
 var OUT = path.join(ROOT, 'docs', 'examples.generated.js');
+
+// Per-op status + note from the manifest (registry ⋈ Mongo set ⋈ summaries.js prose), so each
+// card carries the SAME distinct compat note as the compat matrix — not a generic boilerplate.
+// Keyed by (kind, op): the SAME name can live on multiple surfaces (e.g. `$eq` is both a query
+// operator and an expression operator; `$push` is an update op AND an unsupported accumulator), so
+// the card's `kind` selects the right record.
+var MANIFEST = buildManifest();
+// The example `kind` maps to the manifest surface key. (`projection` records have no manifest
+// surface — projection ops live in project.ts, outside the registries — so fall back to queryOp.)
+var KIND_TO_SURFACE = { method: 'method', stage: 'stage', exprOp: 'exprOp', queryOp: 'queryOp', updateOp: 'updateOp', projection: 'queryOp' };
+// Minimal markdown→HTML for the compat notes (which are authored in markdown in summaries.js) —
+// the HTML ops-table inserts them via innerHTML, so `code`/**bold**/[link](url) must be real tags.
+function mdToHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')  // escape first
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+}
+function compatFor(op, kind) {
+  var surface = KIND_TO_SURFACE[kind] || kind;
+  var list = MANIFEST[surface] || [];
+  var r = null;
+  for (var i = 0; i < list.length; i++) { if (list[i].name === op) { r = list[i]; break; } }
+  return {
+    status: r ? r.status : 'full',           // full | partial | unsupported | micromongo-only
+    note: r ? mdToHtml(r.notes || r.summary || '') : '',
+  };
+}
 
 // The curated op list (order = display order in the playground). One card per op — the first
 // `docs:true` record for that op. Grouped roughly by family for a sensible page flow.
@@ -101,11 +131,14 @@ function main() {
   SHOWCASE.forEach(function (op) {
     var e = byOp[op];
     if (!e) { missing.push(op); return; }
+    var c = compatFor(e.op, e.kind);
     cards.push({
       op: e.op,
       kind: e.kind,
       title: e.title || '',
       source: e.source || '',
+      status: c.status,                     // drives the ✅/⚠️ icon in the compat column
+      note: c.note,                         // the DISTINCT per-op compat note (from summaries.js)
       fixture: e.fixture,
       do: e.do,
       expect: e.expect,

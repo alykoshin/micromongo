@@ -1878,18 +1878,23 @@ module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };</code
         // configure — no Mongo equivalent, so not in the canonical set) is appended.
         function buildOps() {
           var cards = window.__MM_EXAMPLES__ || [];
+          var ICON = { full: OK, partial: WARN, unsupported: NA, "micromongo-only": NA };
           var ops = [{ group: "MongoDB operators & methods (verified against real MongoDB)" }];
           cards.forEach(function (c) {
+            // The DISTINCT per-op compat note comes from the manifest (summaries.js prose); the
+            // ✅/⚠️ icon from its status. A small "verified" tail links the MongoDB doc source.
+            var icon = ICON[c.status] || OK;
+            var note = c.note || "";
+            var src = c.source
+              ? ' <span class="note">— <a href="' + c.source + '">docs</a>, verified on a live MongoDB server</span>'
+              : "";
             ops.push({
               name: c.op + (c.title ? "  —  " + c.title : ""),
               seed: JSON.stringify(c.fixture),
               func: c.func,
               coll: c.coll,
               collections: c.collections,
-              compat:
-                OK +
-                'Ported from the <a href="' + c.source + '">MongoDB docs</a>; ' +
-                'result verified identical on micromongo and a live MongoDB server.',
+              compat: icon + note + src,
             });
           });
           ops.push({ group: "micromongo-specific (no Mongo equivalent)" });
