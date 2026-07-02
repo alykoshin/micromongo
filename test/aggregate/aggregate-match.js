@@ -18,8 +18,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var aggregate = require('../../lib/aggregate/');
-const ObjectId = require('../../lib/utils').ObjectId;
+var aggregate = require('../../dist/aggregate/');
+const ObjectId = require('../../dist/utils').ObjectId;
 
 
 //describe('# aggregate', function() {

@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var match = require('../../../lib/crud/match');
+var match = require('../../../dist/crud/match');
 
 
 describe('#comparision operators - development', function() {

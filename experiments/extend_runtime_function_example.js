@@ -1,9 +1,14 @@
 /**
  *
- * This file is an example how to extend the functionality of `micromongo` in runtime
+ * This file is an example how to extend the functionality of `micromongo` at
+ * runtime with custom query operators.
  *
- * It shows how to add new functions to CRUD `match` functions
- * and use it in `find` function
+ * The blessed extension point is `mm.registerOperator(kind, name, fn)`:
+ *   - kind 'post' : a field-level operator (used inside a field's sub-query)
+ *   - kind 'pre'  : a logical / whole-document operator (used at the top level)
+ *
+ * (This replaces the old pattern of mutating mm._crud._match.postOperators /
+ * .preOperators directly, which is no longer supported.)
  *
  */
 
@@ -18,15 +23,15 @@ const data1 = [
   { user: { Name: 'UserXXXX',  UserId: '1234' } },
 ];
 
-console.log('\n* Extending postOperators with new $userFn1 function...');
+console.log('\n* Registering a new field-level (post) operator $userFn1...');
 
-mm._crud._match.postOperators.$userFn1 = function(doc, query) {
+mm.registerOperator('post', '$userFn1', function(doc, query) {
   const res = (doc.Name !== 'User'+doc.UserId);
   console.log('** Inside $userFn1(): doc', doc, ' query:', query, 'res:', res);
   return res;
-};
+});
 
-console.log('* Running the query with new $userFn1 function...');
+console.log('* Running the query with new $userFn1 operator...');
 
 const query1 = {
   $and: [
@@ -45,15 +50,15 @@ const data2 = [
   { Name: 'UserXXXX',  UserId: '1234' },
 ];
 
-console.log('\n* Extending preOperators with new $userFn2 function...');
+console.log('\n* Registering a new logical (pre) operator $userFn2...');
 
-mm._crud._match.preOperators.$userFn2 = function(doc, query) {
+mm.registerOperator('pre', '$userFn2', function(doc, query) {
   const res = (doc.Name !== 'User'+doc.UserId);
   console.log('** Inside $userFn2(): doc', doc, ' query:', query, 'res:', res);
   return res;
-};
+});
 
-console.log('* Running the query with new $userFn2 function...');
+console.log('* Running the query with new $userFn2 operator...');
 
 const query2 = {
   $and: [
@@ -72,15 +77,15 @@ const data3 = [
   { Name: 'UserXXXX',  UserId: '1234' },
 ];
 
-console.log('\n* Extending preOperators with new $userFn3 function...');
+console.log('\n* Registering a new logical (pre) operator $userFn3...');
 
-mm._crud._match.preOperators.$userFn3 = function(doc, query) {
+mm.registerOperator('pre', '$userFn3', function(doc, query) {
   const res = (doc[query.name1] !== query.value + doc[query.name2]);
   console.log('** Inside $userFn3(): doc', doc, ' query:', query, 'res:', res);
   return res;
-};
+});
 
-console.log('* Running the query with new $userFn3 function...');
+console.log('* Running the query with new $userFn3 operator...');
 
 const query3 = {
   $and: [
@@ -93,4 +98,3 @@ let res3 = mm.find(data3, query3);
 console.log('* res3:', res3);
 
 ////////////////////////////////////////////////////////////////////////////////
-

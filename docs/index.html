@@ -1,0 +1,2115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>micromongo — MongoDB-like queries over plain JavaScript arrays</title>
+    <meta
+      name="description"
+      content="micromongo runs MongoDB-like find/update/aggregate queries over plain JavaScript arrays of objects — zero database, in-memory, in Node and the browser."
+    />
+    <style>
+      :root {
+        --fg: #1b1f24;
+        --muted: #5c6670;
+        --bg: #ffffff;
+        --line: #e3e8ee;
+        --accent: #116329;
+        --code-bg: #f6f8fa;
+        --func: #0a5;
+        --coll: #06c;
+        --nav-w: 15rem;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        color: var(--fg);
+        background: var(--bg);
+        font:
+          15px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+
+      /* ---- Layout: sticky sidebar nav + content ---- */
+      .layout {
+        display: grid;
+        grid-template-columns: var(--nav-w) minmax(0, 1fr);
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      nav.side {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 1.5rem 1rem 2rem 1.25rem;
+        border-right: 1px solid var(--line);
+        font-size: 0.86rem;
+      }
+      nav.side .brand {
+        font-weight: 700;
+        font-size: 1.15rem;
+        margin-bottom: 0.15rem;
+      }
+      nav.side .brand a {
+        color: var(--fg);
+        text-decoration: none;
+      }
+      nav.side .ver {
+        color: var(--muted);
+        font-size: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      nav.side a.navlink {
+        display: block;
+        color: var(--muted);
+        text-decoration: none;
+        padding: 0.18rem 0.5rem;
+        border-radius: 5px;
+        border-left: 2px solid transparent;
+      }
+      nav.side a.navlink:hover {
+        color: var(--fg);
+        background: var(--code-bg);
+      }
+      nav.side a.navlink.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        font-weight: 600;
+      }
+      nav.side a.navlink.sub {
+        padding-left: 1.35rem;
+        font-size: 0.8rem;
+      }
+      nav.side .navgroup {
+        margin-top: 0.9rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #9aa4ae;
+        padding: 0 0.5rem;
+      }
+      nav.side .extlinks {
+        margin-top: 1.4rem;
+        border-top: 1px solid var(--line);
+        padding-top: 0.9rem;
+      }
+      nav.side .extlinks a {
+        display: inline-block;
+        color: var(--accent);
+        text-decoration: none;
+        margin-right: 0.7rem;
+        font-size: 0.8rem;
+      }
+
+      main {
+        padding: 2rem 2.25rem 5rem;
+        min-width: 0;
+      }
+      .content {
+        max-width: 820px;
+      }
+
+      header.hero h1 {
+        margin: 0 0 0.25rem;
+        font-size: 2.2rem;
+      }
+      header.hero .tagline {
+        color: var(--muted);
+        margin: 0 0 1rem;
+        font-size: 1.1rem;
+      }
+      .badges a {
+        margin-right: 0.4rem;
+      }
+      .badges img {
+        vertical-align: middle;
+      }
+
+      h2 {
+        margin: 3rem 0 0.75rem;
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.35rem;
+        scroll-margin-top: 1rem;
+      }
+      h3 {
+        margin: 2rem 0 0.5rem;
+        font-size: 1.12rem;
+        scroll-margin-top: 1rem;
+      }
+      h3 code {
+        font-size: 0.95em;
+      }
+      p {
+        margin: 0.5rem 0 1rem;
+      }
+      ul {
+        margin: 0.5rem 0 1rem;
+        padding-left: 1.3rem;
+      }
+      li {
+        margin: 0.25rem 0;
+      }
+      code,
+      pre {
+        font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      code {
+        background: var(--code-bg);
+        padding: 0.12em 0.4em;
+        border-radius: 4px;
+        font-size: 0.88em;
+      }
+      pre {
+        background: var(--code-bg);
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        line-height: 1.55;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+        font-size: 1em;
+      }
+      a {
+        color: var(--accent);
+      }
+      .lead {
+        font-size: 1.05rem;
+      }
+
+      .callout {
+        border-left: 4px solid;
+        border-radius: 0 6px 6px 0;
+        padding: 0.7rem 1rem;
+        margin: 1.2rem 0;
+        font-size: 0.92rem;
+        background: var(--code-bg);
+      }
+      .callout.warn {
+        border-color: #d6a015;
+        background: #fff8e1;
+        color: #6b5100;
+      }
+      .callout.info {
+        border-color: var(--coll);
+        background: #eef5ff;
+      }
+      .callout.tip {
+        border-color: var(--func);
+        background: #edfaf3;
+      }
+
+      /* ---- Try-it playground ---- */
+      .pg-status {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 0.25rem 0 1rem;
+      }
+      .pg-status.ok {
+        color: var(--func);
+      }
+      .pg-status.err {
+        color: #c0392b;
+      }
+      .pg-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+      @media (max-width: 820px) {
+        .pg-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .pg-grid label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .pg-run {
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #fff;
+        background: var(--accent);
+        border: 0;
+        border-radius: 6px;
+        padding: 0.5rem 1.1rem;
+        cursor: pointer;
+        margin-bottom: 1rem;
+      }
+      .pg-run:disabled {
+        background: var(--muted);
+        cursor: not-allowed;
+      }
+      .pg-out {
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.8rem;
+        min-height: 3rem;
+        font-size: 0.82rem;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      .pg-out.err {
+        color: #c0392b;
+      }
+      .pg-presets {
+        margin: 0.25rem 0 0.75rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .pg-presets button {
+        font: inherit;
+        font-size: 0.78rem;
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 0.2rem 0.55rem;
+        margin: 0 0.25rem 0.35rem 0;
+        cursor: pointer;
+        color: var(--accent);
+      }
+      .pg-presets button:hover {
+        border-color: var(--accent);
+      }
+
+      /* ---- Side-by-side intro snippets ---- */
+      .two-up {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0 1.5rem;
+      }
+      .two-up pre {
+        margin: 0.25rem 0 0;
+        height: 100%;
+      }
+      .lbl {
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .lbl.func {
+        color: var(--func);
+      }
+      .lbl.coll {
+        color: var(--coll);
+      }
+      @media (max-width: 820px) {
+        .two-up {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---- Operations table ---- */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0 2rem;
+        font-size: 0.86rem;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 0.55rem 0.7rem;
+        border-bottom: 1px solid var(--line);
+      }
+      thead th {
+        background: var(--code-bg);
+        border-bottom: 2px solid var(--line);
+      }
+      th.func {
+        width: 38%;
+        color: var(--func);
+      }
+      th.coll {
+        width: 38%;
+        color: var(--coll);
+      }
+      th.compat {
+        width: 24%;
+      }
+      td.compat {
+        font-size: 0.82rem;
+        color: var(--muted);
+        vertical-align: middle;
+      }
+      td.compat .st {
+        font-weight: 600;
+        margin-right: 0.35em;
+      }
+      td.compat .st.ok {
+        color: var(--func);
+      }
+      td.compat .st.warn {
+        color: #b7791f;
+      }
+      td.compat .st.na {
+        color: var(--muted);
+      }
+      .subhead td {
+        border-bottom: 0;
+        padding-bottom: 0.1rem;
+        padding-top: 0.7rem;
+        font-size: 0.82rem;
+        color: var(--fg);
+        background: #f8f9fb;
+        position: relative;
+      }
+      .subhead td code {
+        background: transparent;
+        padding: 0;
+        font-weight: 600;
+        font-size: 1em;
+      }
+      .subhead + tr td {
+        padding-top: 0.15rem;
+      }
+      td code.editable {
+        display: block;
+        cursor: text;
+        outline: none;
+        border: 1px solid var(--line);
+        border-radius: 5px 5px 0 0;
+        background: #fff;
+        padding: 0.4rem 0.55rem;
+        margin-bottom: -1px;
+        line-height: 1.45;
+        z-index: 1;
+        position: relative;
+      }
+      td code.editable:hover {
+        border-color: #b9c2cc;
+      }
+      td code.editable:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(17, 99, 41, 0.12);
+      }
+      .edit-toggle {
+        float: right;
+        font-size: 0.72rem;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+      }
+      .edit-toggle:hover {
+        text-decoration: underline;
+      }
+      .seed-row td {
+        border-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .seed-row.open td {
+        background: #fbfcfd;
+      }
+      .seed-row .seed-box {
+        padding-top: 0.35rem;
+        padding-bottom: 0.55rem;
+      }
+      .seed-row .seed-label {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.3rem;
+      }
+      .seed-row .seed-edit {
+        width: 100%;
+        font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.55rem;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #fff;
+        resize: vertical;
+        min-height: 2.2rem;
+        line-height: 1.45;
+      }
+      .seed-row .seed-edit:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(17, 99, 41, 0.12);
+      }
+      td code {
+        background: transparent;
+        padding: 0;
+        word-break: break-word;
+      }
+      td .call {
+        display: block;
+        white-space: pre-wrap;
+      }
+      td .res {
+        display: block;
+        white-space: pre-wrap;
+        margin-top: 0;
+        background: hsl(0 0% 98% / 1);
+        border: 1px solid #e3e8ee;
+        border-radius: 0 0 5px 5px;
+        padding: 0.35rem 0.55rem;
+        color: var(--fg);
+        word-break: break-word;
+      }
+      td .note {
+        display: block;
+        color: var(--muted);
+        font-style: italic;
+        font-size: 0.92em;
+        margin-top: 0.15rem;
+      }
+      .group td {
+        background: #f0f3f6;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .legend {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .legend b.func {
+        color: var(--func);
+      }
+      .legend b.coll {
+        color: var(--coll);
+      }
+
+      /* ---- Compatibility summary table ---- */
+      table.compat-summary td:first-child {
+        white-space: nowrap;
+        font-weight: 600;
+        width: 12rem;
+      }
+
+      /* ---- Syntax tokens (zero-dependency highlighter) ---- */
+      .t-com {
+        color: #6a737d;
+      }
+      .t-str {
+        color: #032f62;
+      }
+      .t-num {
+        color: #005cc5;
+      }
+      .t-kw {
+        color: #d73a49;
+      }
+      .t-op {
+        color: #6f42c1;
+      }
+      .t-pun {
+        color: #5c6670;
+      }
+      pre:not(.hl) .t-com,
+      code .t-com {
+        font-style: italic;
+      }
+      pre:not(.hl) .t-op,
+      code .t-op {
+        font-weight: 600;
+      }
+
+      /* ---- Editable code overlay (highlighted <pre> behind a transparent <textarea>) ---- */
+      .editor {
+        position: relative;
+      }
+      .editor > textarea,
+      .editor > pre.hl {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.6rem;
+        font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        tab-size: 2;
+        white-space: pre;
+        overflow: auto;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 8.5rem;
+        height: 8.5rem;
+      }
+      .editor > pre.hl {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        pointer-events: none;
+        background: var(--code-bg);
+        color: var(--fg);
+        overflow: hidden;
+      }
+      .editor > textarea {
+        position: relative;
+        background: transparent;
+        color: transparent;
+        caret-color: var(--fg);
+        resize: vertical;
+      }
+      .editor > textarea::selection {
+        background: #b3d4fc;
+      }
+
+      footer {
+        margin-top: 4rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      /* ---- Mobile: collapse the sidebar to a top strip ---- */
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        nav.side {
+          position: static;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        main {
+          padding: 1.5rem 1.25rem 4rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ============================== SIDEBAR NAV ============================== -->
+      <nav class="side" id="side-nav">
+        <div class="brand"><a href="#top">micromongo</a></div>
+        <div class="ver" id="nav-version">in-memory MongoDB queries</div>
+
+        <a class="navlink" href="#top">Overview</a>
+        <a class="navlink" href="#try">Try it live</a>
+        <a class="navlink" href="#install">Install</a>
+        <a class="navlink" href="#quickstart">Quick start</a>
+        <a class="navlink" href="#operations">Operations table</a>
+
+        <div class="navgroup">Reference</div>
+        <a class="navlink sub" href="#reads">Reads</a>
+        <a class="navlink sub" href="#writes">Writes &amp; updates</a>
+        <a class="navlink sub" href="#query-operators">Query operators</a>
+        <a class="navlink sub" href="#aggregation">Aggregation</a>
+        <a class="navlink sub" href="#collections">Collections &amp; indexes</a>
+        <a class="navlink sub" href="#streaming">Streaming cursors</a>
+        <a class="navlink sub" href="#extend">Extending</a>
+        <a class="navlink sub" href="#cli">CLI / REPL</a>
+        <a class="navlink sub" href="#mock">Driver mock (testing)</a>
+
+        <div class="navgroup">More</div>
+        <a class="navlink sub" href="#performance">Performance</a>
+        <a class="navlink sub" href="#compatibility">Compatibility</a>
+
+        <div class="extlinks">
+          <a href="https://github.com/alykoshin/micromongo">GitHub</a>
+          <a href="https://www.npmjs.com/package/micromongo">npm</a>
+          <a
+            href="https://github.com/alykoshin/micromongo/blob/master/planning/compatibility.md"
+            >Full matrix</a
+          >
+        </div>
+      </nav>
+
+      <!-- ================================ CONTENT =============================== -->
+      <main>
+        <div class="content">
+          <header class="hero" id="top">
+            <h1>micromongo</h1>
+            <p class="tagline">
+              MongoDB-like queries over plain JavaScript arrays of objects —
+              <strong>zero database, in-memory</strong>.
+            </p>
+            <p class="badges">
+              <a href="https://www.npmjs.com/package/micromongo"
+                ><img
+                  src="https://badge.fury.io/js/micromongo.svg"
+                  alt="npm version"
+              /></a>
+            </p>
+          </header>
+
+          <p class="lead">
+            An array of objects (documents, in MongoDB's terms) is a very common
+            data structure. If your app works with this kind of data, you want
+            something lightweight, and you already know MongoDB's query syntax,
+            <code>micromongo</code> lets you run the same
+            <code>find</code>/<code>update</code>/<code>aggregate</code> you'd
+            write against MongoDB — directly over the array. It runs in
+            <strong>Node and the browser</strong>, ships TypeScript types, and
+            has <strong>no dependencies you need a server for</strong>.
+          </p>
+
+          <p>
+            micromongo exposes every operation two ways. The
+            <b style="color: var(--func)">functional API</b>
+            (<code>mm.&lt;op&gt;(array, …)</code>) works on any array directly
+            and is always a linear scan — it can't own the array, so it can't
+            keep an index valid. The
+            <b style="color: var(--coll)">Collection / Cursor API</b> wraps the
+            array (which it then owns), returning chainable cursors and
+            supporting opt-in ordered indexes for scale.
+            <strong>Same results either way — only speed differs.</strong>
+          </p>
+
+          <!-- ============================ TRY IT LIVE ============================ -->
+          <h2 id="try">Try it live</h2>
+          <p>
+            This runs the real <code>micromongo</code> engine
+            <strong>in your browser</strong> (the committed IIFE build — the same
+            engine as the npm package, no server). Edit the data and the
+            expression, then Run (it also re-runs as you type).
+            <code>mm</code> (the functional API) and <code>db</code> (a small
+            collection registry) are in scope; the value of the last expression
+            is shown.
+          </p>
+          <p id="pg-status" class="pg-status">Loading the in-browser build…</p>
+
+          <div class="pg-presets">
+            Load an example:
+            <button data-preset="find">find + $gte</button>
+            <button data-preset="aggregate">aggregate</button>
+            <button data-preset="update">updateMany</button>
+            <button data-preset="collection">Collection + index</button>
+            <button data-preset="expr">$expr</button>
+          </div>
+
+          <div class="pg-grid">
+            <div>
+              <label for="pg-data">Data (JSON array)</label>
+              <div class="editor">
+                <pre class="hl" id="pg-data-hl" aria-hidden="true"></pre>
+                <textarea id="pg-data" spellcheck="false">
+[
+  { "_id": 1, "item": "abc", "qty": 30, "tags": ["a", "b"] },
+  { "_id": 2, "item": "xyz", "qty": 10, "tags": ["b"] },
+  { "_id": 3, "item": "ijk", "qty": 50, "tags": ["a", "c"] }
+]</textarea
+                >
+              </div>
+            </div>
+            <div>
+              <label for="pg-expr"
+                >Expression (JS; <code>data</code>, <code>mm</code>,
+                <code>db</code> in scope)</label
+              >
+              <div class="editor">
+                <pre class="hl" id="pg-expr-hl" aria-hidden="true"></pre>
+                <textarea id="pg-expr" spellcheck="false">
+// find qty >= 30, sorted by qty desc
+mm.aggregate(data, [
+  { $match: { qty: { $gte: 30 } } },
+  { $sort:  { qty: -1 } },
+  { $project: { _id: 0, item: 1, qty: 1 } }
+])</textarea
+                >
+              </div>
+            </div>
+          </div>
+          <button id="pg-run" class="pg-run" disabled>Run ▸</button>
+          <div id="pg-out" class="pg-out">// result appears here</div>
+          <div class="callout warn">
+            Everything works in the browser except one thing: a
+            <code>$where</code> written as a <em>string</em> (e.g.
+            <code>{ $where: "this.qty &gt; 20" }</code>) runs your text as live
+            code here, so only use it with queries you wrote yourself — never a
+            string from an untrusted source. A <code>$where</code> written as a
+            <em>function</em>, and <code>$expr</code>, are always safe.
+          </div>
+
+          <!-- ============================== INSTALL ============================= -->
+          <h2 id="install">Install</h2>
+          <pre><code>npm install --save micromongo</code></pre>
+          <div class="two-up">
+            <div>
+              <div class="lbl">CommonJS</div>
+              <pre><code>var mm = require("micromongo");</code></pre>
+            </div>
+            <div>
+              <div class="lbl">ESM / TypeScript</div>
+              <pre><code>import mm from "micromongo";
+// (needs esModuleInterop; else:
+//  import mm = require("micromongo"))</code></pre>
+            </div>
+          </div>
+          <p>
+            The library is written in <strong>TypeScript</strong> and ships type
+            definitions (<code>.d.ts</code>), so the read/write/aggregate surface
+            is typed against your document shape:
+          </p>
+          <pre><code>interface User { _id: number; email: string; age: number; }
+const users: User[] = [{ _id: 1, email: "a@b.c", age: 30 }];
+
+mm.find(users, { age: { $gt: 18 } });        // inferred return type: User[]
+mm.updateOne(users, { _id: 1 }, { $inc: { age: 1 } });
+
+mm.find(users, { age: { $gt: "old" } });     // ✗ compile error — $gt on age wants a number</code></pre>
+          <p>
+            There's also a leaner <code>micromongo/core</code> entry (functional
+            API only, no Collection/Cursor/index layer) for the smallest browser
+            bundle, and a browser IIFE build that exposes a global
+            <code>micromongo</code>.
+            Target Node version: <strong>&ge; 8</strong>.
+          </p>
+
+          <!-- ============================ QUICK START =========================== -->
+          <h2 id="quickstart">Quick start</h2>
+          <p>The same task, done both ways:</p>
+          <div class="two-up">
+            <div>
+              <div class="lbl func">Functional — on any array</div>
+              <pre><code>var mm = require("micromongo");
+var orders = [
+  { _id: 1, status: "A", qty: 30 },
+  { _id: 2, status: "B", qty: 10 },
+  { _id: 3, status: "A", qty: 50 },
+];
+
+mm.find(orders, { status: "A" });
+// → [ {_id:1,…}, {_id:3,…} ]
+
+mm.aggregate(orders, [
+  { $group: { _id: "$status",
+              total: { $sum: "$qty" } } },
+]);
+// → [ {_id:'A',total:80}, {_id:'B',total:10} ]</code></pre>
+            </div>
+            <div>
+              <div class="lbl coll">Collection — owns the array, indexes</div>
+              <pre><code>var mm = require("micromongo");
+var c = new mm.Collection([
+  { _id: 1, status: "A", qty: 30 },
+  { _id: 2, status: "B", qty: 10 },
+  { _id: 3, status: "A", qty: 50 },
+]);
+c.createIndex({ status: 1 });
+
+c.find({ status: "A" })
+  .sort({ qty: -1 })
+  .limit(1)
+  .toArray();
+// → [ {_id:3,…} ]   (served via IXSCAN)</code></pre>
+            </div>
+          </div>
+          <p>
+            By default a query is a <strong>linear scan</strong> over the array,
+            plenty fast for typical in-memory data. For larger collections, a
+            <a href="#collections"><code>Collection</code></a> can carry an
+            opt-in <a href="#collections">ordered index</a> to serve equality,
+            range, sort, <code>$in</code>, compound-prefix and <code>$or</code>
+            queries from the index instead of scanning — see
+            <a href="#performance">Performance</a>.
+          </p>
+
+          <!-- ========================= OPERATIONS TABLE ========================= -->
+          <h2 id="operations">Operations — functional vs Collection / Cursor</h2>
+          <p class="legend">
+            Each row shows the <b>same task done both ways</b>, computed
+            <strong>live against the engine in your browser</strong>. The
+            <b class="func">functional</b> form takes the array as its first
+            argument; the <b class="coll">Collection</b> form omits it (the
+            Collection owns the data, kept in <code>c</code>). For ops that exist
+            on only one surface, the other cell shows the <b>workaround</b>. Each
+            call line and the seed data are editable — type to re-run.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th class="func">
+                  Functional — <code>mm.*(array, …)</code>
+                </th>
+                <th class="coll">Collection / Cursor</th>
+                <th class="compat">MongoDB compatibility</th>
+              </tr>
+            </thead>
+            <tbody id="ops-body">
+              <tr>
+                <td colspan="3" style="color: var(--muted)">
+                  Loading examples…
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="legend">
+            <span class="st ok" style="font-weight: 600">✅</span> full ·
+            <span class="st warn" style="font-weight: 600; color: #b7791f"
+              >⚠️</span
+            >
+            with limits ·
+            <span style="color: var(--muted); font-weight: 600">—</span>
+            micromongo-specific, no Mongo equivalent. See the
+            <a
+              href="https://github.com/alykoshin/micromongo/blob/master/planning/compatibility.md"
+              >full compatibility matrix</a
+            >
+            for per-query-operator, per-update-operator, and
+            per-aggregation-stage status.
+          </p>
+
+          <!-- ============================== READS =============================== -->
+          <h2 id="reads">Reads</h2>
+
+          <h3 id="count"><code>count()</code></h3>
+          <p>Returns the number of documents matching a query.</p>
+          <pre><code>var mm = require("micromongo");
+
+mm.count([{ a: 1 }, { a: 2 }, { a: 3 }], { a: { $gte: 2 } });  // → 2
+mm.count([{ a: 1 }, { a: 2 }, { a: 3 }], {});                  // → 3  (empty query ⇒ total)</code></pre>
+
+          <h3 id="find"><code>find()</code> / <code>findOne()</code></h3>
+          <p>
+            <code>find()</code> returns a deep copy of the documents matching
+            <code>query</code>, with fields filtered by an optional
+            <code>projection</code>. If documents carry an <code>_id</code>,
+            projection follows Mongo's rule of including <code>_id</code> by
+            default. <code>findOne()</code> returns the first match, or
+            <code>null</code>.
+          </p>
+          <pre><code>var array = [
+  { qty: 10, price: 10 }, { qty: 10, price: 0 },
+  { qty: 20, price: 10 }, { qty: 20, price: 0 },
+  { qty: 30, price: 10 }, { qty: 30, price: 0 },
+];
+var query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
+
+mm.find(array, query, { qty: 1 });
+// → [ { qty: 10 }, { qty: 20 }, { qty: 30 } ]
+
+mm.findOne(array, query, { qty: 1 });
+// → { qty: 10 }</code></pre>
+
+          <h3 id="distinct"><code>distinct()</code></h3>
+          <p>
+            Distinct values for a field across matching documents (array-valued
+            fields are flattened, like MongoDB; deep-equal dedup; dotted paths).
+          </p>
+          <pre><code>mm.distinct([{ a: 1 }, { a: 2 }, { a: 1 }], "a");                  // → [ 1, 2 ]
+mm.distinct([{ tags: ["x", "y"] }, { tags: ["y"] }], "tags");     // → [ 'x', 'y' ]</code></pre>
+
+          <!-- ========================= WRITES & UPDATES ========================= -->
+          <h2 id="writes">Writes &amp; updates</h2>
+          <p>
+            Reads (<code>find</code>/<code>findOne</code>/<code>count</code>/<code
+              >distinct</code
+            >/<code>aggregate</code>) are non-mutating and return deep copies.
+            The write family <strong>mutates the passed array in place</strong>
+            and returns a driver-shaped report.
+          </p>
+
+          <h3 id="insert">
+            <code>insert()</code> / <code>insertOne()</code> /
+            <code>insertMany()</code>
+          </h3>
+          <pre><code>mm.insertOne(array, { _id: 1, a: 1 });
+// → { acknowledged: true, insertedId: 1, insertedCount: 1 }
+
+mm.insertMany(array, [{ _id: 1 }, { _id: 2 }]);
+// → { acknowledged: true, insertedCount: 2, insertedIds: { '0': 1, '1': 2 } }
+
+mm.insert(array, doc);      // dispatches to insertOne
+mm.insert(array, [docs]);   // …or insertMany</code></pre>
+          <div class="callout info">
+            <strong>Differs from MongoDB (configurable):</strong> by default
+            <code>micromongo</code> does <strong>not</strong> auto-generate
+            <code>_id</code> (reads stay non-mutating). To match MongoDB, set
+            <code>mm.configure({ autoId: true })</code> — then inserts and
+            upserts generate a unique string <code>_id</code> for any document
+            lacking one (an explicit <code>_id</code> is always preserved).
+          </div>
+
+          <h3 id="updateone--updatemany">
+            <code>updateOne()</code> / <code>updateMany()</code>
+          </h3>
+          <p>
+            <code>updateOne</code> updates the <strong>first</strong> match;
+            <code>updateMany</code> updates <strong>all</strong>. The
+            <code>update</code> must be an <strong>operator document</strong>
+            (<code>$set</code>, <code>$inc</code>, …). <code>modifiedCount</code>
+            follows MongoDB: a matched-but-unchanged document contributes
+            <code>0</code>.
+          </p>
+          <pre><code>var array = [
+  { _id: 1, status: "A", qty: 10 },
+  { _id: 2, status: "A", qty: 20 },
+  { _id: 3, status: "B", qty: 30 },
+];
+
+mm.updateOne(array, { status: "A" }, { $set: { status: "C" } });
+// → { acknowledged: true, matchedCount: 1, modifiedCount: 1 }
+
+mm.updateMany(array, { status: "A" }, { $inc: { qty: 5 } });
+// → { acknowledged: true, matchedCount: 1, modifiedCount: 1 }
+
+// upsert — no match inserts a doc built from the query + update:
+mm.updateOne(array, { _id: 7 }, { $set: { status: "NEW" } }, { upsert: true });
+// → { acknowledged: true, matchedCount: 0, modifiedCount: 0, upsertedId: 7, upsertedCount: 1 }</code></pre>
+          <p>
+            <strong>Update operators</strong> — field (<code>$set</code>
+            <code>$unset</code> <code>$inc</code> <code>$mul</code>
+            <code>$min</code> <code>$max</code> <code>$rename</code>
+            <code>$currentDate</code> <code>$setOnInsert</code>
+            <code>$bit</code>), array (<code>$push</code> <code>$addToSet</code>
+            <code>$pop</code> <code>$pull</code> <code>$pullAll</code>, with
+            <code>$each</code>/<code>$position</code>/<code>$slice</code>/<code
+              >$sort</code
+            >
+            modifiers), and <strong>positional</strong> (see below).
+          </p>
+
+          <h3 id="positional">Positional <code>$</code> / <code>$[]</code> / <code>$[&lt;id&gt;]</code></h3>
+          <p>
+            The query-bound positional <code>$</code> updates the
+            <strong>first array element matched by the query</strong>. The array
+            field must appear in the query condition (either directly or via
+            <code>$elemMatch</code>). For <em>every</em> element use
+            <code>$[]</code>; for a filtered subset use
+            <code>$[&lt;id&gt;]</code> with <code>arrayFilters</code>.
+          </p>
+          <pre><code>var students = [{ _id: 1, grades: [85, 80, 80] }];
+
+mm.updateOne(students, { _id: 1, grades: 80 }, { $set: { "grades.$": 82 } });
+// students[0] → { _id: 1, grades: [ 85, 82, 80 ] }   // first 80 (index 1) changed
+
+// into an array of sub-documents, via $elemMatch:
+mm.updateOne(
+  classes,
+  { _id: 4, grades: { $elemMatch: { grade: 85 } } },
+  { $set: { "grades.$.std": 6 } },
+);</code></pre>
+
+          <h3 id="replaceone"><code>replaceOne()</code></h3>
+          <p>
+            Replaces the first match with a plain document (<strong>no</strong>
+            operators), preserving its position. Supports
+            <code>{ upsert: true }</code>.
+          </p>
+          <pre><code>mm.replaceOne(array, { _id: 1 }, { _id: 1, status: "Z" });
+// → { acknowledged: true, matchedCount: 1, modifiedCount: 1 }</code></pre>
+
+          <h3 id="findoneand">
+            <code>findOneAndUpdate()</code> / <code>findOneAndReplace()</code> /
+            <code>findOneAndDelete()</code>
+          </h3>
+          <p>
+            Like the corresponding write, but
+            <strong>return the affected document</strong> instead of a report —
+            by default the document <em>as it was before</em> the modification
+            (MongoDB's default), or <code>null</code> if nothing matched.
+          </p>
+          <pre><code>var before = mm.findOneAndUpdate(array, { _id: 1 }, { $set: { a: 2 } });  // pre-update doc
+var deleted = mm.findOneAndDelete(array, { _id: 1 });                     // the removed doc</code></pre>
+
+          <h3 id="deleteone">
+            <code>deleteOne()</code> / <code>deleteMany()</code> /
+            <code>remove()</code>
+          </h3>
+          <pre><code>mm.deleteOne(array, query);   // → { acknowledged: true, deletedCount: 1 }
+mm.deleteMany(array, query);  // → { acknowledged: true, deletedCount: 2 }</code></pre>
+          <div class="callout info">
+            <code>remove()</code> is <strong>deprecated</strong> (the MongoDB
+            driver dropped it in v4) — use <code>deleteOne</code>/<code
+              >deleteMany</code
+            >. Kept for back-compat; it returns the legacy
+            <code>{ nRemoved }</code> shape.
+          </div>
+
+          <h3 id="bulkwrite"><code>bulkWrite()</code></h3>
+          <p>
+            A batch of heterogeneous writes in one call, returning an aggregated
+            <code>BulkWriteResult</code>. Each operation is exactly one of
+            <code>insertOne</code>/<code>updateOne</code>/<code>updateMany</code>/<code
+              >replaceOne</code
+            >/<code>deleteOne</code>/<code>deleteMany</code>.
+          </p>
+          <pre><code>var res = mm.bulkWrite(pizzas, [
+  { insertOne:  { document: { _id: 3, type: "beef", size: "medium", price: 6 } } },
+  { updateOne:  { filter: { type: "cheese" }, update: { $set: { price: 8 } } } },
+  { deleteOne:  { filter: { type: "pepperoni" } } },
+  { replaceOne: { filter: { type: "vegan" }, replacement: { type: "tofu", size: "small", price: 4 } } },
+]);
+// → { acknowledged: true, insertedCount: 1, matchedCount: 2, modifiedCount: 2,
+//     deletedCount: 1, upsertedCount: 0, insertedIds: { '0': 3 }, upsertedIds: {} }</code></pre>
+          <p>
+            <code>options.ordered</code> (default <code>true</code>) stops at the
+            first error; <code>false</code> attempts every op and collects
+            per-op failures into <code>writeErrors: [{ index, errmsg }]</code>.
+          </p>
+
+          <!-- ========================= QUERY OPERATORS ========================== -->
+          <h2 id="query-operators">Query operators</h2>
+          <p>
+            micromongo supports the MongoDB query-operator families:
+            <strong>comparison</strong> (<code>$eq</code> <code>$ne</code>
+            <code>$gt</code> <code>$gte</code> <code>$lt</code>
+            <code>$lte</code> <code>$in</code> <code>$nin</code>),
+            <strong>logical</strong> (<code>$and</code> <code>$or</code>
+            <code>$nor</code> <code>$not</code>), <strong>element</strong>
+            (<code>$exists</code> <code>$type</code>),
+            <strong>evaluation</strong> (<code>$mod</code> <code>$regex</code>
+            <code>$where</code> <code>$text</code> <code>$expr</code>),
+            <strong>array</strong> (<code>$all</code> <code>$elemMatch</code>
+            <code>$size</code>), <strong>bitwise</strong> (<code>$bits*</code>),
+            and <strong>geospatial</strong> (<code>$geoWithin</code>
+            <code>$near</code> …).
+          </p>
+
+          <h3 id="regex"><code>$regex</code></h3>
+          <pre><code>mm.find([{ a: "abc" }, { a: "bcd" }, { a: "cde" }], { a: { $regex: /^bc/ } });
+// → [ { a: 'bcd' } ]</code></pre>
+
+          <h3 id="expr"><code>$expr</code></h3>
+          <p>
+            Use an <a href="#aggregation">aggregation expression</a> inside a
+            query — e.g. to compare two fields of the same document. Unlike
+            <code>$where</code>, <code>$expr</code> runs <strong>no arbitrary
+            JS</strong> (no <code>vm</code>), so it's safe over untrusted input.
+          </p>
+          <pre><code>var monthlyBudget = [
+  { _id: 1, category: "food",   budget: 400, spent: 450 },
+  { _id: 2, category: "drinks", budget: 100, spent: 150 },
+  { _id: 3, category: "misc",   budget: 500, spent: 300 },
+];
+
+mm.find(monthlyBudget, { $expr: { $gt: ["$spent", "$budget"] } });
+// → docs 1 and 2 (spent > budget)
+
+// $expr combines with ordinary query clauses:
+mm.find(monthlyBudget, {
+  category: { $in: ["food", "misc"] },
+  $expr: { $gt: ["$spent", "$budget"] },
+});
+// → doc 1</code></pre>
+
+          <h3 id="rand"><code>$rand</code></h3>
+          <p>
+            <code>{ $rand: {} }</code> is an aggregation expression returning a
+            random float in <code>[0, 1)</code> — most often used via
+            <code>$expr</code> to sample documents:
+          </p>
+          <pre><code>// keep ~half the documents at random:
+mm.find(voters, { $expr: { $lt: [0.5, { $rand: {} }] } });</code></pre>
+
+          <h3 id="where"><code>$where</code></h3>
+          <p>
+            <code>$where</code> runs a JS predicate per document (the document is
+            bound as <code>this</code>). It can be a function or a string.
+          </p>
+          <pre><code>mm.find(array, { $where: function () { return this.qty > 20; } });
+mm.find(array, { $where: "this.qty > 20" });</code></pre>
+          <div class="callout warn">
+            <strong>Security — <code>$where</code>:</strong> the string form
+            executes arbitrary JavaScript (in Node via the <code>vm</code>
+            module, which is <em>not</em> a security sandbox; in the browser via
+            <code>new Function</code>). Treat <code>$where</code> as
+            <strong>trusted-input-only</strong> — never assemble a
+            <code>$where</code> string from end-user input. For computed queries
+            over untrusted input, prefer a value-based query or
+            <a href="#expr"><code>$expr</code></a> (which runs no JS).
+          </div>
+
+          <!-- ============================ AGGREGATION =========================== -->
+          <h2 id="aggregation">Aggregation</h2>
+          <p>
+            <code>aggregate(array, stages)</code> deep-copies the input, then
+            folds each stage's output into the next (non-mutating).
+            <strong>Every aggregation stage MongoDB defines that's feasible
+            in-memory is implemented</strong>: <code>$match</code>,
+            <code>$project</code>, <code>$limit</code>, <code>$skip</code>,
+            <code>$sort</code>, <code>$unwind</code>, <code>$group</code>,
+            <code>$addFields</code>/<code>$set</code>, <code>$unset</code>,
+            <code>$count</code>, <code>$sortByCount</code>,
+            <code>$replaceRoot</code>/<code>$replaceWith</code>,
+            <code>$sample</code>, <code>$redact</code>, <code>$geoNear</code>,
+            <code>$lookup</code>, <code>$out</code>, <code>$indexStats</code>.
+          </p>
+          <pre><code>mm.aggregate(orders, [
+  { $match: { status: "A" } },
+  { $group: { _id: "$customerId", total: { $sum: "$amount" } } },
+  { $sort:  { total: -1 } },
+  { $limit: 5 },
+]);</code></pre>
+          <p><code>$unwind</code> accepts the shorthand or the full form:</p>
+          <pre><code>mm.aggregate(array, [{ $unwind: "$customer.items" }]);
+
+mm.aggregate(array, [
+  { $unwind: {
+      path: "$customer.items",
+      includeArrayIndex: "idx",
+      preserveNullAndEmptyArrays: true,
+  } },
+]);</code></pre>
+          <div class="callout info">
+            Computed-field stages use a pragmatic expression-operator core
+            (arithmetic / string / comparison / conditional / boolean / array +
+            group accumulators, plus <code>$rand</code>). Date /
+            type-conversion / set operators and a few stages
+            (<code>$facet</code>/<code>$bucket</code>/…) are partial or
+            unimplemented — see the
+            <a
+              href="https://github.com/alykoshin/micromongo/blob/master/planning/compatibility.md#aggregation"
+              >full matrix</a
+            >.
+          </div>
+
+          <!-- ======================= COLLECTIONS & INDEXES ====================== -->
+          <h2 id="collections">Collections &amp; indexes</h2>
+          <p>
+            For larger data (or a stateful, driver-shaped object), wrap the array
+            in a <code>Collection</code>. It owns the array, forwards
+            reads/writes/aggregations to the same engine, and adds
+            <strong>opt-in ordered indexes</strong>:
+          </p>
+          <pre><code>var orders = new mm.Collection([ /* … */ ]);
+
+orders.createIndex({ status: 1 });                      // single-field / multikey / compound
+orders.find({ status: "A" }).sort({ qty: -1 }).limit(2).toArray();  // lazy Cursor
+orders.find({ status: "A" }).explain();                 // { stage: 'IXSCAN', … } — doesn't run the query</code></pre>
+          <p>
+            The index is a <strong>pure accelerator, safe by construction</strong>:
+            it only ever supplies a candidate <em>superset</em> that the match
+            engine re-filters, so it never changes results — only speed. It
+            serves equality, range (<code>$gt</code>/<code>$gte</code>/<code
+              >$lt</code
+            >/<code>$lte</code>), sort, <code>$in</code>, array (multikey),
+            compound-prefix, and <code>$or</code> (when every branch is
+            index-served); everything else transparently falls back to the scan.
+            Use <code>c.find(q).explain()</code> to see the chosen plan
+            (<code>COLLSCAN</code>/<code>IXSCAN</code>/<code>IXSCAN+FILTER</code>/<code
+              >OR</code
+            >).
+          </p>
+          <p>
+            <code>mm.collection(name, array)</code> / <code>mm.db.&lt;name&gt;</code>
+            register named collections so <code>$out</code>/<code>$lookup</code>
+            can resolve a collection by name.
+          </p>
+
+          <!-- ========================= STREAMING CURSORS ======================= -->
+          <h2 id="streaming">Streaming cursors</h2>
+          <p>
+            A <code>Collection</code> cursor is <strong>lazy</strong>: besides
+            <code>.toArray()</code> it <strong>streams</strong> — <code>for…of</code>,
+            spread (<code>[...cursor]</code>), <code>for await</code>, and a Node
+            <code>.stream()</code> — pulling one document at a time instead of
+            materializing the whole result.
+          </p>
+          <pre><code>var c = new mm.Collection(bigArray);
+
+// for…of / spread — pulls lazily
+for (const doc of c.find({ status: "A" }).limit(5)) { /* … */ }
+const first3 = [...c.find({ status: "A" }).limit(3)];
+
+// for await (same lazy stream; driver-shape compatible)
+for await (const doc of c.find({ status: "A" })) { /* … */ }
+
+// Node Readable object-stream (pipe / event consumers)
+c.find({ status: "A" }).stream().on("data", (doc) => { /* … */ });</code></pre>
+          <div class="callout tip">
+            <strong>Early termination.</strong> With no <code>sort</code>, a
+            <code>limit(k)</code> stream stops scanning once <code>k</code> docs are
+            emitted — <code>find(q).limit(5)</code> over a million-element array
+            reads only until it has 5, in <strong>constant memory</strong>.
+          </div>
+          <div class="callout info">
+            <strong>Bounded top-K for <code>sort</code> + <code>limit</code>.</strong>
+            A global <code>sort</code> must <em>scan</em> every candidate (you can't
+            know the top-K without seeing them all), but micromongo never
+            <em>buffers</em> them: <code>sort().limit(k)</code> keeps only a
+            <code>k</code>-sized heap while scanning — <strong>O(N·log K) time,
+            O(K) memory</strong>, never the full sorted array. Results (incl. tie
+            order) are identical to a full sort.
+          </div>
+          <p>
+            Streaming is a pure performance path — <code>[...cursor]</code> always
+            deep-equals <code>cursor.toArray()</code> (a randomized equivalence
+            test guards this). Streamed documents are deep copies, like every read.
+            <em>(<code>.stream()</code> is Node-only; in the browser build it throws
+            a clear message — use <code>for…of</code>/<code>for await</code> instead.)</em>
+          </p>
+
+          <!-- ============================= EXTENDING ============================ -->
+          <h2 id="extend">Extending — <code>registerOperator()</code></h2>
+          <p>
+            Add a custom query operator (the blessed extension point). A
+            registered operator — including yours — is visible immediately to
+            both the functional API and Collections.
+          </p>
+          <pre><code>mm.registerOperator("post", "$isEven", function (value) {
+  return value % 2 === 0;
+});
+
+mm.find([{ n: 1 }, { n: 2 }], { n: { $isEven: true } });  // → [ { n: 2 } ]</code></pre>
+          <p>
+            <code>kind</code> is <code>'post'</code> (field-level comparison),
+            <code>'pre'</code> (whole-document / logical), or
+            <code>'preprocess'</code> (run once before matching).
+          </p>
+
+          <!-- ============================== CLI ================================= -->
+          <h2 id="cli">CLI / REPL</h2>
+          <p>
+            <code>micromongo</code> ships a <strong>mongosh-flavored,
+            in-memory</strong> command-line tool. There's no server, so instead
+            of a connection string you load local JSON arrays as collections with
+            <code>--load file.json:name</code> (repeatable).
+          </p>
+          <pre><code># interactive shell, like mongosh:
+micromongo --load orders.json:orders --load customers.json:customers
+
+micromongo&gt; show collections
+[ { name: 'orders', count: 5 }, { name: 'customers', count: 12 } ]
+micromongo&gt; db.orders.find({ status: 'A' }).sort({ qty: -1 }).limit(2).toArray()
+micromongo&gt; db.orders.createIndex({ status: 1 })
+micromongo&gt; db.orders.find({ status: 'A' }).explain()
+{ stage: 'IXSCAN', indexed: true, exact: true, plan: { index: 'status_1', … } }</code></pre>
+          <pre><code># one-shot --eval (repeatable; only the last result prints):
+micromongo --eval "db.orders.find({status:'A'}).toArray()" --load orders.json:orders
+
+# run a script file:
+micromongo --file report.js --load orders.json:orders</code></pre>
+          <p>
+            Shell commands: <code>show collections</code>/<code>show dbs</code>,
+            <code>use &lt;name&gt;</code> (cosmetic), <code>load()</code>,
+            <code>save()</code>, <code>help</code>, <code>exit</code>. Anything
+            else runs as JavaScript against the live API. Add
+            <code>--shell</code> after <code>--eval</code>/<code>--file</code> to
+            stay interactive; <code>--quiet</code> suppresses the banner.
+          </p>
+
+          <!-- ========================= DRIVER MOCK (TESTING) ==================== -->
+          <h2 id="mock">MongoDB driver mock — <code>micromongo/mock</code></h2>
+          <p>
+            <code>micromongo/mock</code> is a drop-in,
+            <code>mongodb</code>-driver-shaped adapter backed by the in-memory
+            engine — so <strong>other projects can run their existing test
+            suites against micromongo instead of a live MongoDB</strong>. It
+            mirrors the native driver: <code>MongoClient</code> /
+            <code>Db</code> / <code>Collection</code> /
+            <code>FindCursor</code> / <code>AggregationCursor</code> /
+            <code>ObjectId</code>, with async (<code>Promise</code>) results,
+            <code>for await</code> cursors, and auto-<code>ObjectId</code>
+            <code>_id</code> on insert.
+          </p>
+          <pre><code>const { MongoClient, ObjectId } = require("micromongo/mock");
+
+const client = await MongoClient.connect("mongodb://localhost/test");
+const users = client.db().collection("users");
+
+await users.insertOne({ name: "ada", age: 36 }); // → { acknowledged, insertedId: ObjectId(…) }
+const adults = await users
+  .find({ age: { $gte: 18 } })
+  .sort({ age: -1 })
+  .toArray();</code></pre>
+          <p>
+            Point the code under test at it <strong>without changing that
+            code</strong> — e.g. in Jest:
+          </p>
+          <pre><code>// jest.config.js
+module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };</code></pre>
+          <div class="callout info">
+            <strong>Fidelity.</strong> CRUD, <code>aggregate</code>,
+            <code>bulkWrite</code> + the fluent
+            <code>initialize*BulkOp</code> builders, and the index methods
+            (<code>createIndex(es)</code>/<code>listIndexes</code>/<code>indexExists</code>/…)
+            all work. Cursor wire/planner hints
+            (<code>hint</code>/<code>collation</code>/<code>maxTimeMS</code>/…)
+            are chainable no-ops (meaningless in-memory).
+            <code>ObjectId</code> uses the consumer's real
+            <a href="https://www.npmjs.com/package/bson"><code>bson</code></a>
+            if installed (optional peer dependency), else a self-contained
+            24-hex fallback.
+          </div>
+          <div class="callout warn">
+            <strong>Sessions/transactions</strong> run the callback but
+            <strong>without real isolation</strong> —
+            <code>abortTransaction()</code> does not roll back (there's a single
+            in-memory array). <strong>Server-only features throw loudly</strong>
+            (<code>watch()</code> change streams, Atlas
+            <code>*SearchIndex*</code>) so a test depending on a real server
+            fails instead of silently passing.
+          </div>
+
+          <!-- ============================ PERFORMANCE =========================== -->
+          <h2 id="performance">Performance</h2>
+          <p>
+            A bare query (the functional <code>mm.*</code> API, or a
+            <code>Collection</code> with no index) is a linear scan — O(n) in the
+            array length. That's fast for typical in-memory sizes; a
+            <code>Collection</code> index removes the scan for equality (→ O(1)),
+            range, and sort queries.
+          </p>
+          <div class="callout info">
+            <strong>Measurement system:</strong> AMD Ryzen 7 5800HS (16 logical
+            cores) · 31 GB RAM · Node v22.16.0 · Windows. Numbers are one run,
+            best of several — read the <strong>shape</strong> (how each column
+            grows with size), not the absolute values.
+          </div>
+          <p>Linear-scan latency (ms), whole-operation:</p>
+          <pre><code>  size      count (ms)   find (ms)   $sort (ms)
+  ----------------------------------------------
+  1 000      0.39         1.15        1.54
+  10 000     2.32         6.29       12.77
+  100 000   21.41        63.33      127.91</code></pre>
+          <p>
+            Single-equality <code>findOne</code>, scan vs.
+            <code>createIndex('sku')</code> (µs per lookup):
+          </p>
+          <pre><code>  size      scan (µs)   indexed (µs)   speedup
+  ---------------------------------------------
+  1 000      126.57      2.74            46x
+  10 000    1107.03      1.91           579x
+  100 000  10707.10      1.17          9138x</code></pre>
+          <p>
+            Scan cost grows ~10× per 10× more data, while the indexed lookup
+            stays ~1–3 µs <strong>regardless of collection size</strong> (a
+            single hash hit) — so the speedup scales with the data. Full timings
+            and the range/sort tables are in the
+            <a
+              href="https://github.com/alykoshin/micromongo/blob/master/README.md#performance"
+              >README</a
+            >
+            (<code>test/performance.js</code> / <code>test/performance-index.js</code>).
+          </p>
+
+          <!-- =========================== COMPATIBILITY ========================== -->
+          <h2 id="compatibility">Compatibility</h2>
+          <p>
+            <code>micromongo</code> aims for MongoDB-compatible semantics
+            (baseline: MongoDB 3.2 docs, plus selected newer operators like
+            <code>$expr</code>/<code>$rand</code>). Every MongoDB-compatible
+            operator/stage is verified by a <code>*-mongodoc.js</code> test
+            ported verbatim from the official MongoDB docs. High-level summary:
+          </p>
+          <table class="compat-summary">
+            <tbody>
+              <tr>
+                <td>Reads</td>
+                <td>
+                  <code>count</code> <code>find</code> <code>findOne</code>
+                  <code>distinct</code> + lazy <code>Cursor</code> — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Writes</td>
+                <td>
+                  <code>insert*</code> <code>delete*</code>/<code>remove</code>
+                  <code>update*</code> <code>replaceOne</code>
+                  <code>findOneAnd*</code> <code>bulkWrite</code> — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Comparison</td>
+                <td>
+                  <code>$eq $ne $gt $gte $lt $lte $in $nin</code> — ✅
+                  (<code>$ne</code>/<code>$nin</code> use strict, non-deep
+                  compare)
+                </td>
+              </tr>
+              <tr>
+                <td>Logical</td>
+                <td><code>$and $or $nor $not</code> — ✅</td>
+              </tr>
+              <tr>
+                <td>Element</td>
+                <td>
+                  <code>$exists $type</code> — ✅ (<code>$type</code> uses JS
+                  types)
+                </td>
+              </tr>
+              <tr>
+                <td>Evaluation</td>
+                <td>
+                  <code>$mod $regex $where $text $expr</code> — ✅
+                  (<code>$regex</code> needs a <code>RegExp</code>;
+                  <code>$where</code> runs JS — see security note)
+                </td>
+              </tr>
+              <tr>
+                <td>Array</td>
+                <td><code>$all $elemMatch $size</code> — ✅</td>
+              </tr>
+              <tr>
+                <td>Bitwise</td>
+                <td>
+                  <code>$bitsAllSet $bitsAnySet $bitsAllClear $bitsAnyClear</code>
+                  — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Geospatial</td>
+                <td>
+                  <code>$geoWithin $geoIntersects $near $nearSphere</code>
+                  (planar/haversine; no spatial index) — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Projection</td>
+                <td>
+                  inclusion/exclusion, <code>_id</code> default,
+                  <code>$slice $elemMatch $ $meta:"textScore"</code> — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Update operators</td>
+                <td>
+                  field, array (+ modifiers), positional
+                  <code>$</code>/<code>$[]</code>/<code>$[&lt;id&gt;]</code>,
+                  <code>$bit</code>, <code>upsert</code> — ✅
+                </td>
+              </tr>
+              <tr>
+                <td>Aggregation stages</td>
+                <td>every stage feasible in-memory — ✅</td>
+              </tr>
+              <tr>
+                <td>Aggregation expressions</td>
+                <td>
+                  pragmatic core (+ accumulators, <code>$rand</code>);
+                  date/type-conversion/set operators are partial — ⚠️
+                </td>
+              </tr>
+              <tr>
+                <td>Not supported</td>
+                <td>
+                  <code>mapReduce</code>, legacy <code>update</code>,
+                  <code>$jsonSchema</code>, and server/storage-bound methods — by
+                  design (no server)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The full, per-operator status table is the canonical source:
+            <a
+              href="https://github.com/alykoshin/micromongo/blob/master/planning/compatibility.md"
+              ><strong>compatibility.md</strong></a
+            >.
+          </p>
+
+          <footer>
+            <p>
+              <a href="https://github.com/alykoshin/micromongo">GitHub</a> ·
+              <a href="https://www.npmjs.com/package/micromongo">npm</a> ·
+              <a
+                href="https://github.com/alykoshin/micromongo/blob/master/planning/compatibility.md"
+                >Compatibility matrix</a
+              >
+              · MIT license · by
+              <a href="https://github.com/alykoshin/">Alexander</a>
+            </p>
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <!-- The real engine, committed next to this page (see scripts/build-docs-site.js). -->
+    <script src="./micromongo.global.js"></script>
+    <!-- Curated showcase examples (generated from meta/mongo-examples/, verified vs real MongoDB). -->
+    <script src="./examples.generated.js"></script>
+    <script>
+      (function () {
+        // ================================================================
+        // Zero-dependency JS/JSON syntax highlighter → HTML (output escaped)
+        // ================================================================
+        function esc(s) {
+          return s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        }
+        var KW =
+          /^(var|let|const|function|return|if|else|for|while|new|typeof|true|false|null|undefined|this|import|require)\b/;
+        function highlight(src) {
+          var i = 0,
+            n = src.length,
+            out = "";
+          function span(cls, s) {
+            return '<span class="t-' + cls + '">' + esc(s) + "</span>";
+          }
+          while (i < n) {
+            var c = src[i],
+              rest = src.slice(i),
+              m,
+              e;
+            if (c === "/" && src[i + 1] === "/") {
+              e = src.indexOf("\n", i);
+              if (e < 0) e = n;
+              out += span("com", src.slice(i, e));
+              i = e;
+              continue;
+            }
+            if (c === "/" && src[i + 1] === "*") {
+              e = src.indexOf("*/", i);
+              e = e < 0 ? n : e + 2;
+              out += span("com", src.slice(i, e));
+              i = e;
+              continue;
+            }
+            if (c === '"' || c === "'" || c === "`") {
+              var j = i + 1;
+              while (j < n && src[j] !== c) {
+                if (src[j] === "\\") j++;
+                j++;
+              }
+              j++;
+              out += span("str", src.slice(i, Math.min(j, n)));
+              i = Math.min(j, n);
+              continue;
+            }
+            if (c === "$" && (m = rest.match(/^\$[a-zA-Z][a-zA-Z0-9]*/))) {
+              out += span("op", m[0]);
+              i += m[0].length;
+              continue;
+            }
+            if ((m = rest.match(/^-?\d+(\.\d+)?([eE][+-]?\d+)?/))) {
+              out += span("num", m[0]);
+              i += m[0].length;
+              continue;
+            }
+            if ((m = rest.match(KW))) {
+              out += span("kw", m[0]);
+              i += m[0].length;
+              continue;
+            }
+            if ((m = rest.match(/^[A-Za-z_][A-Za-z0-9_]*/))) {
+              out += esc(m[0]);
+              i += m[0].length;
+              continue;
+            }
+            if ("{}[]()".indexOf(c) >= 0) {
+              out += span("pun", c);
+              i++;
+              continue;
+            }
+            out += esc(c);
+            i++;
+          }
+          return out;
+        }
+
+        // Color every static read-only snippet. Result cells (.res) render as a comment.
+        // This script sits at the END of <body>, so the DOM is present; but keep the
+        // DOMContentLoaded guard for safety when the browser streams late.
+        function highlightStatic() {
+          var blocks = document.querySelectorAll(
+            "pre > code, code.call, code.res",
+          );
+          for (var b = 0; b < blocks.length; b++) {
+            var el = blocks[b],
+              text = el.textContent;
+            if (el.classList.contains("res")) {
+              text = "// → " + text;
+            }
+            el.innerHTML = highlight(text);
+          }
+        }
+
+        // ================================================================
+        // Editable code overlay: keep the highlighted <pre> in sync with its <textarea>
+        // ================================================================
+        function bindEditor(taId, hlId) {
+          var ta = document.getElementById(taId),
+            hl = document.getElementById(hlId);
+          function sync() {
+            hl.innerHTML = highlight(ta.value) + "\n";
+          }
+          function scroll() {
+            hl.scrollTop = ta.scrollTop;
+            hl.scrollLeft = ta.scrollLeft;
+          }
+          ta.addEventListener("input", sync);
+          ta.addEventListener("scroll", scroll);
+          ta.addEventListener("keydown", function (ev) {
+            if (ev.key === "Tab") {
+              ev.preventDefault();
+              var s = ta.selectionStart,
+                e = ta.selectionEnd;
+              ta.value = ta.value.slice(0, s) + "  " + ta.value.slice(e);
+              ta.selectionStart = ta.selectionEnd = s + 2;
+              sync();
+            }
+          });
+          sync();
+          return ta;
+        }
+
+        // ================================================================
+        // Scroll-spy: highlight the current section in the sidebar nav
+        // ================================================================
+        function initScrollSpy() {
+          var links = [].slice.call(
+            document.querySelectorAll("nav.side a.navlink"),
+          );
+          var byId = {};
+          links.forEach(function (a) {
+            var id = a.getAttribute("href").slice(1);
+            byId[id] = a;
+          });
+          var targets = Object.keys(byId)
+            .map(function (id) {
+              return document.getElementById(id);
+            })
+            .filter(Boolean);
+          if (!targets.length || !("IntersectionObserver" in window)) return;
+          var visible = {};
+          var obs = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (en) {
+                visible[en.target.id] = en.isIntersecting;
+              });
+              // topmost currently-visible target wins
+              var current = null;
+              for (var k = 0; k < targets.length; k++) {
+                if (visible[targets[k].id]) {
+                  current = targets[k].id;
+                  break;
+                }
+              }
+              links.forEach(function (a) {
+                a.classList.remove("active");
+              });
+              if (current && byId[current]) byId[current].classList.add("active");
+            },
+            { rootMargin: "-10% 0px -80% 0px", threshold: 0 },
+          );
+          targets.forEach(function (t) {
+            obs.observe(t);
+          });
+        }
+
+        // ================================================================
+        // Live playground
+        // ================================================================
+        var statusEl = document.getElementById("pg-status");
+        var runBtn = document.getElementById("pg-run");
+        var outEl = document.getElementById("pg-out");
+        var dataEl = bindEditor("pg-data", "pg-data-hl");
+        var exprEl = bindEditor("pg-expr", "pg-expr-hl");
+
+        if (typeof micromongo === "undefined") {
+          statusEl.textContent =
+            "Could not load the in-browser build (micromongo.global.js). " +
+            "Run `npm run build:docs` and serve the docs/ folder.";
+          statusEl.className = "pg-status err";
+          return;
+        }
+        var mm = micromongo;
+        // A tiny db.<name> registry sugar, mirroring mm.collection(name).
+        var db = new Proxy(
+          {},
+          {
+            get: function (_t, name) {
+              return mm.collection(String(name));
+            },
+          },
+        );
+
+        // expose the package version in the nav if available
+        try {
+          if (mm.version)
+            document.getElementById("nav-version").textContent =
+              "v" + mm.version + " · in-memory MongoDB queries";
+        } catch (e) {}
+
+        statusEl.textContent =
+          "Ready — the engine is loaded and running in your browser.";
+        statusEl.className = "pg-status ok";
+        runBtn.disabled = false;
+
+        function showResult(text, isErr) {
+          outEl.className = "pg-out" + (isErr ? " err" : "");
+          outEl.innerHTML = isErr ? esc(text) : highlight(text);
+        }
+
+        function run() {
+          var data;
+          try {
+            data = JSON.parse(dataEl.value);
+          } catch (e) {
+            showResult("Data JSON error: " + e.message, true);
+            return;
+          }
+          try {
+            var fn = new Function(
+              "data",
+              "mm",
+              "db",
+              "return (" + exprEl.value + "\n);",
+            );
+            var result = fn(data, mm, db);
+            showResult(JSON.stringify(result, null, 2), false);
+          } catch (e) {
+            showResult(
+              "Error: " + (e && e.message ? e.message : String(e)),
+              true,
+            );
+          }
+        }
+        runBtn.addEventListener("click", run);
+
+        var runTimer = null;
+        function scheduleRun() {
+          if (runTimer) clearTimeout(runTimer);
+          runTimer = setTimeout(run, 250);
+        }
+        dataEl.addEventListener("input", scheduleRun);
+        exprEl.addEventListener("input", scheduleRun);
+
+        // ---- Playground presets ----
+        var PRESETS = {
+          find: {
+            data:
+              '[\n  { "_id": 1, "item": "abc", "qty": 30, "tags": ["a", "b"] },\n' +
+              '  { "_id": 2, "item": "xyz", "qty": 10, "tags": ["b"] },\n' +
+              '  { "_id": 3, "item": "ijk", "qty": 50, "tags": ["a", "c"] }\n]',
+            expr:
+              "// find qty >= 30, sorted by qty desc\nmm.aggregate(data, [\n" +
+              "  { $match: { qty: { $gte: 30 } } },\n" +
+              "  { $sort:  { qty: -1 } },\n" +
+              "  { $project: { _id: 0, item: 1, qty: 1 } }\n])",
+          },
+          aggregate: {
+            data:
+              '[\n  { "status": "A", "amount": 30 },\n' +
+              '  { "status": "B", "amount": 10 },\n' +
+              '  { "status": "A", "amount": 50 }\n]',
+            expr:
+              "// group by status, sum amounts\nmm.aggregate(data, [\n" +
+              "  { $group: { _id: \"$status\", total: { $sum: \"$amount\" } } },\n" +
+              "  { $sort: { total: -1 } }\n])",
+          },
+          update: {
+            data:
+              '[\n  { "_id": 1, "status": "A", "qty": 1 },\n' +
+              '  { "_id": 2, "status": "A", "qty": 2 },\n' +
+              '  { "_id": 3, "status": "B", "qty": 9 }\n]',
+            expr:
+              "// updateMany mutates `data` in place; show the report + the mutated data.\n" +
+              "// (wrapped in an IIFE so the multi-statement body is a single expression)\n" +
+              "(function () {\n" +
+              "  var report = mm.updateMany(data, { status: \"A\" }, { $inc: { qty: 5 } });\n" +
+              "  return { report: report, data: data };\n" +
+              "})()",
+          },
+          collection: {
+            data:
+              '[\n  { "_id": 1, "sku": "a", "status": "A" },\n' +
+              '  { "_id": 2, "sku": "b", "status": "B" },\n' +
+              '  { "_id": 3, "sku": "c", "status": "A" }\n]',
+            expr:
+              "// Collection owns the array; build an index and inspect the plan.\n" +
+              "// (wrapped in an IIFE so the multi-statement body is a single expression)\n" +
+              "(function () {\n" +
+              "  var c = new mm.Collection(data);\n" +
+              "  c.createIndex({ status: 1 });\n" +
+              "  return {\n" +
+              "    result: c.find({ status: \"A\" }).sort({ sku: 1 }).toArray(),\n" +
+              "    plan: c.find({ status: \"A\" }).explain(),\n" +
+              "  };\n" +
+              "})()",
+          },
+          expr: {
+            data:
+              '[\n  { "_id": 1, "budget": 400, "spent": 450 },\n' +
+              '  { "_id": 2, "budget": 100, "spent": 50 },\n' +
+              '  { "_id": 3, "budget": 200, "spent": 650 }\n]',
+            expr:
+              "// $expr compares two fields of the same doc (no arbitrary JS)\n" +
+              "mm.find(data, { $expr: { $gt: [\"$spent\", \"$budget\"] } })",
+          },
+        };
+        var presetBar = document.querySelector(".pg-presets");
+        if (presetBar) {
+          presetBar.addEventListener("click", function (ev) {
+            var key = ev.target && ev.target.getAttribute("data-preset");
+            if (!key || !PRESETS[key]) return;
+            dataEl.value = PRESETS[key].data;
+            exprEl.value = PRESETS[key].expr;
+            dataEl.dispatchEvent(new Event("input")); // resync highlight overlays
+            exprEl.dispatchEvent(new Event("input"));
+            run();
+          });
+        }
+
+        // ================================================================
+        // Operations table — built from DATA and computed LIVE against the engine.
+        // Each op has a `seed` (a JS array literal) and func/coll example expressions.
+        // Results can't drift from actual behavior — they ARE the behavior.
+        // ================================================================
+        var OK = '<span class="st ok">✅</span>',
+          WARN = '<span class="st warn">⚠️</span>',
+          NA = '<span class="st na">—</span>';
+
+        // OPS is built from the CANONICAL showcase set (window.__MM_EXAMPLES__, generated by
+        // scripts/gen-docs-examples.js from meta/mongo-examples/ — verified vs micromongo AND real
+        // MongoDB). One card per showcase op; `seed` is the fixture as a JS literal, `func`/`coll`
+        // are the ready-made call strings. A short micromongo-specific tail (registerOperator /
+        // configure — no Mongo equivalent, so not in the canonical set) is appended.
+        function buildOps() {
+          var cards = window.__MM_EXAMPLES__ || [];
+          var ICON = { full: OK, partial: WARN, unsupported: NA, "micromongo-only": NA };
+          var ops = [{ group: "MongoDB operators & methods (verified against real MongoDB)" }];
+          cards.forEach(function (c) {
+            // The DISTINCT per-op compat note comes from the manifest (summaries.js prose); the
+            // ✅/⚠️ icon from its status. A small "verified" tail links the MongoDB doc source.
+            var icon = ICON[c.status] || OK;
+            var note = c.note || "";
+            var src = c.source
+              ? ' <span class="note">— <a href="' + c.source + '">docs</a>, verified on a live MongoDB server</span>'
+              : "";
+            ops.push({
+              name: c.op + (c.title ? "  —  " + c.title : ""),
+              seed: JSON.stringify(c.fixture),
+              func: c.func,
+              coll: c.coll,
+              collections: c.collections,
+              compat: icon + note + src,
+            });
+          });
+          ops.push({ group: "micromongo-specific (no Mongo equivalent)" });
+          ops.push({
+            name: "registerOperator  —  custom query operator",
+            seed: "[{n:2},{n:3},{n:4}]",
+            func: "(mm.registerOperator('post', '$isEven', function (v) { return v % 2 === 0; }), mm.find(data, { n: { $isEven: true } }))",
+            compat: NA + "micromongo extension point — adds a custom query operator visible to both surfaces.",
+          });
+          ops.push({
+            name: "configure  —  global defaults",
+            seed: "[]",
+            func: "mm.configure({ autoId: true })",
+            compat: NA + "micromongo-specific global settings (no Mongo equivalent).",
+          });
+          return ops;
+        }
+        var OPS = buildOps();
+
+        // Compact mongosh-style formatter: unquoted keys, single-quoted strings, truncation.
+        function fmtVal(v, depth) {
+          depth = depth || 0;
+          if (v === undefined) return "undefined";
+          if (v === null) return "null";
+          if (typeof v === "function") return "[Function]";
+          if (typeof v === "string") return "'" + v + "'";
+          if (typeof v !== "object") return String(v);
+          if (v instanceof mm.Collection) return "Collection(" + v.count() + ")";
+          if (Array.isArray(v)) {
+            if (depth > 2) return "[…]";
+            var items = v.slice(0, 6).map(function (x) {
+              return fmtVal(x, depth + 1);
+            });
+            if (v.length > 6) items.push("…(" + v.length + ")");
+            return "[ " + items.join(", ") + " ]";
+          }
+          if (depth > 3) return "{…}";
+          var ks = Object.keys(v);
+          var parts = ks.slice(0, 8).map(function (k) {
+            return k + ": " + fmtVal(v[k], depth + 1);
+          });
+          if (ks.length > 8) parts.push("…");
+          return "{ " + parts.join(", ") + " }";
+        }
+
+        function runExample(expr, seed) {
+          var data = new Function("return (" + seed + ");")(); // fresh array each call
+          var c = new mm.Collection(data);
+          var fn = new Function("data", "c", "mm", "return (" + expr + "\n);");
+          return fn(data, c, mm);
+        }
+
+        function seedOf(seed) {
+          return typeof seed === "function" ? seed() : seed;
+        }
+
+        function fillResult(res, expr, seed) {
+          if (!expr) {
+            res.textContent = "";
+            return;
+          }
+          try {
+            var out = runExample(expr, seed);
+            res.style.color = "";
+            res.innerHTML = highlight(fmtVal(out));
+          } catch (e) {
+            res.style.color = "#c0392b";
+            res.textContent = "✗ " + (e && e.message ? e.message : String(e));
+          }
+        }
+
+        function exampleCell(expr, note, seed) {
+          var td = document.createElement("td");
+          if (note) {
+            td.innerHTML = '<span class="note">' + note + "</span>";
+            return { td: td };
+          }
+          if (!expr) {
+            td.innerHTML = "";
+            return { td: td };
+          }
+          var call = document.createElement("code");
+          call.className = "call editable";
+          call.innerHTML = highlight(expr);
+          var res = document.createElement("code");
+          res.className = "res";
+          res.textContent = "running…";
+          td.appendChild(call);
+          td.appendChild(res);
+          setTimeout(function () {
+            fillResult(res, expr, seedOf(seed));
+          }, 0);
+
+          var rerun = function () {
+            fillResult(res, call.textContent, seedOf(seed));
+          };
+
+          call.setAttribute("contenteditable", "true");
+          call.setAttribute("spellcheck", "false");
+          call.title = "editable — type to run live";
+          var t = null;
+          call.addEventListener("input", function () {
+            if (t) clearTimeout(t);
+            t = setTimeout(rerun, 250);
+          });
+
+          return { td: td, rerun: rerun };
+        }
+
+        function renderOps() {
+          var body = document.getElementById("ops-body");
+          if (!body) return;
+          body.innerHTML = "";
+          OPS.forEach(function (op) {
+            if (op.group) {
+              var g = document.createElement("tr");
+              g.className = "group";
+              g.innerHTML = '<td colspan="3">' + op.group + "</td>";
+              body.appendChild(g);
+              return;
+            }
+            var cells = {};
+            var currentSeed = op.seed;
+            var liveSeed = function () {
+              return currentSeed;
+            };
+
+            var sh = document.createElement("tr");
+            sh.className = "subhead";
+            var shTd = document.createElement("td");
+            shTd.setAttribute("colspan", "3");
+            shTd.innerHTML = "<code>" + op.name + "</code>";
+            var toggle = document.createElement("span");
+            toggle.className = "edit-toggle";
+            toggle.textContent = "edit data ▾";
+            shTd.appendChild(toggle);
+            sh.appendChild(shTd);
+            body.appendChild(sh);
+
+            var seedTr = document.createElement("tr");
+            seedTr.className = "seed-row";
+            var seedTd = document.createElement("td");
+            seedTd.setAttribute("colspan", "2");
+            var seedBox = document.createElement("div");
+            seedBox.className = "seed-box";
+            seedBox.style.display = "none";
+            var seedLab = document.createElement("div");
+            seedLab.className = "seed-label";
+            seedLab.textContent = "seed data (edit → both run live)";
+            var seedTa = document.createElement("textarea");
+            seedTa.className = "seed-edit";
+            seedTa.spellcheck = false;
+            seedTa.value = op.seed;
+            seedBox.appendChild(seedLab);
+            seedBox.appendChild(seedTa);
+            seedTd.appendChild(seedBox);
+            seedTr.appendChild(seedTd);
+
+            var compat = document.createElement("td");
+            compat.className = "compat";
+            compat.setAttribute("rowspan", "2");
+            compat.innerHTML = op.compat || "";
+            seedTr.appendChild(compat);
+            body.appendChild(seedTr);
+
+            var st = null;
+            seedTa.addEventListener("input", function () {
+              currentSeed = seedTa.value;
+              if (st) clearTimeout(st);
+              st = setTimeout(function () {
+                if (cells.func) cells.func.rerun();
+                if (cells.coll) cells.coll.rerun();
+              }, 250);
+            });
+            function grow() {
+              seedTa.style.height = "auto";
+              seedTa.style.height = seedTa.scrollHeight + 2 + "px";
+            }
+            var shown = false;
+            toggle.addEventListener("click", function () {
+              shown = !shown;
+              seedBox.style.display = shown ? "" : "none";
+              seedTr.className = shown ? "seed-row open" : "seed-row";
+              toggle.textContent = shown ? "edit data ▴" : "edit data ▾";
+              if (shown) grow();
+            });
+
+            var row = document.createElement("tr");
+            if (op.full) {
+              cells.func = exampleCell(op.func, op.funcNote, liveSeed);
+              cells.func.td.setAttribute("colspan", "2");
+              row.appendChild(cells.func.td);
+            } else {
+              cells.func = exampleCell(op.func, op.funcNote, liveSeed);
+              cells.coll = exampleCell(op.coll, op.collNote, liveSeed);
+              row.appendChild(cells.func.td);
+              row.appendChild(cells.coll.td);
+            }
+            body.appendChild(row);
+          });
+        }
+
+        // The DOM is fully present (this script is at end of <body>), but guard anyway.
+        function boot() {
+          highlightStatic();
+          renderOps();
+          initScrollSpy();
+          run(); // show the default playground result
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", boot);
+        } else {
+          boot();
+        }
+      })();
+    </script>
+  </body>
+</html>

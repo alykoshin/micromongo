@@ -11,8 +11,8 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-//var _Query = require('../../../lib/crud/match')._Query;
-var _eql = require('../../../lib/crud/match')._eql;
+//var _Query = require('../../../dist/crud/match')._Query;
+var _eql = require('../../../dist/crud/match')._eql;
 
 
 describe.skip('# _Query', function() {

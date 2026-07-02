@@ -1,25 +1,92 @@
 {
   "name": "micromongo",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "Mongodb-like queries over standard arrays of objects",
   "main": "./index.js",
+  "module": "./dist/index.mjs",
+  "browser": "./dist/index.global.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.global.js",
+      "import": "./dist/index.mjs",
+      "require": "./index.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.js"
+    },
+    "./mock": {
+      "types": "./dist/mock/index.d.ts",
+      "import": "./dist/mock/index.mjs",
+      "require": "./dist/mock/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "micromongo": "./cli.js"
+  },
+  "files": [
+    "dist",
+    "index.js",
+    "cli.js",
+    "README.md"
+  ],
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.mjs",
+    "./dist/index.global.js",
+    "./dist/crud/match/index.js",
+    "./dist/crud/match/operators/*.js"
+  ],
+  "peerDependencies": {
+    "bson": "*"
+  },
+  "peerDependenciesMeta": {
+    "bson": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=8"
   },
+  "nyc": {
+    "exclude": [
+      "test/**",
+      "meta/**"
+    ]
+  },
   "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc -p tsconfig.json",
+    "build:bundles": "tsup",
+    "build:all": "npm run build && npm run build:bundles",
+    "rebuild": "npm run clean && npm run build:all",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test-types": "tsd",
+    "gen-mongo-operators": "node scripts/gen-mongo-operators.js",
+    "gen-mongo-operations": "node scripts/gen-mongo-operations.js",
+    "gen-compat-tables": "node scripts/gen-compat-tables.js",
+    "gen-docs-examples": "node scripts/gen-docs-examples.js",
+    "build:docs": "npm run build:bundles && node scripts/build-docs-site.js && node scripts/gen-docs-examples.js",
+    "gen-docs": "npm run gen-compat-tables && npm run build:docs",
+    "prepare": "npm run build:all",
+    "prepublishOnly": "npm run rebuild",
+    "pre_test": "npm run build",
     "_npm-audit": "npm audit || echo '\n*** Please check warnings above ***\n' && npm audit --production --audit-level high && echo '\n*** npm audit reported no high-level vulnerabilities for production configuration ***\n' ",
     "_deps-check": "npm-check-updates --error-level 2",
     "_deps-update": "echo '* Updating packages versions... '; npm-check-updates -u --upgradeAll --error-level 1 && npm install",
     "_check-changes": "echo '* Checking if git directory is clean... '; bash -c '[[ -z $(git status -uno --porcelain) ]]'",
     "update-deps": "npm run _check-changes && npm run _deps-update && npm test && git commit -am 'updated deps'",
-    "lint": "./node_modules/.bin/eslint -f unix --ext .ts,.js,.jsx .",
+    "lint": "./node_modules/.bin/eslint -f unix --max-warnings 560 --ext .ts,.js,.jsx .",
     "_inspect": "jsinspect --ignore 'coverage|test'",
     "inspect": "echo \"skipping jsinspect\"",
-    "pretest": "npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
-    "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/",
+    "pretest": "npm run typecheck && npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
+    "test:bundles": "npm run build:bundles && node bundle-tests/esm-smoke.mjs && node bundle-tests/browser-iife-smoke.cjs && node bundle-tests/dual-package.mjs && node bundle-tests/treeshake-guard.mjs && node bundle-tests/core-smoke.mjs",
+    "test:mongo": "npm run build && node test-mongo/differential.mjs",
+    "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/ && npm run test-types && npm run test:bundles",
     "_test-report": "nyc report --reporter=html && nyc report --reporter=text-lcov > coverage/coverage.lcov",
     "test": "npm run _test && npm run _test-report",
     "test-travis": "npm run _test && npm run _test-report",
@@ -55,12 +122,13 @@
   },
   "homepage": "https://github.com/alykoshin/micromongo",
   "dependencies": {
-    "lodash": "^4.17.19",
-    "mini-deep-assign": "^0.0.8",
-    "minimist": "^1.2.5",
-    "nyc": "^15.1.0"
+    "lodash": "^4.18.1",
+    "minimist": "^1.2.5"
   },
   "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "chai": "^4.2.0",
     "chai-things": "^0.2.0",
     "coveralls": "^3.1.0",
@@ -69,7 +137,12 @@
     "jsinspect": "^0.12.7",
     "mocha": "^8.0.1",
     "mockery": "^2.1.0",
+    "mongodb": "^7.3.0",
+    "nyc": "^15.1.0",
     "require-dir-all": "^0.4.15",
-    "sinon": "^9.0.2"
+    "sinon": "^9.0.2",
+    "tsd": "^0.33.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   }
 }

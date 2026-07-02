@@ -11,7 +11,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var _eql = require('../../../lib/crud/match')._eql;
+var _eql = require('../../../dist/crud/match')._eql;
 
 
 describe('# _eql', function() {

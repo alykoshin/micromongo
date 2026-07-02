@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "lib": ["es2017"],
+    "types": ["node"],
+    "moduleResolution": "node",
+
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "declaration": true,
+    "sourceMap": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "newLine": "lf"
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules", "dist", "test",
+    "src/vm-browser-stub.ts",
+    "src/stream-browser-stub.ts"
+  ]
+}

@@ -4,44 +4,62 @@
 [![Code Climate](https://codeclimate.com/github/alykoshin/micromongo/badges/gpa.svg)](https://codeclimate.com/github/alykoshin/micromongo)
 [![Inch CI](https://inch-ci.org/github/alykoshin/micromongo.svg?branch=master)](https://inch-ci.org/github/alykoshin/micromongo)
 
-[![Dependency Status](https://david-dm.org/alykoshin/micromongo/status.svg)](https://david-dm.org/alykoshin/micromongo#info=dependencies)
-[![devDependency Status](https://david-dm.org/alykoshin/micromongo/dev-status.svg)](https://david-dm.org/alykoshin/micromongo#info=devDependencies)
-
-
 # micromongo
 
-Mongodb-like queries over standard arrays of objects.
+MongoDB-like queries over plain JavaScript arrays of objects — **zero database, in-memory**.
 
-Array of objects (documents in Mongodb's terminology) is a very common data structure in programming. 
-If your application widely using this type of data, if you are looking for something relatively lightweight 
-and you are familiar with Mongodb syntax, you may consider this package to handle the arrays of objects.  
+📖 **[Full documentation & live playground →](https://alykoshin.github.io/micromongo/)**
 
-Please, be aware that this module is working on unsorted arrays and does not uses indexes, so it is not intended to be used with relatively big arrays (thousands of elements) and not purposed for that tasks (see [performance](#performance) section).
-If you have big sets of data, I'd recommend to consider `minimongo`'s `Collection` or Mongodb itself.
+An array of objects (documents, in MongoDB's terms) is a very common data structure. If your app
+works with this kind of data, you want something lightweight, and you already know MongoDB's query
+syntax, `micromongo` lets you run the same `find`/`update`/`aggregate` you'd write against MongoDB —
+directly over the array. It runs in **Node and the browser**, ships TypeScript types, and needs no
+server.
 
+```js
+var mm = require("micromongo");
+var orders = [
+  { status: "A", qty: 30 },
+  { status: "B", qty: 10 },
+  { status: "A", qty: 50 },
+];
 
-Currently following methods are supported:
-- [`count()`](#count), 
-- [`find()`](#find),
-- [`findOne()`](#findone)
-- [`deleteOne()`](#deleteone)
-- [`deleteMany()`](#deletemany)
-- [`remove()`](#remove)
-- [`insert()`](#insert)
-- [`insertOne()`](#insertone)
-- [`insertMany()`](#insertmany)
-- [`aggregate()`](#aggregate) (stages `skip`, `limit`, `sort`, `unwind`, partially `project`)
+// Functional API — query/aggregate any array directly (linear scan):
+mm.find(orders, { status: "A", qty: { $gte: 30 } });
+// [ {status:'A',qty:30}, {status:'A',qty:50} ]
 
+mm.aggregate(orders, [{ $group: { _id: "$status", total: { $sum: "$qty" } } }]);
+// [ {_id:'A',total:80}, {_id:'B',total:10} ]
+```
 
-Not supported: indexes, geolocation, bitwise operators etc; also not supported cursor methods `skip()`, `limit()`, `sort()`.  
-Limited support for querying array elements; not supported /pattern/ syntax (without $regexp) 
+For larger collections, wrap the data in a `Collection` and add an ordered index (single-field /
+multikey / compound) to serve equality, range, sort, `$in`, compound-prefix and `$or` queries from the
+index instead of scanning. The functional `mm.find(array, …)` API stays a scan by design (it can't own
+the caller's array to keep an index valid); the `Collection` API is the path to scale.
 
-For more info see [compatibility matrix](#compatibility-matrix) below.
+```js
+// Collection API — chainable cursors + opt-in indexes (the scale path):
+var c = new mm.Collection(orders);
+c.createIndex({ status: 1 });
+c.find({ status: "A" }).sort({ qty: -1 }).limit(1).toArray();
+// [ {status:'A',qty:50} ]  — served via IXSCAN
+```
 
-Tests contains over 200 different test cases based on module's logic and examples from Mongodb docs.
+Cursors also **stream** — `for…of`, `for await`, spread, or a Node `.stream()` — pulling one doc at a
+time and **stopping early on `limit`** (so `find(q).limit(5)` over a huge array never scans the rest).
+When a `sort` is combined with a `limit`, it uses a bounded **top-K** heap (O(K) memory — it never
+materializes the full sorted array):
 
-Supported `node` version >= 0.11.
+```js
+for (const order of c.find({ status: "A" }).limit(5)) {
+  /* … */
+} // stops after 5
+c.find({}).sort({ qty: -1 }).limit(10); // top-10 without buffering all N
+```
 
+The library is **written in TypeScript** and ships type definitions (`.d.ts`), so the read/write/
+aggregate surface is typed against your document shape. `require('micromongo')` and the `bin` are
+unchanged — it's still CommonJS, with ESM (`import`) and a browser IIFE build also provided.
 
 ## Installation
 
@@ -49,557 +67,98 @@ Supported `node` version >= 0.11.
 npm install --save micromongo
 ```
 
-
-# Usage
-
-## `count()`
-
-Method `count()` return number of documents matching query.
-
-Syntax:
-
 ```js
-res = mm.count(array, query);
+var mm = require("micromongo");
 ```
 
-`array` - array of objects
+## Documentation
 
-`query` - query object
+The full reference — every method, query/update operator, aggregation stage, the CLI, and a
+**live in-browser playground** — lives on the docs site:
 
-Following example returns number of elements with `a >= 2` (i.e. `2`):
+> ### 📖 [alykoshin.github.io/micromongo](https://alykoshin.github.io/micromongo/)
 
-```js
-var mm = require('micromongo');
-res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], { a: { $gte: 2 } });
+Quick links:
 
-// res = 2
-```
+- **[Reads](https://alykoshin.github.io/micromongo/#reads)** — `count` `find` `findOne` `distinct` +
+  lazy `Cursor`.
+- **[Writes & updates](https://alykoshin.github.io/micromongo/#writes)** — `insert*`
+  `deleteOne`/`deleteMany` `updateOne`/`updateMany` `replaceOne` `findOneAnd*` `bulkWrite`, with field,
+  array, positional (`$`, `$[]`, `$[<id>]`) and bitwise update operators, plus `upsert`.
+- **[Query operators](https://alykoshin.github.io/micromongo/#query-operators)** — comparison,
+  logical, element, evaluation (`$regex`/`$where`/`$mod`/`$text`/`$expr`), array, bitwise, geospatial.
+- **[Aggregation](https://alykoshin.github.io/micromongo/#aggregation)** — every pipeline stage
+  feasible in-memory + a pragmatic expression-operator core.
+- **[Collections & indexes](https://alykoshin.github.io/micromongo/#collections)** — opt-in ordered
+  indexes with a query planner and `explain()`.
+- **[Streaming cursors](https://alykoshin.github.io/micromongo/#streaming)** — `for…of` / `for await` /
+  Node `.stream()`, with early-termination on `limit` and bounded top-K for `sort` + `limit`.
+- **[Extensibility](https://alykoshin.github.io/micromongo/#extend)** — register custom query
+  operators via `mm.registerOperator`.
+- **[CLI / REPL](https://alykoshin.github.io/micromongo/#cli)** — a mongosh-flavored, in-memory shell.
+- **[MongoDB driver mock](https://alykoshin.github.io/micromongo/#mock)** — `micromongo/mock`, a
+  drop-in `mongodb`-driver-shaped adapter for testing (see below).
+- **[Performance](https://alykoshin.github.io/micromongo/#performance)** — scan-vs-index benchmarks.
 
-If `query` is `undefined` or empty object (`{}`), method returns total count of elements in array:
+Runnable snippets are in the [`examples/`](examples/) directory (`node examples/index.js`); the
+[`experiments/`](experiments/) directory shows advanced use — extending the engine at runtime with
+custom query/aggregate operators (`registerOperator`); and the tests in [`test/`](test/) double as
+executable specs.
 
-```js
-var mm = require('micromongo');
-res = mm.count([ { a: 1 }, { a: 2 }, { a: 3 }, ], {});
+Target `node` version: **>= 8**.
 
-// res = 3
-```
+## Compatibility
 
+`micromongo` aims for MongoDB-compatible semantics (baseline: MongoDB 3.2 docs, plus selected newer
+operators like `$expr`/`$rand`). The **full, per-operator status matrix** — every method, query/update
+operator and aggregation stage, with per-operator notes — lives in two always-in-sync places:
 
-## `find()`
+- **[Compatibility on the docs site →](https://alykoshin.github.io/micromongo/#compatibility)** (with a
+  live ops table that runs the real engine in your browser), and
+- **[`planning/compatibility.md`](planning/compatibility.md)** — the generated Markdown table.
 
-Method `find()` returns deep copy (with some type limitations) of array's documents matching query with fields matching projection.
+Both are verified by the `*-mongodoc.js` tests (ported verbatim from the MongoDB docs) and a differential
+harness that replays the same examples against a real MongoDB server.
 
-If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
+> **⚠️ Security — `$where`:** `$where` executes arbitrary JavaScript against each document (in Node via
+> the `vm` module — which is **not** a security sandbox — and in the browser via `new Function`). Treat
+> `$where` as **trusted-input-only**: only pass it queries your own code builds, never a `$where`
+> expression assembled from end-user input. For computed queries over untrusted input, prefer a
+> value-based query or [`$expr`](https://alykoshin.github.io/micromongo/#expr) (which runs no JS).
 
+## MongoDB driver mock (`micromongo/mock`)
 
-```js
-var mm = require('micromongo');
-
-inventory = [
-  { qty: 10, carrier: { fee: 3 }, price: 3 },
-  { qty: 20, carrier: { fee: 2 }, price: 2 },
-  { qty: 30, carrier: { fee: 1 }, price: 1 },
-];
-
-var query = { qty: { $gt: 20 } };
-
-var res = mm.find(inventory, query);
-
-// { qty: 30, carrier: { fee: 1 }, price: 1 },
-```
-
-
-## `findOne()`
-
-Method `findOne()` returns deep copy (with some type limitations) of first array's documents matching query with fields matching projection.
-
-If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
-
-```js
-doc = mm.findOne(array, query, projection);
-```
-
-
-## `deleteOne()`
-
-Method `deleteOne()` removes from array its first document matching query.
-
-Returns document containing
-- `deletedCount` containing the number of deleted documents
+`micromongo/mock` is a drop-in, `mongodb`-driver-shaped adapter backed by the in-memory engine — so
+**other projects can run their existing test suites against micromongo instead of a live MongoDB**. It
+mirrors the native driver (`MongoClient` / `Db` / `Collection` / cursors / `ObjectId`, async results,
+`for await`), so you can point the code under test at it without touching that code — e.g. in Jest:
 
 ```js
-var res = mm.deleteOne(array, query);
-
-// { deletedCount: 1 }  
+// jest.config.js
+module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };
 ```
 
+See **[the mock adapter docs →](https://alykoshin.github.io/micromongo/#mock)** for the full surface,
+the `bson` `ObjectId` handling, and which server-only features are no-ops vs. throw.
 
-## `deleteMany()`
-
-Method `deleteMany()` removes from array all its documents matching query.
-
-```js
-var res = mm.deleteMany(array, query);
-
-// { deletedCount: 1 }  
-```
-
-Returns document containing
-- `deletedCount` containing the number of deleted documents
-
-
-## `remove()`
-
-Method `remove()` removes from array its first document matching query or all documents matching query.
-
-```js
-var res = mm.remove(array, query);
-
-// { nRemoved: 1 }  
-
-var res = mm.remove(array, query, {});
-
-// { nRemoved: 1 }  
-```
-
-Parameters:
-- [`options`] - may be boolean or document containing boolean property `justOne`. Optional, default: `false`. Determines, all matched documents to be removed or only first of them.
-
-Returns document containing
-- `nRemoved` containing the number of deleted documents
-
-
-Parameters:
-- [`options`] - may be boolean or document containing boolean property `justOne`. Optional, default: `false`. Determines, all matched documents to be removed or only first of them.
-
-Returns document containing
-- `nRemoved` containing the number of deleted documents
-
-
-## `insert()`
-
-While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
-
-```js
-var res = mm.insert(array, sourceDocOrArray, options);
-
-// { nInserted: 1 }  
-```
-
-- `options.ordered` - `boolean` - not supported
-
-
-## `insertOne()`
-
-While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
-
-```js
-var res = mm.insertOne(array, sourceDoc, options);
-
-// { nInserted: 1 }  
-```
-
-
-## `insertMany()`
-
-While Mongo creates new Collection if it does not exists, for `micromongo` array must exists.
-
-```js
-var res = mm.insert(array, sourceArray, options);
-
-// { nInserted: 1 }  
-```
-
-- `options.ordered` - `boolean` - not supported
-
-
-## `aggregate()`
-
-```js
-var res = mm.aggregate(array, stages);
-```
-
-`stages` - array of aggregation pipeline stages.
-
-Currently supported aggregation pipeline stages:
-
-- `$limit`  - `mm.aggregate([ { $limit: 5 } ])`
-
-- `$skip`   - `mm.aggregate([ { $skip: 5 } ])`       
-
-- `$sort`   - `mm.aggregate([ { $sort: { a: 1 }, { 'a.b': -1 } } ])`
-
-Array and objects in `$sort` not currently supported. 
-
-- `$unwind` - `mm.aggregate([ { $unwind: '$customer.items' } ])` or 
-
-```js
-mm.aggregate([ { $unwind: { 
-    path: '$customer.items', 
-    includeArrayIndex: 'idx',
-    preserveNullAndEmptyArrays: true
-  } 
-])` 
-```
-
-# Examples 
-
-## count()
-
-```js
-//var mm = require('../');
-var mm = require('micromongo');
-
-var array, query, res;
-
-array = [
-  { a: 1 },
-  { a: 2 },
-  { a: 3 },
-];
-
-query = { a: { $gte: 2 } };
-
-res = mm.count(array, query);
-console.log(res);
-
-// 2
-
-query = {};
-
-res = mm.count(array, query);
-console.log(res);
-
-// 3
-```
-
-
-## Example find()
-
-```js
-//var mm = require('../');
-var mm = require('micromongo');
-
-var array, query, projection, res;
-
-array = [
-  { qty: 10, price: 10 },
-  { qty: 10, price:  0 },
-  { qty: 20, price: 10 },
-  { qty: 20, price:  0 },
-  { qty: 30, price: 10 },
-  { qty: 30, price:  0 },
-];
-
-query = { $or: [ { quantity: { $eq: 20 } }, { price: { $lt: 10 } } ] };
-
-projection = { qty: 1 };
-
-res = mm.find(array, query, projection);
-console.log(res);
-
-// [ { qty: 10 }, { qty: 20 }, { qty: 30 } ]
-```
-
-You can find these examples in `examples/` subdirectory.
-To run all the examples at once you may start `node examples\index.js`.
-
-For more examples please also have a look on tests in `tests/` subdirectory. 
-
-
-If you have different needs regarding the functionality, please add a [feature request](https://github.com/alykoshin/micromongo/issues).
-
-
-
-# Testing
-
-For unit tests run:
+## Testing
 
 ```sh
 npm run _test
 ```
 
-
-# Performance
-
-As it was mentioned, `micromongo` runs on unsorted unindexed data, so it can't show good performance on big arrays.
-
-Test system: 
-- Intel® Core™ i7-3520M (2.90 GHz, 4MB L3, 1600MHz FSB)
-- 16GB 1600 MHz DDR3
-
-Tests showed following results for operations `count`, `find`, `aggregate` `$sort` over arrays of `1000`, `10000`, `100000` elements:
-
-```
-  #performance
-Processed 1000 elements - Elapsed: 26 ms
-    ✓ # count 1000 elements
-Processed 10000 elements - Elapsed: 261 ms
-    ✓ #count 10000 elements (262ms)
-    - # count 100000 elements
-Processed 1000 elements - Elapsed: 26 ms
-    ✓ # find 1000 elements
-Processed 10000 elements - Elapsed: 246 ms
-    ✓ # find 10000 elements (247ms)
-    - # find 100000 elements
-Processed 1000 elements - Elapsed: 15 ms
-    ✓ # sort 1000 elements
-Processed 10000 elements - Elapsed: 102 ms
-    ✓ # sort 10000 elements (102ms)
-    - # sort 100000 elements
-Processed 1000 elements - Elapsed: 481 ms
-    ✓ # node version >= v5.3.0 - find $where 1000 elements (481ms)
-Processed 5000 elements - Elapsed: 2997 ms
-    ✓ # node version >= v5.3.0 - find $where 5000 elements (2997ms)
- ```
-
-For `node` version < 5.3.0 `$where` is significantly slower due to imementation of `vm`.
-
-You may have a look on the data used for the tests in `tests/performance.js`, and running tests by yourself by `npm run _test` and checking the console log for `performance` output.
-
-
-
-# Compatibility matrix
-
-At the moment supports only `find()` and `findOne()` operations.
-
-If documents in array contains `_id` field, projection follows standard Mongo agreement to include it in output document by default.
-
-
-Matrix below is based on Mongodb 3.2 documentation.
-
-## Collection Methods
-
-Method                  | Status |
-------------------------|--------|--------------------------
-aggregate()             | **+**  | see [Aggregation Pipeline Operators](#aggregation-pipeline-operators)
-bulkWrite()             | ?      |
-**count()**             | **+**  |
-**copyTo()**            | **+**  |
-createIndex()           | NA     |
-dataSize()              | NA     |
-**deleteOne()**         | **+**  |
-**deleteMany()**        | **+**  |
-distinct()              | ?      |
-drop()                  | NA     |
-dropIndex()             | NA     |
-dropIndexes()           | NA     |
-ensureIndex()           | NA     |
-explain()               | NA     |
-**find()**              | **+**  |
-findAndModify()         | ?      |
-**findOne()**           | **+**  |
-findOneAndDelete()      | ?      |
-findOneAndReplace()     | ?      |
-findOneAndUpdate()      | ?      |
-getIndexes()            | NA     |
-getShardDistribution()  | NA     |
-getShardVersion()       | NA     |
-group()                 | ?      |
-**insert()**            | **+**  |
-**insertOne()**         | **+**  |
-**insertMany()**        | **+**  |
-isCapped()              | NA     |
-mapReduce()             | ?      |
-reIndex()               | NA     |
-replaceOne()            | ?      |
-**remove()**            | **+**  |
-renameCollection()      | NA     |
-save()                  | NA     |
-stats()                 | NA     |
-storageSize()           | NA     |
-totalSize()             | NA     |
-totalIndexSize()        | NA     |
-update()                | .      |
-updateOne()             | .      |
-updateMany()            | .      |
-validate()              | NA     |
-
-+  - Supported
-
-NA - Not Applicable
-
-?  - Not planned
-
-.  - Not implemented
-
-
-## Query and Projection Operators
-
-
-### Comparison Operators
-
-Operator       | Status | Comment
----------------|--------|-----------------------
-**$eq**        | **+**  |
-**$ne**        | **+**  |
-**$gt**        | **+**  |
-**$gte**       | **+**  |
-**$lt**        | **+**  |
-**$lte**       | **+**  |
-**$in**        | **+**  |
-**$nin**       | **+**  | arrays not supported
-  
-  
-### Logical Operators
-               
-Operator       | Status 
----------------|--------
-**$and**       | **+**    
-**$or**        | **+**    
-**$not**       | **+**    
-**$nor**       | **+**    
-
-
-### Element Query Operators
-
-Operator       | Status    
----------------|--------   
-**$exists**    | **+**
-**$type**      | **+**
-
- 
-### Evaluation query operators
-
-Operator       | Status | Comment  
----------------|--------|----------------------------------   
-**$mod**       | **+**  |  
-**$regex**     | **+**  | Not supported `o`, `x` options
-$text          | ?      |  
-**$where**     | **+**  | Timeout hardcoded to 1000 ms  
-
-
-### Geospatial Query Operators
-
-Operator       | Status  
----------------|-------- 
-$geoWithin     | ?
-$geoIntersects | ?
-$near          | ?
-$nearSphere    | ?
-$geometry      | ?
-$minDistance   | ?
-$maxDistance   | ?
-$center        | ?
-$centerSphere: | ?
-$box           | ?
-$polygon       | ?
-$uniqueDocs    | ?
- 
- 
-### Query Operator Array 
-
-Operator       | Status | Comment   
----------------|--------|----------------    
-**$all**       | **+**  | Not supported: (1) nested arrays, (2) use with `$elemMatch`, 
-**$elemMatch** | **+**  | 
-**$size**      | **+**  |
- 
- 
-### Bitwise Query Operators
-
-Operator       | Status 
----------------|--------
-$bitsAllSet    | ?
-$bitsAnySet    | ?
-$bitsAllClear  | ?
-$bitsAnyClear  | ?
- 
- 
-### $comment
-                         
-Operator       | Status | Comment 
----------------|--------|------------------- 
-**$comment**   | **+**  | Logs to console
-
-
-### Projection operators
-
-Operator       | Status 
----------------|--------
-$              | .
-$all           | .
-$elemMatch     | .
-$size          | .
-
-
-## Update Operators
-
-### Field Update Operators
-$inc 
-$mul 
-$rename 
-$setOnInsert
-$set
-$unset 
-$min 
-$max 
-$currentDate
-
-## Update Operators
-$ 
-$addToSet 
-$pop
-$pullAll 
-$pull
-$pushAll 
-$push 
-
-## Update Operator Modifiers
-$each 
-$slice
-$sort 
-$position 
-
-
-## Bitwise Update Operator¶
-$bit 
-
-## Isolation Update Operator¶
-$isolated 
-
-## Aggregation Pipeline Operators
-
-### Pipeline Aggregation Stages
-
-Operator       | Status 
----------------|--------
-$project       | **+**
-$match         | **+**
-$redact        | .
-**$limit**     | **+**
-**$skip**      | **+**
-**$unwind**    | **+**         s
-$group         | .
-$sample        | .
-**$sort**      | **+**
-$geoNear       | .
-$lookup        | .
-$out           | .
-$indexStats    | NA
-
-### Boolean Aggregation Operators
-### Set Operators (Aggregation)
-### Comparison Aggregation Operators
-### Arithmetic Aggregation Operators
-### String Aggregation Operators
-### Text Search Aggregation Operators
-### Array Aggregation Operators
-### Aggregation Variable Operators
-### Aggregation Literal Operators
-### Date Aggregation Operators
-### Conditional Aggregation Operators
-### Group Accumulator Operators
-
+If you have different needs regarding the functionality, please add a
+[feature request](https://github.com/alykoshin/micromongo/issues).
 
 ## Credits
+
 [Alexander](https://github.com/alykoshin/)
 
+## Links
 
-# Links to package pages:
-
-[github.com](https://github.com/alykoshin/micromongo) &nbsp; [npmjs.com](https://www.npmjs.com/package/micromongo) &nbsp; [travis-ci.org](https://travis-ci.org/alykoshin/micromongo) &nbsp; [coveralls.io](https://coveralls.io/github/alykoshin/micromongo) &nbsp; [inch-ci.org](https://inch-ci.org/github/alykoshin/micromongo)
-
+[github.com](https://github.com/alykoshin/micromongo) &nbsp;
+[npmjs.com](https://www.npmjs.com/package/micromongo) &nbsp;
+[docs & playground](https://alykoshin.github.io/micromongo/)
 
 ## License
 

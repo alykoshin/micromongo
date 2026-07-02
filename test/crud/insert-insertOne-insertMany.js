@@ -18,7 +18,7 @@ var should = chai.should();
 var expect = chai.expect;
 var sinon = require('sinon');
 
-var crud = require('../../lib/crud/');
+var crud = require('../../dist/crud/');
 
 
 describe('#insert-insertOne-insertMany', function() {
@@ -39,7 +39,8 @@ describe('#insert-insertOne-insertMany', function() {
       var res = crud.insert(a, i);
 
       expect(a).eql(r);
-      expect(res).eql({ nInserted: 1 });
+      // docs without _id → insertedId is undefined (micromongo does not auto-generate)
+      expect(res).eql({ acknowledged: true, insertedId: undefined, insertedCount: 1 });
     });
 
     it('#insert array', function() {
@@ -52,7 +53,7 @@ describe('#insert-insertOne-insertMany', function() {
       var res = crud.insert(a, i);
 
       expect(a).eql(r);
-      expect(res).eql({ nInserted: i.length });
+      expect(res).eql({ acknowledged: true, insertedCount: i.length, insertedIds: { 0: undefined, 1: undefined } });
     });
 
   });
@@ -64,7 +65,7 @@ describe('#insert-insertOne-insertMany', function() {
     var res = crud.insert(a, i);
 
     expect(a).eql(r);
-    expect(res).eql({ nInserted: 1 });
+    expect(res).eql({ acknowledged: true, insertedId: undefined, insertedCount: 1 });
   });
 
   it('#insertMany', function() {
@@ -77,7 +78,7 @@ describe('#insert-insertOne-insertMany', function() {
     var res = crud.insert(a, i);
 
     expect(a).eql(r);
-    expect(res).eql({ nInserted: i.length });
+    expect(res).eql({ acknowledged: true, insertedCount: i.length, insertedIds: { 0: undefined, 1: undefined } });
   });
 
 
