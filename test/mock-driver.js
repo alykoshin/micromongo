@@ -92,6 +92,14 @@ describe('# micromongo/mock (mongodb driver adapter)', function () {
       var top = await coll.find({}).sort({ n: -1 }).limit(1).project({ _id: 0, n: 1 }).toArray();
       expect(top).eql([{ n: 3 }]);
     });
+    it('# find(q, options) honors the driver options bag (projection/sort/limit/skip)', async function () {
+      var top = await coll.find({}, { sort: { n: -1 }, limit: 1, projection: { _id: 0, n: 1 } }).toArray();
+      expect(top).eql([{ n: 3 }]);
+    });
+    it('# findOne(q, { projection }) applies the projection', async function () {
+      var doc = await coll.findOne({}, { sort: { n: 1 }, projection: { _id: 0, n: 1 } });
+      expect(doc).eql({ n: 1 });
+    });
     it('# for-await async iteration', async function () {
       var ns = [];
       for await (var d of coll.find({}).sort({ n: 1 })) { ns.push(d.n); }

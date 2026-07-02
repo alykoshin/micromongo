@@ -69,12 +69,22 @@ class MockCollection {
   }
 
   // --- reads ---
-  find(query?: any, _options?: any): any {
-    return new FindCursor(this._c, query || {}, mkCursor);
+  find(query?: any, options?: any): any {
+    var cur = new FindCursor(this._c, query || {}, mkCursor);
+    // The driver accepts these as an options bag on find() (as well as via cursor chaining):
+    if (options) {
+      if (options.projection) { cur.project(options.projection); }
+      if (options.sort) { cur.sort(options.sort); }
+      if (typeof options.skip === 'number') { cur.skip(options.skip); }
+      if (typeof options.limit === 'number') { cur.limit(options.limit); }
+    }
+    return cur;
   }
 
-  findOne(query?: any, _options?: any): Promise<any> {
-    return Promise.resolve(this._c.findOne(query || {}));
+  findOne(query?: any, options?: any): Promise<any> {
+    // findOne honors options.projection like the driver; reuse find()+limit(1).
+    var cur = this.find(query || {}, options);
+    return cur.limit(1).toArray().then(function (arr: any[]) { return arr.length ? arr[0] : null; });
   }
 
   aggregate(pipeline?: any[], _options?: any): any {

@@ -78,6 +78,7 @@
     "inspect": "echo \"skipping jsinspect\"",
     "pretest": "npm run typecheck && npm run lint && npm run inspect && npm run _npm-audit && npm run _deps-check",
     "test:bundles": "npm run build:bundles && node bundle-tests/esm-smoke.mjs && node bundle-tests/browser-iife-smoke.cjs && node bundle-tests/dual-package.mjs && node bundle-tests/treeshake-guard.mjs && node bundle-tests/core-smoke.mjs",
+    "test:mongo": "npm run build && node test-mongo/differential.mjs",
     "_test": "nyc ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./test/ && npm run test-types && npm run test:bundles",
     "_test-report": "nyc report --reporter=html && nyc report --reporter=text-lcov > coverage/coverage.lcov",
     "test": "npm run _test && npm run _test-report",
