@@ -105,6 +105,10 @@ Runnable snippets are in the [`examples/`](examples/) directory (`node examples/
 custom query/aggregate operators (`registerOperator`); and the tests in [`test/`](test/) double as
 executable specs.
 
+This is the documentation for the current **1.x** release. The old pre-rewrite API (v0.3.x, no
+indexes / no `Collection`, `node >= 0.11`) is archived at
+[`docs/legacy-readme-0.3.1.md`](docs/legacy-readme-0.3.1.md) for reference.
+
 Target `node` version: **>= 8**.
 
 ## Compatibility
