@@ -53,3 +53,11 @@ node_modules
 
 # Local env (secrets — never commit). .env.example is the committed contract.
 .env
+
+# Local-only working docs / AI-assistant scratch — kept on disk, not tracked.
+.claude/
+CLAUDE.md
+# planning/ is local-only EXCEPT compatibility.md (the canonical compat matrix,
+# linked from README/docs and guarded by test/meta/manifest.js).
+planning/*
+!planning/compatibility.md
