@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/micromongo.svg)](https://www.npmjs.com/package/micromongo)
-[![CI](https://github.com/alykoshin/micromongo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/alykoshin/micromongo/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/alykoshin/micromongo/badge.svg?branch=master)](https://coveralls.io/github/alykoshin/micromongo?branch=master)
+[![tests](https://raw.githubusercontent.com/alykoshin/micromongo/master/docs/badges/tests.svg)](https://github.com/alykoshin/micromongo#testing)
+[![coverage](https://raw.githubusercontent.com/alykoshin/micromongo/master/docs/badges/coverage.svg)](https://github.com/alykoshin/micromongo#testing)
 [![node](https://img.shields.io/node/v/micromongo.svg)](https://www.npmjs.com/package/micromongo)
 [![license](https://img.shields.io/npm/l/micromongo.svg)](https://github.com/alykoshin/micromongo/blob/master/LICENSE)
 
@@ -144,8 +144,13 @@ the `bson` `ObjectId` handling, and which server-only features are no-ops vs. th
 ## Testing
 
 ```sh
-npm run _test
+npm run _test    # build + run the suite (mocha + nyc), type tests, and bundle smokes
+npm test         # the above + lint/audit/deps checks, coverage report, and status badges
 ```
+
+There is no cloud CI; the **tests** and **coverage** badges above are generated locally from
+the real numbers by [`scripts/gen-badges.js`](scripts/gen-badges.js) (run as part of `npm test`)
+and committed under [`docs/badges/`](docs/badges/) — so they always reflect the last full run.
 
 If you have different needs regarding the functionality, please add a
 [feature request](https://github.com/alykoshin/micromongo/issues).
