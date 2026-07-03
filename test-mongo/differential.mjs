@@ -4,15 +4,15 @@
 // query/update/aggregation semantics surfaces as a deep-equality failure.
 //
 // OPT-IN and source-agnostic: it runs only when a URI is available. The URI comes from
-// `TEST_MONGODB_URI` — read from `.env` (gitignored) or the environment (env wins over .env).
+// `TEST_MONGO_URI` — read from `.env` (gitignored) or the environment (env wins over .env).
 // `MONGODB_URI` is also accepted as a fallback. With none set it exits 0 with a SKIP, so it
 // never blocks a normal `npm test`. Point it at a THROWAWAY/test database — the harness
 // creates and DROPS collections.
 //
-//   # .env:  TEST_MONGODB_URI=mongodb://localhost:27017
+//   # .env:  TEST_MONGO_URI=mongodb://localhost:27017
 //   npm run test:mongo
 //   # or ad-hoc:
-//   TEST_MONGODB_URI=mongodb://localhost:27017 node test-mongo/differential.mjs
+//   TEST_MONGO_URI=mongodb://localhost:27017 node test-mongo/differential.mjs
 //
 // This lives OUTSIDE test/ so mocha's `--recursive ./test/` never auto-runs it (no accidental
 // dependency on a running mongod). See CLAUDE.md → "Validating against a real MongoDB".
@@ -46,16 +46,16 @@ function loadDotEnv() {
 }
 loadDotEnv();
 
-const URI = process.env.TEST_MONGODB_URI || process.env.MONGODB_URI;
+const URI = process.env.TEST_MONGO_URI || process.env.MONGODB_URI;
 if (!URI) {
-  console.log('SKIP: no TEST_MONGODB_URI — differential mongo tests need a real MongoDB.');
-  console.log('      Set TEST_MONGODB_URI in .env (see .env.example) to a THROWAWAY database,');
-  console.log('      or: TEST_MONGODB_URI=mongodb://localhost:27017 node test-mongo/differential.mjs');
+  console.log('SKIP: no TEST_MONGO_URI — differential mongo tests need a real MongoDB.');
+  console.log('      Set TEST_MONGO_URI in .env (see .env.example) to a THROWAWAY database,');
+  console.log('      or: TEST_MONGO_URI=mongodb://localhost:27017 node test-mongo/differential.mjs');
   process.exit(0);
 }
 
 // The database to create the temp `mmdiff_*` collections in. Some accounts are scoped to a
-// specific db (not free to create arbitrary ones), so this is configurable: TEST_MONGODB_DB,
+// specific db (not free to create arbitrary ones), so this is configurable: TEST_MONGO_DB,
 // else the db in the URI path (mongodb://host/<db>), else 'mm_differential'.
 function dbFromUri(uri) {
   const m = uri.replace(/^mongodb(\+srv)?:\/\//i, '').split('/')[1];
@@ -63,7 +63,7 @@ function dbFromUri(uri) {
   const name = m.split('?')[0];
   return name || null;
 }
-const TEST_DB = process.env.TEST_MONGODB_DB || dbFromUri(URI) || 'mm_differential';
+const TEST_DB = process.env.TEST_MONGO_DB || dbFromUri(URI) || 'mm_differential';
 console.log('Differential harness → db "' + TEST_DB + '" (temp mmdiff_* collections, dropped after each case)');
 
 // The real driver is a devDependency-or-peer; import lazily so the skip path needs nothing.

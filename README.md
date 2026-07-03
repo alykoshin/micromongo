@@ -109,7 +109,7 @@ This is the documentation for the current **1.x** release. The old pre-rewrite A
 indexes / no `Collection`, `node >= 0.11`) is archived at
 [`docs/legacy-readme-0.3.1.md`](docs/legacy-readme-0.3.1.md) for reference.
 
-Target `node` version: **>= 8**.
+Target `node` version: **>= 12**.
 
 ## Compatibility
 
