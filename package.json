@@ -74,7 +74,7 @@
     "build:docs": "npm run build:bundles && node scripts/build-docs-site.js && node scripts/gen-docs-examples.js",
     "gen-docs": "npm run gen-compat-tables && npm run build:docs",
     "prepare": "npm run build:all",
-    "prepublishOnly": "npm run rebuild",
+    "prepublishOnly": "npm run clean",
     "pre_test": "npm run build",
     "_npm-audit": "npm audit || echo '\n*** Please check warnings above ***\n' && npm audit --production --audit-level high && echo '\n*** npm audit reported no high-level vulnerabilities for production configuration ***\n' ",
     "_deps-check": "npm-check-updates --error-level 2",
