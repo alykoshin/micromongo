@@ -4,7 +4,12 @@
     "target": "es2017",
     "lib": ["es2017"],
     "types": ["node"],
-    "moduleResolution": "node",
+    // "node" (= node10) is the classic Node CommonJS resolver, correct for this
+    // CJS library (module: commonjs, export = shape). TS 6 deprecates it and will
+    // drop it in TS 7; node16/nodenext enforce stricter ESM/CJS interop that would
+    // break the require/export = patterns here, so keep node10 + silence for now.
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
 
     "rootDir": "src",
     "outDir": "dist",
