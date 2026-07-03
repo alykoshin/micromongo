@@ -1,8 +1,8 @@
-[![npm version](https://badge.fury.io/js/micromongo.svg)](http://badge.fury.io/js/micromongo)
-[![Build Status](https://travis-ci.org/alykoshin/micromongo.svg)](https://travis-ci.org/alykoshin/micromongo)
-[![Coverage Status](https://coveralls.io/repos/alykoshin/micromongo/badge.svg?branch=master&service=github)](https://coveralls.io/github/alykoshin/micromongo?branch=master)
-[![Code Climate](https://codeclimate.com/github/alykoshin/micromongo/badges/gpa.svg)](https://codeclimate.com/github/alykoshin/micromongo)
-[![Inch CI](https://inch-ci.org/github/alykoshin/micromongo.svg?branch=master)](https://inch-ci.org/github/alykoshin/micromongo)
+[![npm version](https://img.shields.io/npm/v/micromongo.svg)](https://www.npmjs.com/package/micromongo)
+[![CI](https://github.com/alykoshin/micromongo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/alykoshin/micromongo/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/alykoshin/micromongo/badge.svg?branch=master)](https://coveralls.io/github/alykoshin/micromongo?branch=master)
+[![node](https://img.shields.io/node/v/micromongo.svg)](https://www.npmjs.com/package/micromongo)
+[![license](https://img.shields.io/npm/l/micromongo.svg)](https://github.com/alykoshin/micromongo/blob/master/LICENSE)
 
 # micromongo
 
