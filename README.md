@@ -142,8 +142,21 @@ mirrors the native driver (`MongoClient` / `Db` / `Collection` / cursors / `Obje
 module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };
 ```
 
-See **[the mock adapter docs →](https://alykoshin.github.io/micromongo/#mock)** for the full surface,
-the `bson` `ObjectId` handling, and which server-only features are no-ops vs. throw.
+**Using it in tests — two styles:** *module replacement* (as above — Jest `moduleNameMapper` / Vitest
+`resolve.alias` rewrite `mongodb` → `micromongo/mock`, no app change), or *dependency injection* (pass
+the mock's `Db` into code that takes a `Db` — works with any runner: `node:test`, Mocha, AVA, …). A fresh
+`MongoClient` per test gives isolated state with no global reset.
+
+**Mock vs. stubs vs. a real server:** a hand stub returns canned data (misses query-logic bugs);
+`micromongo/mock` runs your *real* queries against the in-memory engine with no server (fast, but not
+100% Mongo-faithful — no txn isolation / change streams); a real mongod is ground truth but slow and
+needs infra. Typical split: mock-backed suite as the default `npm test`, a thin real-mongod tier gating
+releases (micromongo dogfoods this via its [`test:mongo`](test-mongo/differential.mjs) differential harness).
+
+See **[the mock adapter docs →](https://alykoshin.github.io/micromongo/#mock)** for the full surface, the
+[test-runner wiring →](https://alykoshin.github.io/micromongo/#mock-runners) and
+[comparison table →](https://alykoshin.github.io/micromongo/#mock-vs), the `bson` `ObjectId` handling,
+and which server-only features are no-ops vs. throw.
 
 ## Testing
 

@@ -92,6 +92,11 @@
         padding-left: 1.35rem;
         font-size: 0.8rem;
       }
+      nav.side a.navlink.sub2 {
+        padding-left: 2.1rem;
+        font-size: 0.74rem;
+        opacity: 0.85;
+      }
       nav.side .navgroup {
         margin-top: 0.9rem;
         font-size: 0.68rem;
@@ -627,6 +632,8 @@
         <a class="navlink sub" href="#extend">Extending</a>
         <a class="navlink sub" href="#cli">CLI / REPL</a>
         <a class="navlink sub" href="#mock">Driver mock (testing)</a>
+        <a class="navlink sub sub2" href="#mock-runners">— test runners</a>
+        <a class="navlink sub sub2" href="#mock-vs">— mock vs. real server</a>
 
         <div class="navgroup">More</div>
         <a class="navlink sub" href="#performance">Performance</a>
@@ -1358,6 +1365,118 @@ module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };</code
             (<code>watch()</code> change streams, Atlas
             <code>*SearchIndex*</code>) so a test depending on a real server
             fails instead of silently passing.
+          </div>
+
+          <h3 id="mock-runners">Wiring it into your test runner</h3>
+          <p>
+            There are two ways to get the mock in front of your code under
+            test. Pick by whether that code <code>require</code>s
+            <code>mongodb</code> directly or receives a <code>Db</code>.
+          </p>
+          <p>
+            <strong>Style 1 — module replacement.</strong> The app keeps
+            <code>require("mongodb")</code> untouched; the runner rewrites that
+            specifier to <code>micromongo/mock</code>. No app change at all.
+          </p>
+          <pre><code>// Jest — jest.config.js
+module.exports = { moduleNameMapper: { "^mongodb$": "micromongo/mock" } };
+
+// Vitest — vitest.config.ts
+export default { resolve: { alias: { mongodb: "micromongo/mock" } } };
+
+// …then your app code and tests keep importing "mongodb" as usual:
+const { MongoClient } = require("mongodb"); // ← resolves to micromongo/mock under test</code></pre>
+          <p>
+            <strong>Style 2 — dependency injection.</strong> Runners without a
+            module-mapping layer (<code>node:test</code>, Mocha, AVA, …) need no
+            config: import the mock in the test and pass its <code>Db</code> into
+            the code under test (which should take a <code>Db</code> rather than
+            importing a driver — good practice regardless). Works everywhere.
+          </p>
+          <pre><code>// repository.js — the code under test takes a Db; never imports a driver
+function makeUserRepo(db) {
+  const users = db.collection("users");
+  return {
+    create: (u) => users.insertOne(u).then((r) => r.insertedId),
+    adults: () => users.find({ age: { $gte: 18 } }).sort({ age: 1 }).toArray(),
+  };
+}
+
+// user.test.mjs — runner-agnostic (shown with node:test)
+import { test, beforeEach } from "node:test";
+import assert from "node:assert/strict";
+import { MongoClient } from "micromongo/mock"; // ← swap for "mongodb" in production wiring
+import { makeUserRepo } from "./repository.js";
+
+let repo;
+beforeEach(async () => {
+  const client = await MongoClient.connect("mongodb://localhost/test"); // fresh ⇒ isolated
+  repo = makeUserRepo(client.db());
+});
+
+test("finds adults sorted by age", async () => {
+  await repo.create({ name: "kid", age: 12 });
+  await repo.create({ name: "ada", age: 36 });
+  assert.deepEqual((await repo.adults()).map((u) => u.name), ["ada"]);
+});</code></pre>
+          <div class="callout tip">
+            <strong>Isolation.</strong> Each <code>MongoClient</code> owns its
+            databases, so a fresh client per test (in
+            <code>beforeEach</code>) gives clean state with no global reset — and
+            makes parallel/concurrent runners (AVA, Vitest threads) safe by
+            construction.
+          </div>
+
+          <h3 id="mock-vs">Mock vs. stubs vs. a real server</h3>
+          <p>
+            Three ways to test code that talks to MongoDB, from lightest to
+            most faithful. <code>micromongo/mock</code> sits in the middle:
+            no server, but your <em>real</em> query / update / aggregation logic
+            actually runs against the real engine (a hand stub can't catch a
+            wrong <code>$</code>-operator or a broken pipeline — it just returns
+            whatever you canned).
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Concern</th>
+                <th>Hand-stubbed unit<br /><span class="legend">canned consts / sinon</span></th>
+                <th><code>micromongo/mock</code></th>
+                <th>Real mongod<br /><span class="legend">local / docker / Atlas</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Runs your real query/update/agg logic</td><td>❌ returns canned data</td><td>✅ real engine</td><td>✅</td></tr>
+              <tr><td>Server needed / works offline</td><td>✅ none</td><td>✅ none</td><td>❌ needs mongod</td></tr>
+              <tr><td>Speed</td><td>fastest</td><td>≈ as fast (in-memory)</td><td>slowest (I/O + startup)</td></tr>
+              <tr><td>Setup &amp; CI cost</td><td>low</td><td>low (one dep)</td><td>high (container / creds)</td></tr>
+              <tr><td>Parallel-test isolation</td><td>trivial</td><td>per-client (easy)</td><td>needs per-test db/namespace</td></tr>
+              <tr><td>Catches wrong-operator / bad-pipeline bugs</td><td>❌</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Fully Mongo-faithful (txn isolation, change streams, real index/perf)</td><td>n/a</td><td>⚠️ mostly — see <a href="#compatibility">compatibility</a></td><td>✅ ground truth</td></tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>Pick this when…</strong> reach for a
+            <strong>hand stub</strong> only to isolate code where the query is
+            incidental (you're testing the caller, not the query). Use
+            <strong><code>micromongo/mock</code></strong> for the bulk of your
+            data-layer tests — the fast inner loop where you want the real query
+            semantics without a server. Keep a thin
+            <strong>real-mongod</strong> tier for what the mock can't model
+            (transaction isolation, change streams, index/perf behavior, and any
+            <a href="#compatibility">documented divergence</a>) and to gate
+            releases.
+          </p>
+          <div class="callout info">
+            <strong>Layered strategy.</strong> Run the mock-backed suite as your
+            default <code>npm test</code> (no server, milliseconds), and gate
+            releases with the same tests against a real mongod behind an opt-in
+            script, e.g. <code>test:e2e</code>. micromongo dogfoods exactly this:
+            its
+            <a href="https://github.com/alykoshin/micromongo/blob/master/test-mongo/differential.mjs"><code>test:mongo</code></a>
+            differential harness replays one test body against <em>both</em>
+            <code>micromongo/mock</code> and a real MongoDB and asserts identical
+            results — the reference pattern for “one suite, two backends.”
           </div>
 
           <!-- ============================ PERFORMANCE =========================== -->
